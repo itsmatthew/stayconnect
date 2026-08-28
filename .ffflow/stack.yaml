@@ -1,0 +1,3 @@
+extends: typescript-ui
+dimensions:
+  ui_baseline: react
