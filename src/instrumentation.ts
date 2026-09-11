@@ -9,7 +9,9 @@ export async function register() {
 
   if (missing.length > 0) {
     throw new Error(
-      `Missing required environment variable(s): ${missing.join(", ")}\n` +
+      "Startup halted — missing configuration.\n" +
+        '(The "✓ Ready" line above is expected. The server did not stay up.)\n\n' +
+        `Missing required environment variable(s): ${missing.join(", ")}\n` +
         "Copy .env.example to .env.local and fill in the missing value(s).",
     );
   }
