@@ -1,30 +1,26 @@
 import type { Metadata } from "next";
-import { getImageProps } from "next/image";
-import { HomePlaceholder } from "@/components/intro/home-placeholder";
+import { Fraunces, Karla } from "next/font/google";
+import { HomeClient } from "./home-client";
 import { IntroClient } from "./intro-client";
 
 export const metadata: Metadata = {
   title: "stayconnect",
 };
 
-export default function IntroPage() {
-  // Art direction: phone and wide screens get different screenshots (see docs/specs/intro.md, INTRO-7/9).
-  const common = { alt: "", sizes: "100vw" };
-  const {
-    props: { src: desktopSrc, srcSet: desktopSrcSet },
-  } = getImageProps({ ...common, src: "/your-circles-desktop.png", width: 1312, height: 816 });
-  const {
-    props: { src, srcSet, width, height, sizes },
-  } = getImageProps({ ...common, src: "/your-circles.jpg", width: 1170, height: 2532 });
+// The home screen's typefaces, from the designer's reference.
+// Variable weight plus the optical-size axis: the wordmark's curly "&" is Fraunces' large-opsz glyph.
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  axes: ["opsz"],
+  variable: "--font-fraunces",
+});
+const karla = Karla({ subsets: ["latin"], weight: ["500", "700", "800"], variable: "--font-karla" });
 
+export default function IntroPage() {
   return (
-    <IntroClient
-      home={
-        <HomePlaceholder
-          desktop={{ src: desktopSrc, srcSet: desktopSrcSet }}
-          mobile={{ src, srcSet, width: Number(width), height: Number(height), sizes }}
-        />
-      }
-    />
+    <div className={`${fraunces.variable} ${karla.variable}`}>
+      <IntroClient home={<HomeClient />} />
+    </div>
   );
 }

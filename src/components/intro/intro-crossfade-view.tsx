@@ -23,7 +23,10 @@ export function IntroCrossfadeView({ phase, fast, onSkip, videoRef, backdropRef,
       data-fast={String(fast)}
       className="relative isolate h-dvh w-full overflow-hidden bg-black"
     >
-      <div className={`absolute inset-0 ${fade} ${done ? "opacity-100" : "opacity-0"}`}>{home}</div>
+      {/* Inert under the video so nothing in home can be focused or clicked until the intro is done. */}
+      <div data-intro-home="" inert={!done} className={`absolute inset-0 ${fade} ${done ? "opacity-100" : "opacity-0"}`}>
+        {home}
+      </div>
 
       {/* Wide screens: a blurred, darkened, enlarged copy fills the sides of the portrait column. */}
       <video

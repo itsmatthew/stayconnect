@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { IntroClient } from "@/app/intro/intro-client";
-import { HomePlaceholder } from "@/components/intro/home-placeholder";
+import { HomeClient } from "@/app/intro/home-client";
 
 // jsdom has no media playback, so stub what the hook touches.
 let readyState = 0;
@@ -25,16 +25,11 @@ afterEach(() => {
 });
 
 function renderIntro() {
-  const home = (
-    <HomePlaceholder
-      desktop={{ src: "/your-circles-desktop.png", srcSet: "/your-circles-desktop.png 1x" }}
-      mobile={{ src: "/your-circles.jpg", srcSet: "/your-circles.jpg 1x", width: 1170, height: 2532 }}
-    />
-  );
-  const utils = render(<IntroClient home={home} />);
+  const utils = render(<IntroClient home={<HomeClient />} />);
   const root = utils.container.querySelector("[data-intro]") as HTMLElement;
   const video = utils.container.querySelector("video:not([aria-hidden])") as HTMLVideoElement;
-  return { ...utils, root, video };
+  const home = utils.container.querySelector("[data-intro-home]") as HTMLElement;
+  return { ...utils, root, video, home };
 }
 
 describe("IntroClient", () => {
@@ -99,29 +94,12 @@ describe("IntroClient", () => {
     expect(video.className).toContain("motion-reduce:duration-200");
   });
 
-  it("art-directs the home placeholder at 768px (INTRO-7)", () => {
-    const { container } = renderIntro();
-    const source = container.querySelector("picture source") as HTMLSourceElement;
-    expect(source.getAttribute("media")).toBe("(min-width: 768px)");
-    expect(source.getAttribute("srcset")).toContain("/your-circles-desktop.png");
-    const img = container.querySelector("picture img") as HTMLImageElement;
-    expect(img.getAttribute("src")).toBe("/your-circles.jpg");
-    expect(img.className).toContain("object-cover");
-  });
-
-  it("shows the whole desktop image over a blurred copy at md and up (INTRO-9)", () => {
-    const { container } = renderIntro();
-    const img = container.querySelector("picture img") as HTMLImageElement;
-    expect(img.className).toContain("md:object-contain");
-    const backdrop = container.querySelector("img[aria-hidden='true']") as HTMLImageElement;
-    expect(backdrop.getAttribute("src")).toBe("/your-circles-desktop.png");
-    expect(backdrop.getAttribute("alt")).toBe("");
-    expect(backdrop.className).toMatch(/\bhidden\b/);
-    expect(backdrop.className).toContain("md:block");
-    expect(backdrop.className).toContain("blur-2xl");
-    expect(backdrop.className).toContain("brightness-50");
-    // The backdrop sits behind the sharp image.
-    expect(backdrop.compareDocumentPosition(img) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  it("renders the home screen under the video, inert until done (INTRO-7)", () => {
+    const { home } = renderIntro();
+    expect(home.querySelector("[data-layout='phone']")).not.toBeNull();
+    expect(home.hasAttribute("inert")).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Skip intro" }));
+    expect(home.hasAttribute("inert")).toBe(false);
   });
 
   it("has a decorative backdrop video shown only at md and up (INTRO-8)", () => {

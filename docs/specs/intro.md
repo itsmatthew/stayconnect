@@ -11,8 +11,7 @@ Tests: `tests/intro/`.
 | INTRO-4 | If the video errors, `play()` is rejected (autoplay blocked), or it has not loaded (`readyState < HAVE_CURRENT_DATA`) 4s after mount, go to home with a 0.25s cut. |
 | INTRO-5 | The transition to home happens once; later events are ignored. |
 | INTRO-6 | Under `prefers-reduced-motion`, all fades are 0.2s. |
-| INTRO-7 | Home is a static placeholder until the real homepage components exist: below 768px `/your-circles.jpg` fills the screen (cover). |
-| INTRO-9 | At 768px and up, home shows the whole `/your-circles-desktop.png`, uncropped and centered (contain). A blurred, darkened, enlarged, `aria-hidden` copy of the same image fills any leftover space behind it. Below 768px there is no image backdrop. |
+| INTRO-7 | Home is the Home — Your Circles screen (`docs/specs/home.md`). It is `inert` until the intro is done, so it can't be focused under the video. |
 | INTRO-8 | At 768px and up the video plays in a centered full-height 1170:2532 column, and a blurred, darkened, enlarged, `aria-hidden` copy of the video fills the sides. Below 768px the video fills the screen with no backdrop. |
 
-INTRO-6 and the visual parts of INTRO-8 and INTRO-9 are CSS media behaviour that jsdom can't evaluate. The tests assert the classes are present, and the real behaviour is checked by hand in a browser.
+INTRO-6 and the visual parts of INTRO-8 are CSS media behaviour that jsdom can't evaluate. The tests assert the classes are present, and the real behaviour is checked by hand in a browser.
