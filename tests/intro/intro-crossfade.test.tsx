@@ -102,6 +102,15 @@ describe("IntroClient", () => {
     expect(home.hasAttribute("inert")).toBe(false);
   });
 
+  it("once done, the faded-out videos let taps through to home (INTRO-7)", () => {
+    const { container } = renderIntro();
+    const videos = Array.from(container.querySelectorAll("video"));
+    for (const v of videos) expect(v.className).not.toContain("pointer-events-none");
+    fireEvent.click(screen.getByRole("button", { name: "Skip intro" }));
+    expect(videos).toHaveLength(2);
+    for (const v of videos) expect(v.className).toContain("pointer-events-none");
+  });
+
   it("has a decorative backdrop video shown only at md and up (INTRO-8)", () => {
     const { container } = renderIntro();
     const backdrop = container.querySelector("video[aria-hidden='true']") as HTMLVideoElement;

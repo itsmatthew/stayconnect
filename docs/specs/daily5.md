@@ -1,0 +1,22 @@
+# Daily 5
+
+Five old photos a day, resurfaced from the user's own photos and the family computer, each one a nudge to send a memory to a circle or a friend.
+Built from the designer's Daily 5 and Daily 5 send references (phone, 390×844). There is no database yet: photos stay in this browser.
+Tests: `tests/daily5/`, `tests/app/`.
+
+| ID | Behaviour |
+|----|-----------|
+| D5-1 | **Nav.** The Daily 5 nav button (phone and wide) opens the Daily 5 tab, which becomes `aria-current="page"`. Circles and Messages switch tabs the same way. Archive and Me do nothing yet (TODO). |
+| D5-2 | **Photo pools.** There are two pools, "My photos" and "Family computer". Each has a "Choose folder" button (`webkitdirectory`, for a whole folder) and a "Choose photos" button (`multiple`, `accept="image/*"`, for picking many photos on mobile). Added photos join the pool. Re-adding the same file (same name, size and modified date) is ignored. Non-image files are ignored. Each pool shows its photo count and import progress. Files the browser can't decode (e.g. HEIC on Chrome) are skipped and reported as "N skipped". |
+| D5-3 | **Stored locally.** Photos are stored only in this browser's IndexedDB: a JPEG copy at most 1600 px on the long edge, plus the pool, the date, the file key and a cached face result. Nothing is uploaded. |
+| D5-4 | **Photo date.** A photo's date is its EXIF DateTimeOriginal, else its EXIF CreateDate, else the file's last-modified date. EXIF times are local time. |
+| D5-5 | **One year old.** A photo is eligible if its date is on or before the same calendar day one year ago. If today is Feb 29, the cutoff is Feb 28 last year. |
+| D5-6 | **Three and two.** The day's pick is 5 photos: 3 from My photos and 2 from Family computer. If one pool has too few eligible photos, the other makes up the shortfall. If fewer than 5 photos are eligible in total, all of them are shown. |
+| D5-7 | **Faces.** At least 4 of the 5 contain a face, so at most one has none. Face detection runs in the browser and only detects faces; it never recognises them. Its runtime's own info and warning lines are kept out of the console, so they don't show up as errors; real errors still do. If the pools don't hold enough photos with faces, the remaining slots are filled with photos without faces rather than showing fewer than 5. Each photo is checked at most once (the result is cached), and at most 80 photos are checked per pick. |
+| D5-8 | **Same five all day.** The pick is seeded by the local date: the same photos and date always give the same five. The day's set is saved and re-shown all day, even if the pools change, unless it holds fewer than 5 photos, in which case it is re-picked when photos are added. A new local date brings a new set. The date is checked on load and whenever the tab becomes visible again. |
+| D5-9 | **Polaroids.** Each photo is a polaroid card: the photo (warm film filter), its date handwritten in Caveat ("Jul 2, 2023") and a "Send this photo to someone" button. Cards cycle the reference's five frame colours (red, amber, green, blue, purple) and tilts. The send button takes the frame colour. The banner reads "Daily 5" and today's date ("Tuesday, Oct 6"). |
+| D5-10 | **Nothing yet.** With no eligible photos, the screen shows the pools and explains that photos at least a year old will appear here. The pools are always reachable below the cards. |
+| D5-11 | **Send sheet.** Send opens the reference's bottom sheet: the photo's thumbnail, "Send this to…", Cancel, a search box, then sections "closest circles", "other groups" and "people", then an "add a message" field and the send arrow. Search filters every section by name, ignoring case, and hides empty sections. Exactly one recipient can be picked (`aria-pressed`); picking another replaces it. Send is disabled until a recipient is picked. The hint reads "pick a circle or a person", then "tap the arrow to send". |
+| D5-12 | **Sent.** On send the sheet closes, the photo flies off (the reference's `sd-fly`, 0.9s), and a small "Sent ✓" pops in (`sd-pop`) and fades away. The overlay is gone 2.4s after sending. Under `prefers-reduced-motion` the animations run instantly. The memory is sealed until a reply (`docs/specs/messages.md`, MSG-4). |
+
+Face detection, EXIF reading and image decoding need a real browser, so their wrappers (`face-detector.ts`, the default decoder in `import-photos.ts`) are checked by hand. The tests inject stand-ins and pin the rules around them. jsdom can't animate, so the tests pin the animation names and the timers.

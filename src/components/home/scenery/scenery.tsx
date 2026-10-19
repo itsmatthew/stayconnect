@@ -24,6 +24,13 @@ const WIDE_VIEWBOX = `0 ${WIDE_TOP} ${W} ${H - WIDE_TOP}`;
 export const WIDE_SCENE = { top: WIDE_TOP, height: H - WIDE_TOP, centerX: W / 2 } as const;
 /** The church tower (x 259–283) moves to the center line, behind the middle tree. */
 const CHURCH_SHIFT = W / 2 - 271;
+/**
+ * …and drops a little, so its spire peeks out between the center tree's name and canopy without
+ * running into the name (docs/specs/home.md, HOME-8).
+ */
+const CHURCH_DROP = 25;
+/** The lowered tower's box, spire tip to foot, in wide scene units. */
+export const WIDE_CHURCH_BOX: Zone = { x0: 259 + CHURCH_SHIFT, x1: 283 + CHURCH_SHIFT, y0: 286 + CHURCH_DROP, y1: 378 + CHURCH_DROP };
 const CLOUD_PARTS = { 1: Cloud1, 2: Cloud2, 3: Cloud3 } as const;
 /** Copies either side of the original; odd copies are mirrored so the repeat doesn't read as tiling. */
 const REPEATS = [-3, -2, -1, 1, 2, 3];
@@ -123,7 +130,7 @@ export function Scenery({ variant, ids: sharedIds, foreground, clearZones = [], 
       {stretch(<Ridges ids={ids} />)}
       {fixed(
         <g opacity=".6">
-          <g data-church="" transform={`translate(${CHURCH_SHIFT} 0)`}>
+          <g data-church="" transform={`translate(${CHURCH_SHIFT} ${CHURCH_DROP})`}>
             <Church ids={ids} />
           </g>
           {repeated("houses", `${ids.hSky}-houses`, <Houses ids={ids} />)}
@@ -136,9 +143,9 @@ export function Scenery({ variant, ids: sharedIds, foreground, clearZones = [], 
           <Hills ids={ids} />
         </>,
       )}
+      {/* No river here: the wide river follows the center tree, so the tree row draws it (wide-river.tsx). */}
       {fixed(
         <>
-          <River ids={ids} />
           {WIDE_SMALL_TREES.map((t, i) =>
             clearZones.some((z) => overlaps(smallTreeBox(t), z)) ? null : (
               <g key={i} opacity={t.opacity}>

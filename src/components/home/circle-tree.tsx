@@ -91,7 +91,7 @@ type CircleTreeProps = Omit<TreeShapeProps, "palette" | "children" | "glow"> & {
 export function CircleTree({ group, slot, defs, ...shape }: CircleTreeProps) {
   const { cx, cy, r } = shape;
   return (
-    <g data-tree="" data-slot={slot} data-group-id={group.id}>
+    <g data-tree="" data-slot={slot} data-group-id={group.id} data-cx={cx}>
       <TreeShape {...shape} palette={group.palette} glow={slot === "center"}>
         {group.memories.map((m, i) => {
           const [dx, dy, R, L] = ORNAMENTS[slot][i];

@@ -1,9 +1,12 @@
-// TODO(re-evaluate when Daily 5, Archive, Messages and Me exist): only Circles is a real destination so far.
+// TODO(re-evaluate when Archive and Me exist): those two report taps but the app ignores them.
 import type { ReactNode } from "react";
 import { ArchiveIcon, CirclesIcon, DailyIcon, MeIcon, MessagesIcon } from "./icons";
 import { CREAM, KARLA, s } from "./units";
 
-type Item = { label: string; icon: (size: string) => ReactNode; color: string };
+export type NavLabel = "Circles" | "Daily 5" | "Archive" | "Messages" | "Me";
+export type NavProps = { current: NavLabel; onNavigate?: (to: NavLabel) => void };
+
+type Item = { label: NavLabel; icon: (size: string) => ReactNode; color: string };
 const ITEMS: Item[] = [
   { label: "Circles", icon: (z) => <CirclesIcon size={z} />, color: "#C8432B" },
   { label: "Daily 5", icon: (z) => <DailyIcon size={z} />, color: "#4E7A5C" },
@@ -11,10 +14,9 @@ const ITEMS: Item[] = [
   { label: "Messages", icon: (z) => <MessagesIcon size={z} />, color: "#5467C4" },
   { label: "Me", icon: (z) => <MeIcon size={z} />, color: "#9668A8" },
 ];
-const CURRENT = "Circles";
 
 /** Phone: the reference's bottom tab bar (390×78 design px). */
-export function BottomNav() {
+export function BottomNav({ current: currentTab, onNavigate }: NavProps) {
   return (
     <nav
       aria-label="Main"
@@ -31,12 +33,13 @@ export function BottomNav() {
       }}
     >
       {ITEMS.map((it) => {
-        const current = it.label === CURRENT;
+        const current = it.label === currentTab;
         return (
           <button
             key={it.label}
             type="button"
             aria-current={current ? "page" : undefined}
+            onClick={() => onNavigate?.(it.label)}
             style={{
               width: s(66),
               height: s(52),
@@ -64,16 +67,17 @@ export function BottomNav() {
 }
 
 /** Wide: nav items as colored discs with labels, centered along the top, on the sky. */
-export function TopNav() {
+export function TopNav({ current: currentTab, onNavigate }: NavProps) {
   return (
     <nav aria-label="Main" style={{ display: "flex", gap: s(30), fontFamily: KARLA }}>
       {ITEMS.map((it) => {
-        const current = it.label === CURRENT;
+        const current = it.label === currentTab;
         return (
           <button
             key={it.label}
             type="button"
             aria-current={current ? "page" : undefined}
+            onClick={() => onNavigate?.(it.label)}
             style={{
               border: 0,
               background: "none",
