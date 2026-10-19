@@ -50,8 +50,8 @@ export function HeaderActions({ avatarSize = 40, iconSize = 22, color = CREAM }:
   );
 }
 
-/** The 365 logo, then "Now & Then", the logo as tall as the wordmark's line. */
-export function Wordmark({ size }: { size: number }) {
+/** The 365 logo, then "Now & Then", the logo as tall as the wordmark's line. Cream with a shadow on the sky; `ink` on paper. */
+export function Wordmark({ size, ink }: { size: number; ink?: string }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: s(size * 0.3) }}>
       <Image src="/logo-365.png" alt="" width={887} height={995} sizes="96px" style={{ height: s(size), width: "auto" }} loading="eager" />
@@ -62,8 +62,8 @@ export function Wordmark({ size }: { size: number }) {
           fontSize: s(size),
           lineHeight: 1,
           letterSpacing: s(-0.5),
-          color: CREAM,
-          textShadow: "0 2px 6px rgba(39,48,90,.45)",
+          color: ink ?? CREAM,
+          textShadow: ink ? undefined : "0 2px 6px rgba(39,48,90,.45)",
           whiteSpace: "nowrap",
         }}
       >

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { Fraunces, Karla } from "next/font/google";
-import { HomeClient } from "./home-client";
+import { Caveat, Fraunces, Karla } from "next/font/google";
+import { AppClient } from "./app-client";
 import { IntroClient } from "./intro-client";
 
 export const metadata: Metadata = {
@@ -16,11 +16,13 @@ const fraunces = Fraunces({
   variable: "--font-fraunces",
 });
 const karla = Karla({ subsets: ["latin"], weight: ["500", "700", "800"], variable: "--font-karla" });
+// Daily 5's handwritten polaroid dates.
+const caveat = Caveat({ subsets: ["latin"], weight: "700", variable: "--font-caveat" });
 
 export default function IntroPage() {
   return (
-    <div className={`${fraunces.variable} ${karla.variable}`}>
-      <IntroClient home={<HomeClient />} />
+    <div className={`${fraunces.variable} ${karla.variable} ${caveat.variable}`}>
+      <IntroClient home={<AppClient />} />
     </div>
   );
 }

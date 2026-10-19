@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, render, within } from "@testing-library/react";
 import { HomeClient } from "@/app/intro/home-client";
-import { placeholderGroups } from "@/app/intro/placeholder-groups";
+import { placeholderGroups } from "@/app/intro/placeholder-data";
 import { wideLabelZones } from "@/components/home/home-screen";
 
 afterEach(cleanup);
@@ -22,17 +22,17 @@ const prev = (layout: HTMLElement) =>
   fireEvent.click(within(layout).getByRole("button", { name: "Previous circle" }));
 
 describe("Home — Your Circles", () => {
-  it("starts on Madrid Crew with the reference card (HOME-4)", () => {
+  it("opens on Hoops Since ’14, the middle closest circle, with the reference card (HOME-2/4)", () => {
     const { phone } = renderHome();
     const c = card(phone);
-    expect(cardName(phone)).toBe("Madrid Crew");
-    expect(c.textContent).toContain("6");
+    expect(cardName(phone)).toBe("Hoops Since ’14");
+    expect(c.textContent).toContain("5");
     expect(c.textContent).toContain("FRIENDS");
     expect(within(c).getByRole("link", { name: "swap photos" })).toBeTruthy();
-    for (const caption of ["rooftop, last night", "the 4am churro run", "wrong line, twice"]) {
+    for (const caption of ["buzzer beater", "the 6am run", "post-game tacos"]) {
       expect(c.textContent!.replace(/\s+/g, " ")).toContain(caption);
     }
-    expect(c.textContent).toContain("last memory 2 days ago");
+    expect(c.textContent).toContain("last memory yesterday");
   });
 
   it("announces the card politely (HOME-4)", () => {
@@ -40,34 +40,45 @@ describe("Home — Your Circles", () => {
     expect(card(phone).getAttribute("aria-live")).toBe("polite");
   });
 
-  it("Next and Previous rotate the center group (HOME-2)", () => {
+  it("Next and Previous rotate the center group, from the closest circles into the other groups (HOME-2)", () => {
     const { phone } = renderHome();
     next(phone);
-    expect(cardName(phone)).toBe("Hoops Since ’14");
-    prev(phone);
-    prev(phone);
     expect(cardName(phone)).toBe("Apt 4B");
-    prev(phone);
+    next(phone);
+    next(phone);
     expect(cardName(phone)).toBe("Uni Mates");
+    prev(phone);
+    prev(phone);
+    prev(phone);
+    prev(phone);
+    expect(cardName(phone)).toBe("Madrid Crew");
   });
 
   it("wraps around (HOME-2)", () => {
     const { phone } = renderHome();
-    for (let i = 0; i < 5; i++) next(phone);
-    expect(cardName(phone)).toBe("Madrid Crew");
+    for (let i = 0; i < 7; i++) next(phone);
+    expect(cardName(phone)).toBe("Hoops Since ’14");
     prev(phone);
     prev(phone);
-    prev(phone);
-    expect(cardName(phone)).toBe("Work Mates");
+    expect(cardName(phone)).toBe("Fall 24");
   });
 
-  it("phone shows center ±1, wide shows center ±2, both following rotation (HOME-2/3)", () => {
+  it("opens with closest circles in the center and nearest slots, five trees wide (HOME-2/10)", () => {
     const { phone, wide } = renderHome();
-    expect(treeNames(phone)).toEqual(["Apt 4B", "Madrid Crew", "Hoops Since ’14"]);
-    expect(treeNames(wide)).toEqual(["Uni Mates", "Apt 4B", "Madrid Crew", "Hoops Since ’14", "Work Mates"]);
+    expect(treeNames(phone)).toEqual(["Madrid Crew", "Hoops Since ’14", "Apt 4B"]);
+    expect(treeNames(wide)).toEqual(["Fall 24", "Madrid Crew", "Hoops Since ’14", "Apt 4B", "Family"]);
+    expect(cardName(wide)).toBe("Hoops Since ’14");
+    const closest = new Set(placeholderGroups.filter((g) => g.closest).map((g) => g.name));
+    for (const name of treeNames(wide).slice(1, 4)) expect(closest.has(name!)).toBe(true);
+  });
+
+  it("after rotating, phone shows center ±1 and wide center ±2 (HOME-2/3)", () => {
+    const { phone, wide } = renderHome();
     next(wide);
-    expect(treeNames(phone)).toEqual(["Madrid Crew", "Hoops Since ’14", "Work Mates"]);
-    expect(treeNames(wide)).toEqual(["Apt 4B", "Madrid Crew", "Hoops Since ’14", "Work Mates", "Uni Mates"]);
+    expect(treeNames(phone)).toEqual(["Hoops Since ’14", "Apt 4B", "Family"]);
+    expect(treeNames(wide)).toEqual(["Madrid Crew", "Hoops Since ’14", "Apt 4B", "Family", "Uni Mates"]);
+    const xs = Array.from(wide.querySelectorAll<SVGGElement>("[data-tree]"), (t) => Number(t.dataset.cx)).sort((a, b) => a - b);
+    expect(xs).toEqual([216, 431, 656, 881, 1096]);
   });
 
   it("each visible tree has its friend-count badge and three ornaments; only the center glows (HOME-3)", () => {
@@ -75,10 +86,10 @@ describe("Home — Your Circles", () => {
     const trees = Array.from(phone.querySelectorAll<SVGGElement>("[data-tree]"));
     // Paint order puts the center tree last (on top), as in the reference.
     expect(trees.map((t) => t.dataset.slot)).toEqual(["left", "right", "center"]);
-    expect(trees.map((t) => t.dataset.groupId)).toEqual(["apt-4b", "hoops-since-14", "madrid-crew"]);
+    expect(trees.map((t) => t.dataset.groupId)).toEqual(["madrid-crew", "apt-4b", "hoops-since-14"]);
     for (const t of trees) expect(t.querySelectorAll("[data-ornament]")).toHaveLength(3);
     expect(trees.map((t) => t.querySelector("[data-glow]") !== null)).toEqual([false, false, true]);
-    expect(Array.from(phone.querySelectorAll("[data-badge]"), (b) => b.textContent)).toEqual(["3", "6", "5"]);
+    expect(Array.from(phone.querySelectorAll("[data-badge]"), (b) => b.textContent)).toEqual(["6", "5", "3"]);
     expect(phone.querySelector("[data-ring]")).not.toBeNull();
   });
 
@@ -135,7 +146,7 @@ describe("Home — Your Circles", () => {
     expect(circle.getAttribute("aria-pressed")).toBe("true");
   });
 
-  it("has the header and nav, with Circles as the current page, in both layouts (HOME-6)", () => {
+  it("has the header and nav, with the current tab marked, in both layouts (HOME-6)", () => {
     const { phone, wide } = renderHome();
     for (const layout of [phone, wide]) {
       const w = within(layout);
