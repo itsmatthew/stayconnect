@@ -1,9 +1,11 @@
 # /intro
 
-Sunrise video that crossfades into the app: Circles (home), Daily 5 and Messages tabs. Specs: `docs/specs/intro.md`, `docs/specs/home.md`, `docs/specs/daily5.md`, `docs/specs/messages.md`; tests: `tests/intro/`, `tests/home/`, `tests/daily5/`, `tests/messages/`, `tests/app/`.
+Sunrise video that crossfades into the app: Circles (home), Daily 5, Archive, Messages and Me tabs. Specs: `docs/specs/intro.md`, `home.md`, `daily5.md`, `archive.md`, `messages.md`, `me.md`, `demo.md`; tests: `tests/intro/`, `tests/home/`, `tests/daily5/`, `tests/archive/`, `tests/messages/`, `tests/me/`, `tests/app/`.
 
 - Intro layering: `intro-sequence.ts` (pure reducer, all timing rules) → `use-intro-sequence.ts` (wires media events/timer) → `intro-client.tsx` → view in `src/components/intro/`.
-- The app lives here until it gets routes: `app-client.tsx` holds the tab and the shared chat state (a Daily 5 send must land in Messages), then `home-client.tsx`, `daily5/` and `messages/` (each has its own CLAUDE.md). Rotation maths and the opening view are pure in `circle-carousel.ts`.
+- The app lives here until it gets routes: `app-client.tsx` holds the tab, the shared chat state (a Daily 5 send must land in Messages) and the Archive store (shared by Archive and Me), then `home-client.tsx`, `daily5/`, `archive/`, `messages/` and `me/` (each has its own CLAUDE.md). Rotation maths and the opening view are pure in `circle-carousel.ts`.
 - Put new timing/rotation rules in the pure modules with a test, not in hooks or views.
-- `placeholder-data.ts` holds *all* placeholder data: groups (closest first, with a `closest` flag), friends, seed conversations and simulated replies. It's marked `TODO(re-evaluate when groups come from the database)` and is the swap point for real data. Keep fake data in that one file.
+- `placeholder-data.ts` holds *all* placeholder data: groups (closest first, with a `closest` flag and optional `viewers`), friends, seed conversations, simulated replies and Archive posts. It's marked `TODO(re-evaluate when groups come from the database)` and is the swap point for real data. Keep fake data in that one file.
+- **Demo switch** (`docs/specs/demo.md`): only `app-data.ts` imports `placeholder-data.ts`. It exports `demoData` / `emptyData` (`AppData`), and `defaultData` picks one from `demo.ts` (`NEXT_PUBLIC_DEMO_DATA`, else on only in development). Screens get everything through `AppClient`'s `data`; never import placeholder data anywhere else (a test enforces it). Every screen needs a designed empty state for `emptyData`.
+- `photo-file.ts` reads picked files (EXIF capture date, downscaling) for both Daily 5 and the Archive; the two features are otherwise unrelated.
 - Fonts (Fraunces with its `opsz` axis, Karla) and Caveat (Daily 5 dates) are loaded in `page.tsx` and exposed as `--font-fraunces` / `--font-karla` / `--font-caveat`.

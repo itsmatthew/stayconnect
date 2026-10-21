@@ -97,6 +97,11 @@ export function SendSheet({ photo, recipients, onCancel, onSend }: SendSheetProp
           style={{ height: s(40), boxSizing: "border-box", padding: `0 ${s(14)}`, borderRadius: s(20), border: `${s(2)} solid ${NAVY}`, background: "#FFF8EC", font: "inherit", fontFamily: FRAUNCES, fontStyle: "italic", fontSize: s(14), color: NAVY, outline: 0 }}
         />
 
+        {SECTIONS.every(([, key]) => !recipients[key].length) && (
+          // docs/specs/demo.md, DEMO-2: nobody to send to yet.
+          <p style={{ margin: `${s(8)} 0`, textAlign: "center", fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 600, fontSize: s(15) }}>No circles yet</p>
+        )}
+
         {SECTIONS.map(([label, key]) => {
           const parties = recipients[key].filter(match);
           if (!parties.length) return null;

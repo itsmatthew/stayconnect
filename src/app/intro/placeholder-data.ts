@@ -1,8 +1,11 @@
 // TODO(re-evaluate when groups come from the database): swap this file for real data.
 // Every placeholder in the app lives here: groups (docs/specs/home.md, HOME-1), friends,
-// seed conversations and the replies "simulate reply" uses (docs/specs/messages.md).
+// seed conversations, the replies "simulate reply" uses (docs/specs/messages.md) and Archive posts
+// (docs/specs/archive.md). Only app-data.ts imports it, behind the demo switch (docs/specs/demo.md).
 
-import type { CircleGroup, Friend, Palette } from "@/components/home/types";
+import type { ArtKind, CircleGroup, Friend, Palette } from "@/components/home/types";
+import { isOpen, periodsOfYear } from "./archive/periods";
+import type { ArchivePost } from "./archive/posts";
 import { ME, type ChatMessage, type Conversation } from "./messages/conversations";
 
 const red: Palette = { canopy: "#C8432B", shade: "#93281A", highlight: "#F3A088", rim: "#FFD2C4" };
@@ -22,6 +25,7 @@ export const friends: readonly Friend[] = [
   { id: "nico", name: "Nico", closest: false, look: { skin: "#F1C7A0", hair: "#B8562E", shirt: "#7A4E8C", bg: "#E6D8F2", ring: "#7A4E8C" } },
   { id: "mom", name: "Mom", closest: false, look: { skin: "#EDB98F", hair: "#8A8A8A", shirt: "#3F86C4", bg: "#D8ECFB", ring: "#3F86C4" } },
   { id: "dad", name: "Dad", closest: false, look: { skin: "#EDB98F", hair: "#4A3A2A", shirt: "#5E8068", bg: "#D6F0DC", ring: "#5E8068" } },
+  { id: "grandma", name: "Grandma", closest: false, look: { skin: "#F1C7A0", hair: "#D9D4CC", shirt: "#9A4FB0", bg: "#F0DDF6", ring: "#9A4FB0" } },
 ];
 
 // Captions break onto two lines at "\n", as in the reference card.
@@ -74,7 +78,9 @@ export const placeholderGroups: readonly CircleGroup[] = [
     name: "Family",
     palette: blue,
     closest: true,
-    members: ["mom", "dad"],
+    members: ["mom", "dad", "grandma"],
+    // Grandma sees everyone's Archive posts without posting (ARC-5).
+    viewers: ["grandma"],
     friendCount: 4,
     memories: [
       { id: "family-1", art: "sunset", caption: "lake house,\nevery july" },
@@ -169,3 +175,56 @@ export const placeholderReplies: readonly string[] = [
   "we need to do this again",
   "look at us 😭",
 ];
+
+const ARTS: readonly ArtKind[] = ["sunset", "people", "city", "faces", "basketball", "cookie", "churro"];
+const CAPTIONS: readonly string[] = [
+  "the 6am run, finally",
+  "rooftop, no plans",
+  "first snow, sort of",
+  "we found the good tacos",
+  "grandma's kitchen, again",
+  "drove too far for this sunset",
+];
+
+/** A small, stable hash so the same period always gets the same placeholder posts. */
+function hash(s: string): number {
+  let h = 2166136261;
+  for (const c of s) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+  return h >>> 0;
+}
+
+/**
+ * Archive posts for last year and this one, up to `now` (docs/specs/archive.md).
+ * Friends post most periods (viewers never do). You've posted every ended period except a few weeks,
+ * so the missed ones show as closed, and you haven't posted anything that's still open.
+ */
+export function placeholderPosts(now: number): ArchivePost[] {
+  const year = new Date(now).getFullYear();
+  const posters = friends.filter((f) => !placeholderGroups.some((g) => g.viewers?.includes(f.id)));
+  return [year - 1, year].flatMap((y) =>
+    periodsOfYear(y).flatMap((period) => {
+      const open = isOpen(period, now);
+      if (!open && period.end > now) return [];
+      // The yearly post opens in December.
+      const from = period.kind === "year" ? new Date(period.year, 11, 1).getTime() : period.start;
+      const until = Math.min(period.end, now);
+      const make = (author: string): ArchivePost => {
+        const h = hash(`${author}/${period.key}`);
+        const postedAt = Math.floor(from + ((h % 1000) / 1000) * (until - from));
+        return {
+          id: `placeholder/${author}/${period.key}`,
+          author,
+          period: period.key,
+          postedAt,
+          takenAt: Math.max(from, postedAt - (h % 7) * 3_600_000),
+          photo: { kind: "art", art: ARTS[h % ARTS.length] },
+          // About a third carry a caption (ARC-13).
+          ...(h % 3 === 0 ? { caption: CAPTIONS[(h >>> 3) % CAPTIONS.length] } : {}),
+        };
+      };
+      const theirs = posters.filter((f) => hash(`${f.id}/${period.key}`) % 4 !== 0).map((f) => make(f.id));
+      const missed = period.kind === "week" && period.index % 9 === 4;
+      return open || missed ? theirs : [...theirs, make(ME)];
+    }),
+  );
+}

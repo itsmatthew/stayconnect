@@ -7,5 +7,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     include: ["tests/**/*.test.{ts,tsx}"],
+    // jsdom renders of whole tabs take ~1–2s alone and several times that with files running in parallel on a small machine.
+    testTimeout: 15_000,
   },
 });

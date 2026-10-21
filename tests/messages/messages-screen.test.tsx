@@ -4,7 +4,8 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { AppClient } from "@/app/intro/app-client";
 import { openPhotoStore } from "@/app/intro/daily5/photo-store";
 import { chatReducer, initialChatState, type ChatState } from "@/app/intro/messages/conversations";
-import { CHAT_STORAGE_KEY } from "@/app/intro/messages/use-chat";
+import { chatStorageKey } from "@/app/intro/messages/use-chat";
+import { demoData } from "@/app/intro/app-data";
 import { seedConversations } from "@/app/intro/placeholder-data";
 
 const NOW = new Date(2026, 9, 14, 12).getTime();
@@ -23,7 +24,7 @@ afterEach(() => {
 function renderMessages() {
   const name = `messages-test-${++n}`;
   return render(
-    <AppClient initialTab="Messages" now={() => NOW} openStore={() => openPhotoStore(name)} hasFace={async () => true} />,
+    <AppClient initialTab="Messages" data={demoData} now={() => NOW} openStore={() => openPhotoStore(name)} hasFace={async () => true} />,
   );
 }
 function seedWithSealed(...conversationIds: string[]) {
@@ -39,7 +40,7 @@ function seedWithSealed(...conversationIds: string[]) {
       at: NOW - 60_000,
     });
   });
-  localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(s));
+  localStorage.setItem(chatStorageKey(demoData.storageSuffix), JSON.stringify(s));
 }
 
 const pinned = (row: string) =>
