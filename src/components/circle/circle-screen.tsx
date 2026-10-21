@@ -13,6 +13,8 @@ import type { CirclePerson, CircleSuggestion, Ring } from "./types";
 type CircleScreenProps = {
   /** Everyone the user can place, placed people in each ring's order. */
   people: readonly CirclePerson[];
+  /** Gifts received, newest first (CIRCLE-12). */
+  gifts?: readonly { id: string }[];
   /** Rings past their soft guide (CIRCLE-2). */
   crowded?: readonly Ring[];
   suggestion?: CircleSuggestion;
@@ -35,8 +37,8 @@ export function CircleScreen(props: CircleScreenProps) {
   );
 }
 
-function Tree({ people, onOpenChat, onMove }: CircleScreenProps) {
-  return <CircleTree people={people} onOpenChat={onOpenChat} onMove={onMove} />;
+function Tree({ people, gifts = [], onOpenChat, onMove }: CircleScreenProps) {
+  return <CircleTree people={people} gifts={gifts} onOpenChat={onOpenChat} onMove={onMove} />;
 }
 function Card({ crowded = [], ...p }: CircleScreenProps) {
   return <RingCard {...p} crowded={crowded} />;

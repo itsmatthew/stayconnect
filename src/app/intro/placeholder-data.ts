@@ -1,9 +1,10 @@
 // TODO(re-evaluate when groups come from the database): swap this file for real data.
 // Every placeholder in the app lives here: groups (docs/specs/home.md, HOME-1), friends,
-// their rings in Your circle (docs/specs/circle.md), seed conversations, the replies "simulate reply" uses (docs/specs/messages.md) and Archive posts
+// their rings and gifts in Your circle (docs/specs/circle.md), seed conversations, the replies "simulate reply" uses (docs/specs/messages.md) and Archive posts
 // (docs/specs/archive.md). Only app-data.ts imports it, behind the demo switch (docs/specs/demo.md).
 
 import type { ArtKind, CircleGroup, Friend, Palette } from "@/components/home/types";
+import type { ReceivedGift } from "./circle/gifts";
 import type { Placements } from "./circle/rings";
 import { isOpen, periodsOfYear } from "./archive/periods";
 import type { ArchivePost } from "./archive/posts";
@@ -186,6 +187,14 @@ export function seedConversations(now: number): Conversation[] {
     chat("friend:sam", 5 * HOUR, [["sam", 6 * HOUR, "pull up"]]),
     chat("group:uni-mates", 20 * HOUR, [["priya", 26 * HOUR, "library at 8?"]]),
     chat("group:work-mates", 3 * DAY, [["nico", 4 * DAY, "karaoke rematch?"]]),
+  ];
+}
+
+/** Two gifts under Your circle's tree (CIRCLE-12), timed back from `now`. */
+export function placeholderGifts(now: number): ReceivedGift[] {
+  return [
+    { id: "placeholder-gift/mom", from: "mom", receivedAt: now - 1 * DAY },
+    { id: "placeholder-gift/leo", from: "leo", receivedAt: now - 2 * HOUR },
   ];
 }
 

@@ -9,6 +9,7 @@ import { HomeScreen } from "@/components/home/home-screen";
 import type { NavProps } from "@/components/home/main-nav";
 import type { CircleGroup, Friend } from "@/components/home/types";
 import { initialCircleState, members, overGuide, type CircleAction, type CircleState } from "./circle/rings";
+import { newestFirst, type ReceivedGift } from "./circle/gifts";
 import { activity, isLit, suggestion } from "./circle/suggestions";
 import { openingCenter, rotate, visibleAround } from "./circle-carousel";
 import { initialChatState, type ChatState } from "./messages/conversations";
@@ -20,6 +21,7 @@ type HomeClientProps = {
   chat?: ChatState;
   circle?: CircleState;
   circleDispatch?: (a: CircleAction) => void;
+  gifts?: readonly ReceivedGift[];
   now?: () => number;
   onOpenChat?: (friendId: string) => void;
   nav?: NavProps;
@@ -34,6 +36,7 @@ export function HomeClient({
   chat = noChat,
   circle: state = noCircle,
   circleDispatch: dispatch = () => {},
+  gifts = [],
   now = Date.now,
   onOpenChat = () => {},
   nav = { current: "Circles" },
@@ -60,6 +63,7 @@ export function HomeClient({
     return (
       <CircleScreen
         people={people}
+        gifts={newestFirst(gifts).map((g) => ({ id: g.id }))}
         crowded={RINGS.filter((r) => overGuide(r, placed.filter((p) => p.ring === r).length))}
         suggestion={next && name ? { name, to: next.to } : undefined}
         onAcceptSuggestion={() => next && dispatch({ type: "place", friendId: next.friendId, ring: next.to })}

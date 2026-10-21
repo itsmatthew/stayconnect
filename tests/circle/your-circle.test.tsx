@@ -84,12 +84,29 @@ describe("the view (CIRCLE-1)", () => {
     expect(inTree("Mom").getAttribute("data-lit")).toBe("false");
   });
 
-  it("the gift pile is decoration only (CIRCLE-12)", () => {
+});
+
+describe("gifts under the tree (CIRCLE-12)", () => {
+  const gifts = () => Array.from(tree().querySelectorAll("[data-gift]"), (g) => g.getAttribute("data-gift"));
+
+  it("demo on: the 2 placeholder gifts, announced, and nothing to open yet", () => {
     renderApp();
     toCircle();
-    const pile = tree().querySelector("[data-gift-pile]");
-    expect(pile?.getAttribute("aria-hidden")).toBe("true");
-    expect(pile?.querySelector("button")).toBeNull();
+    expect(gifts()).toHaveLength(2);
+    expect(within(tree()).getByRole("img", { name: "2 gifts received" })).toBeTruthy();
+    expect(tree().querySelector("[data-gift-pile] button")).toBeNull();
+  });
+
+  it("only gifts actually received, newest in front", () => {
+    const received = (now: number) => [
+      { id: "older", from: "a", receivedAt: now - 3 * DAY },
+      { id: "newest", from: "b", receivedAt: now - 1000 },
+      { id: "middle", from: "c", receivedAt: now - DAY },
+    ];
+    renderApp({ ...demoData, gifts: received });
+    toCircle();
+    // Drawn back to front: the last box is the one in front.
+    expect(gifts()).toEqual(["older", "middle", "newest"]);
   });
 });
 
@@ -234,6 +251,10 @@ describe("demo off (CIRCLE-11)", () => {
     renderApp(emptyData);
     toCircle(document.body);
     expect(within(tree()).queryAllByRole("button")).toEqual([]);
+    // No gifts: just the trunk.
+    expect(tree().querySelector("[data-trunk]")).toBeTruthy();
+    expect(tree().querySelector("[data-gift-pile], [data-gift]")).toBeNull();
+    expect(within(tree()).queryByRole("img", { name: /gifts? received/ })).toBeNull();
     expect(card().textContent).toContain("Your circle fills as you connect with people");
     expect(tab(/^Nest/).textContent).toBe("Nest 0");
     fireEvent.click(within(card()).getByRole("button", { name: "Add to Nest" }));

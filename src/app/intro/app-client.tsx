@@ -66,6 +66,7 @@ export function AppClient({
   const [chat, dispatch] = useChat(now, data.seedConversations, data.storageSuffix);
   const [recipients] = useState(() => recipientSections(data.groups, data.friends));
   const [circle, circleDispatch] = useCircle(data.rings, data.storageSuffix);
+  const [gifts] = useState(() => data.gifts(now()));
   /** A thread for Messages to open on arrival (CIRCLE-6). */
   const [openThread, setOpenThread] = useState<string | null>(null);
 
@@ -90,6 +91,7 @@ export function AppClient({
           chat={chat}
           circle={circle}
           circleDispatch={circleDispatch}
+          gifts={gifts}
           now={now}
           onOpenChat={openChat}
           nav={nav}

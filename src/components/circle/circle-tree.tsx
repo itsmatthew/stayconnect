@@ -22,6 +22,8 @@ const ANNOUNCE_MS = 2500;
 
 type CircleTreeProps = {
   people: readonly CirclePerson[];
+  /** Gifts received, newest first (CIRCLE-12). */
+  gifts: readonly { id: string }[];
   onOpenChat: (id: string) => void;
   onMove: (id: string, ring: Ring) => void;
 };
@@ -33,7 +35,7 @@ type Drag = { id: string; dx: number; dy: number; over?: Ring };
  * Tap opens the chat (CIRCLE-6); press-and-hold picks someone up to drop on another ring (CIRCLE-7).
  * Drawn in TREE_BOX design px; the layout sets `--s`.
  */
-export function CircleTree({ people, onOpenChat, onMove }: CircleTreeProps) {
+export function CircleTree({ people, gifts, onOpenChat, onMove }: CircleTreeProps) {
   const box = useRef<HTMLDivElement>(null);
   const press = useRef<{ id: string; x: number; y: number; timer?: ReturnType<typeof setTimeout> } | null>(null);
   const swallowClick = useRef(false);
@@ -131,10 +133,12 @@ export function CircleTree({ people, onOpenChat, onMove }: CircleTreeProps) {
         </defs>
         <g transform={`translate(${TREE_BOX.cx - 195} ${TREE_BOX.cy - 318})`}>
           <ellipse cx="160" cy="566" rx="130" ry="11" fill="#5E7C33" opacity=".45" />
-          <path d="M180 452c3 46 0 88-14 114h58c-14-26-17-68-14-114z" fill="#8C4A2B" />
-          <path d="M197 452c2 46 4 88 14 114h13c-14-26-17-68-14-114z" fill="#6F3820" />
+          <g data-trunk="">
+            <path d="M180 452c3 46 0 88-14 114h58c-14-26-17-68-14-114z" fill="#8C4A2B" />
+            <path d="M197 452c2 46 4 88 14 114h13c-14-26-17-68-14-114z" fill="#6F3820" />
+          </g>
           <circle cx="195" cy="318" r="170" fill={`url(#${glowId})`} />
-          <GiftPile />
+          {gifts.length > 0 && <GiftPile gifts={gifts} />}
         </g>
         {CANOPY.map((c) => {
           const lit = drag?.over === c.ring;
@@ -219,6 +223,14 @@ export function CircleTree({ people, onOpenChat, onMove }: CircleTreeProps) {
         );
       })}
 
+      {gifts.length > 0 && (
+        <span
+          role="img"
+          aria-label={`${gifts.length} ${gifts.length === 1 ? "gift" : "gifts"} received`}
+          style={{ position: "absolute", left: s(PILE_BOX.x + TREE_BOX.cx - 195), top: s(PILE_BOX.y + TREE_BOX.cy - 318), width: s(PILE_BOX.w), height: s(PILE_BOX.h), pointerEvents: "none" }}
+        />
+      )}
+
       <div role="status" aria-live="polite" style={{ position: "absolute", left: 0, width: "100%", top: s(TREE_BOX.cy + BANDS.bloom.outer + 6), textAlign: "center", pointerEvents: "none" }}>
         {announcement && (
           <span style={{ display: "inline-block", padding: `${s(4)} ${s(12)}`, borderRadius: s(14), background: "#2B3350", color: "#FBF4DD", fontStyle: "italic", fontWeight: 700, fontSize: s(13) }}>
@@ -242,27 +254,62 @@ const dot = (x: number, y: number, size: number): CSSProperties => ({
 });
 
 /**
- * The presents under the trunk, from the reference. Decoration only (CIRCLE-12).
- * TODO(re-evaluate when the memory mailbox is built): this pile is where the memory mailbox goes.
+ * Where a gift box sits under the trunk (reference canvas px), front first: the newest gift takes slot 0.
+ * High enough that the phone card (top ≈ 556) doesn't hide them.
  */
-function GiftPile() {
-  const gift = (x: number, y: number, w: number, h: number, box: string, lid: string, line: string, ribbon: string) => (
-    <g transform={`translate(${x} ${y})`}>
-      <rect x="0" y="10" width={w} height={h} rx="3" fill={box} stroke={line} strokeWidth="1.5" />
-      <rect x={w / 2 - 4} y="10" width="8" height={h} fill={ribbon} />
-      <rect x="-3" y="4" width={w + 6} height="9" rx="2.5" fill={lid} stroke={line} strokeWidth="1.5" />
-      <rect x={w / 2 - 4} y="4" width="8" height="9" fill={ribbon} />
-      <path transform={`translate(${w / 2} 4)`} d="M0 0c-4-13-13-11-10-4 2 4 6 4 10 4zm0 0c4-13 13-11 10-4-2 4-6 4-10 4z" fill={ribbon} stroke={line} strokeWidth="1.1" />
-    </g>
-  );
+const GIFT_SLOTS: readonly { x: number; y: number; w: number; h: number }[] = [
+  { x: 128, y: 516, w: 34, h: 26 },
+  { x: 178, y: 518, w: 28, h: 22 },
+  { x: 92, y: 508, w: 30, h: 24 },
+  { x: 150, y: 504, w: 26, h: 20 },
+];
+/** The pile's footprint, for its accessible label. */
+const PILE_BOX = { x: 88, y: 498, w: 152, h: 56 };
+/** Wrapping paper from the reference: box, lid, outline, ribbon. */
+const WRAPS: readonly (readonly [string, string, string, string])[] = [
+  ["#C8402D", "#E0553C", "#6E1D13", "#F7CB4D"],
+  ["#2B3350", "#3A4570", "#161B2E", "#F4E9C8"],
+  ["#6F9B4E", "#83B05E", "#3E5F2A", "#F2BE4A"],
+  ["#4F8F8B", "#63A6A1", "#2C5552", "#F7CB4D"],
+  ["#7A4E8C", "#9668A8", "#432650", "#F4E9C8"],
+  ["#E49B2E", "#F2B546", "#8F5A12", "#B43A2A"],
+];
+/** A gift keeps its wrapping however the pile shifts. */
+const wrapOf = (id: string) => WRAPS[[...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % WRAPS.length];
+
+/**
+ * Gifts the user has received, one box each, newest in front; past the slots, a "+N" chip (CIRCLE-12).
+ * TODO(re-evaluate when the memory mailbox is built): gifts can't be opened yet; this pile is where the mailbox goes.
+ */
+function GiftPile({ gifts }: { gifts: readonly { id: string }[] }) {
+  const shown = gifts.slice(0, GIFT_SLOTS.length);
+  const more = gifts.length - shown.length;
   return (
-    <g data-gift-pile="" aria-hidden="true">
-      {gift(142, 524, 22, 17, "#7A4E8C", "#9668A8", "#432650", "#F4E9C8")}
-      {gift(64, 523, 30, 25, "#6F9B4E", "#83B05E", "#3E5F2A", "#F2BE4A")}
-      {gift(98, 520, 44, 34, "#2B3350", "#3A4570", "#161B2E", "#F4E9C8")}
-      {gift(138, 540, 26, 19, "#E49B2E", "#F2B546", "#8F5A12", "#B43A2A")}
-      {gift(175, 537, 26, 22, "#4F8F8B", "#63A6A1", "#2C5552", "#F7CB4D")}
-      {gift(210, 532, 34, 28, "#C8402D", "#E0553C", "#6E1D13", "#F7CB4D")}
+    <g data-gift-pile="">
+      {/* Back to front, so the newest is drawn last. */}
+      {shown
+        .map((g, i) => ({ g, slot: GIFT_SLOTS[i] }))
+        .reverse()
+        .map(({ g, slot: { x, y, w, h } }) => {
+          const [box, lid, line, ribbon] = wrapOf(g.id);
+          return (
+            <g key={g.id} data-gift={g.id} transform={`translate(${x} ${y})`}>
+              <rect x="0" y="10" width={w} height={h} rx="3" fill={box} stroke={line} strokeWidth="1.5" />
+              <rect x={w / 2 - 4} y="10" width="8" height={h} fill={ribbon} />
+              <rect x="-3" y="4" width={w + 6} height="9" rx="2.5" fill={lid} stroke={line} strokeWidth="1.5" />
+              <rect x={w / 2 - 4} y="4" width="8" height="9" fill={ribbon} />
+              <path transform={`translate(${w / 2} 4)`} d="M0 0c-4-13-13-11-10-4 2 4 6 4 10 4zm0 0c4-13 13-11 10-4-2 4-6 4-10 4z" fill={ribbon} stroke={line} strokeWidth="1.1" />
+            </g>
+          );
+        })}
+      {more > 0 && (
+        <g data-gift-more="" transform="translate(212 532)">
+          <rect width="26" height="16" rx="8" fill="#2B3350" stroke="#FFF3C4" strokeWidth="1.2" />
+          <text x="13" y="11.5" textAnchor="middle" fontSize="10" fontWeight="800" fill="#F7CB4D" fontFamily="var(--font-karla), system-ui, sans-serif">
+            +{more}
+          </text>
+        </g>
+      )}
     </g>
   );
 }

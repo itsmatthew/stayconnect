@@ -45,6 +45,7 @@ describe("the switch (DEMO-1)", () => {
     expect(emptyData.posts(NOW)).toEqual([]);
     expect(emptyData.viewerOf).toEqual([]);
     expect(emptyData.rings).toEqual({});
+    expect(emptyData.gifts(NOW)).toEqual([]);
   });
 });
 
