@@ -1,0 +1,14 @@
+/* Your circle (docs/specs/circle.md). Lit friends twinkle, as in the reference; all of it stops under reduced motion. */
+@keyframes yc-twinkle {
+  0%, 100% { filter: saturate(1.25) brightness(1); }
+  50% { filter: saturate(1.35) brightness(1.12); }
+}
+@keyframes yc-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+.yc-lit { animation: yc-twinkle 3s ease-in-out infinite; }
+.yc-pulse { animation: yc-pulse 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .yc-lit, .yc-pulse { animation: none !important; }
+}

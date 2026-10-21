@@ -1,9 +1,10 @@
 // TODO(re-evaluate when groups come from the database): swap this file for real data.
 // Every placeholder in the app lives here: groups (docs/specs/home.md, HOME-1), friends,
-// seed conversations, the replies "simulate reply" uses (docs/specs/messages.md) and Archive posts
+// their rings in Your circle (docs/specs/circle.md), seed conversations, the replies "simulate reply" uses (docs/specs/messages.md) and Archive posts
 // (docs/specs/archive.md). Only app-data.ts imports it, behind the demo switch (docs/specs/demo.md).
 
 import type { ArtKind, CircleGroup, Friend, Palette } from "@/components/home/types";
+import type { Placements } from "./circle/rings";
 import { isOpen, periodsOfYear } from "./archive/periods";
 import type { ArchivePost } from "./archive/posts";
 import { ME, type ChatMessage, type Conversation } from "./messages/conversations";
@@ -27,6 +28,19 @@ export const friends: readonly Friend[] = [
   { id: "dad", name: "Dad", closest: false, look: { skin: "#EDB98F", hair: "#4A3A2A", shirt: "#5E8068", bg: "#D6F0DC", ring: "#5E8068" } },
   { id: "grandma", name: "Grandma", closest: false, look: { skin: "#F1C7A0", hair: "#D9D4CC", shirt: "#9A4FB0", bg: "#F0DDF6", ring: "#9A4FB0" } },
 ];
+
+/** Who's in which ring, each ring in order. Leo's recent chat earns him a "move to Nest?" suggestion (CIRCLE-9). */
+export const placeholderRings: Placements = {
+  mom: "nest",
+  priya: "nest",
+  ana: "nest",
+  leo: "branches",
+  sam: "branches",
+  dad: "branches",
+  jordan: "bloom",
+  nico: "bloom",
+  grandma: "bloom",
+};
 
 // Captions break onto two lines at "\n", as in the reference card.
 // Closest circles first, in the order they're pinned; then the other groups.
@@ -156,7 +170,14 @@ export function seedConversations(now: number): Conversation[] {
     ]),
     chat("group:apt-4b", 1 * DAY, [["priya", 2 * DAY, "who left the oven on"]]),
     chat("group:family", 2 * HOUR, [["mom", 5 * HOUR, "call your grandma!"]]),
-    chat("friend:leo", null, [["leo", 1 * HOUR, "send me that pic from the rooftop"]]),
+    chat("friend:leo", null, [
+      ["leo", 12 * DAY, "found the taco place from madrid. in brooklyn??"],
+      [ME, 12 * DAY - 2 * HOUR, "no way. saturday?"],
+      ["leo", 9 * DAY, "saturday. bring the good camera"],
+      [ME, 8 * DAY, "that was the best day in months"],
+      [ME, 3 * DAY, "we're doing the rooftop again before it gets cold"],
+      ["leo", 1 * HOUR, "send me that pic from the rooftop"],
+    ]),
     chat("friend:priya", 20 * HOUR, [
       ["priya", 31 * HOUR, "text me when you land"],
       [ME, 30 * HOUR, "landed!"],
