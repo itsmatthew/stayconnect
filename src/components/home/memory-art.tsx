@@ -1,4 +1,10 @@
-import type { ArtKind } from "./types";
+import type { ArtKind, Memory } from "./types";
+
+/** A memory's photo, or its art when it has none, in the 2R square centered on (cx, cy). The caller clips it. */
+export function MemoryPicture({ memory, cx, cy, R }: { memory: Pick<Memory, "art" | "src">; cx: number; cy: number; R: number }) {
+  if (memory.src) return <image href={memory.src} x={cx - R} y={cy - R} width={2 * R} height={2 * R} preserveAspectRatio="xMidYMid slice" />;
+  return <MemoryArt kind={memory.art} cx={cx} cy={cy} R={R} />;
+}
 
 /**
  * Stand-in "photo" for a memory, drawn in the 2R square centered on (cx, cy).

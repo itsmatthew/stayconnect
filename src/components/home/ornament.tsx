@@ -1,6 +1,6 @@
 import { useId } from "react";
-import { MemoryArt } from "./memory-art";
-import type { ArtKind } from "./types";
+import { MemoryPicture } from "./memory-art";
+import type { Memory } from "./types";
 
 export type OrnamentDefs = { ornShade: string; ornCap: string };
 
@@ -11,13 +11,13 @@ type OrnamentProps = {
   R: number;
   /** Length of the hanging string. */
   L: number;
-  art: ArtKind;
+  memory: Pick<Memory, "art" | "src">;
   rim: string;
   defs: OrnamentDefs;
 };
 
 /** A glass bauble holding a memory's art, hung on a string (proportions from the reference). */
-export function Ornament({ cx, cy, R, L, art, rim, defs }: OrnamentProps) {
+export function Ornament({ cx, cy, R, L, memory, rim, defs }: OrnamentProps) {
   const clip = `orn${useId().replace(/[^\w-]/g, "")}`;
   return (
     <g data-ornament="">
@@ -43,7 +43,7 @@ export function Ornament({ cx, cy, R, L, art, rim, defs }: OrnamentProps) {
         <circle cx={cx} cy={cy} r={R} />
       </clipPath>
       <g clipPath={`url(#${clip})`}>
-        <MemoryArt kind={art} cx={cx} cy={cy} R={R} />
+        <MemoryPicture memory={memory} cx={cx} cy={cy} R={R} />
       </g>
       <circle cx={cx} cy={cy} r={R} fill={`url(#${defs.ornShade})`} />
       <circle cx={cx} cy={cy} r={R - 0.8} fill="none" stroke={rim} strokeWidth="1.8" opacity=".95" />

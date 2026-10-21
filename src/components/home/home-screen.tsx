@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import "./home.css";
 import { CarouselArrow } from "./carousel-arrow";
 import { CircleToggle, type CirclesView } from "./circle-toggle";
-import { CircleTree, type TreeSlot } from "./circle-tree";
+import { CircleTree, ornamentSpots, type TreeSlot } from "./circle-tree";
 import { CountBadge } from "./count-badge";
 import { DottedRing } from "./dotted-ring";
 import { GroupCard } from "./group-card";
@@ -11,7 +11,6 @@ import { BottomNav, TopNav, type NavProps } from "./main-nav";
 import { Scenery, useSceneIds, type SceneIds, type Zone } from "./scenery/scenery";
 import type { CircleGroup } from "./types";
 import { FRAUNCES, INK, KARLA, s } from "./units";
-import { riverZones, WideRiver, wideRiver } from "./wide-river";
 import { toSceneZone, WIDE_CENTER_SLOT, WIDE_PAINT, WIDE_SLOTS, wideLabelBox } from "./wide-row";
 
 type HomeScreenProps = {
@@ -24,6 +23,8 @@ type HomeScreenProps = {
   onPrevious: () => void;
   onNext: () => void;
   nav: NavProps;
+  /** A tap on one of a group's ornaments (0–2), or on the card's "swap photos" (HOME-13). */
+  onOrnament?: (groupId: string, index: number) => void;
 };
 
 /** Home — Your Circles (docs/specs/home.md). Phone below 768px, wide at 768px and up. */
@@ -45,6 +46,26 @@ const abs = (left: number, top: number, extra: CSSProperties = {}): CSSPropertie
 
 const treeDefs = (ids: SceneIds) => ({ ornShade: ids.ornShade, ornCap: ids.ornCap });
 
+
+/**
+ * The ornaments' tap targets (HOME-13): the trees are decorative SVG, so each bauble gets a round HTML button
+ * on top of it, in the same design px.
+ */
+function OrnamentButtons({ group, slot, cx, cy, r, onOrnament }: { group: CircleGroup; slot: TreeSlot; cx: number; cy: number; r: number; onOrnament?: HomeScreenProps["onOrnament"] }) {
+  return ornamentSpots(slot, cx, cy, r).map((o, i) => {
+    const R = o.R + 3;
+    return (
+      <button
+        key={`${group.id}-${i}`}
+        type="button"
+        className="hm-orn"
+        aria-label={`Change ornament ${i + 1} of ${group.name}`}
+        onClick={() => onOrnament?.(group.id, i)}
+        style={abs(o.cx - R, o.cy - R, { width: s(2 * R), height: s(2 * R) })}
+      />
+    );
+  });
+}
 
 function Label({ name, center, glow = center, style }: { name: string; center: boolean; glow?: boolean; style: CSSProperties }) {
   return (
@@ -85,7 +106,7 @@ const PHONE_BADGES: Record<TreeSlot, { left: number; top: number; size: number; 
 };
 const SLOTS: readonly TreeSlot[] = ["left", "center", "right"];
 
-function PhoneLayout({ phone, view, onViewChange, onPrevious, onNext, nav }: HomeScreenProps) {
+function PhoneLayout({ phone, view, onViewChange, onPrevious, onNext, nav, onOrnament }: HomeScreenProps) {
   const ids = useSceneIds();
   const bySlot = { left: phone[0], center: phone[1], right: phone[2] };
   const tree = (slot: TreeSlot) => (
@@ -149,6 +170,10 @@ function PhoneLayout({ phone, view, onViewChange, onPrevious, onNext, nav }: Hom
             <Label key={slot} name={bySlot[slot].name} center={slot === "center"} style={PHONE_LABELS[slot]} />
           ))}
           {SLOTS.map((slot) => {
+            const { cx, cy, r } = PHONE_TREES[slot];
+            return <OrnamentButtons key={slot} group={bySlot[slot]} slot={slot} cx={cx} cy={cy} r={r} onOrnament={onOrnament} />;
+          })}
+          {SLOTS.map((slot) => {
             const b = PHONE_BADGES[slot];
             return (
               <div key={slot} style={abs(b.left, b.top)}>
@@ -167,7 +192,7 @@ function PhoneLayout({ phone, view, onViewChange, onPrevious, onNext, nav }: Hom
 
         {/* Card and nav hold to the bottom of the screen, as in the reference. */}
         <div className="absolute left-1/2 -translate-x-1/2" style={{ bottom: s(86), width: s(362) }}>
-          <GroupCard group={phone[1]} />
+          <GroupCard group={phone[1]} onSwapPhotos={() => onOrnament?.(phone[1].id, 0)} />
         </div>
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2" style={{ width: s(390), height: s(78) }}>
           <BottomNav {...nav} />
@@ -187,10 +212,10 @@ export function wideLabelZones(pad = 6): Zone[] {
   });
 }
 const CENTER = WIDE_SLOTS[WIDE_CENTER_SLOT];
-/** Small trees stay off the labels and off the river, which follows the center tree. */
-const WIDE_CLEAR_ZONES = [...wideLabelZones(), ...riverZones(wideRiver(CENTER).points).map(toSceneZone)];
+/** Small trees stay off the labels (HOME-8). There is no river on wide screens (HOME-11). */
+const WIDE_CLEAR_ZONES = wideLabelZones();
 
-function WideLayout({ wide, view, onViewChange, onPrevious, onNext, nav }: HomeScreenProps) {
+function WideLayout({ wide, view, onViewChange, onPrevious, onNext, nav, onOrnament }: HomeScreenProps) {
   const ids = useSceneIds();
   return (
     <div
@@ -214,7 +239,6 @@ function WideLayout({ wide, view, onViewChange, onPrevious, onNext, nav }: HomeS
         </div>
 
         <svg viewBox="0 0 1312 816" preserveAspectRatio="xMidYMid meet" aria-hidden="true" className="absolute inset-0 h-full w-full">
-          <WideRiver center={CENTER} />
           <DottedRing cx={CENTER.cx} cy={607} rx={165} ry={34} />
           {WIDE_PAINT.map((i) => {
             const { cx, cy, r, bottom, shadowRy, slot } = WIDE_SLOTS[i];
@@ -235,6 +259,9 @@ function WideLayout({ wide, view, onViewChange, onPrevious, onNext, nav }: HomeS
               />
             );
           })}
+          {WIDE_SLOTS.map((t, i) => (
+            <OrnamentButtons key={`ornaments-${i}`} group={wide[i]} slot={t.slot} cx={t.cx} cy={t.cy} r={t.r} onOrnament={onOrnament} />
+          ))}
           {WIDE_SLOTS.map((t, i) => {
             const center = t.slot === "center";
             return (
@@ -263,7 +290,7 @@ function WideLayout({ wide, view, onViewChange, onPrevious, onNext, nav }: HomeS
             className="absolute left-1/2 -translate-x-1/2"
             style={{ bottom: s(16), "--s": "calc(1.32 * var(--d))" } as CSSProperties}
           >
-            <GroupCard group={wide[WIDE_CENTER_SLOT]} />
+            <GroupCard group={wide[WIDE_CENTER_SLOT]} onSwapPhotos={() => onOrnament?.(wide[WIDE_CENTER_SLOT].id, 0)} />
           </div>
         </div>
 

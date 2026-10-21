@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { MemoryArt } from "./memory-art";
+import { MemoryPicture } from "./memory-art";
 import type { CircleGroup, Memory } from "./types";
 import { CREAM, FRAUNCES, INK, s } from "./units";
 
@@ -37,7 +37,7 @@ function MemoryThumb({ memory }: { memory: Memory }) {
           <circle cx="19" cy="19" r="17" />
         </clipPath>
         <g clipPath={`url(#${clip})`}>
-          <MemoryArt kind={memory.art} cx={19} cy={19} R={17} />
+          <MemoryPicture memory={memory} cx={19} cy={19} R={17} />
         </g>
         <circle cx="19" cy="19" r="17" fill="none" stroke="#2A2030" strokeWidth="2" />
       </svg>
@@ -57,8 +57,8 @@ function MemoryThumb({ memory }: { memory: Memory }) {
   );
 }
 
-/** The selected circle's card (362 design px wide), with its garland. */
-export function GroupCard({ group }: { group: CircleGroup }) {
+/** The selected circle's card (362 design px wide), with its garland. "swap photos" opens the ornament sheet (HOME-4). */
+export function GroupCard({ group, onSwapPhotos }: { group: CircleGroup; onSwapPhotos?: () => void }) {
   return (
     <section aria-label="Selected circle" aria-live="polite" style={{ position: "relative", width: s(362) }}>
       <Garland />
@@ -84,10 +84,13 @@ export function GroupCard({ group }: { group: CircleGroup }) {
             }}
           >
             <h2 style={{ margin: 0, fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(19) }}>{group.name}</h2>
-            {/* TODO(re-evaluate when photo swapping is built): point this at the real flow. */}
-            <a href="#" style={{ fontSize: s(12), fontWeight: 800, textDecoration: "underline", color: "#FFF6DA" }}>
+            <button
+              type="button"
+              onClick={onSwapPhotos}
+              style={{ border: 0, padding: 0, background: "none", font: "inherit", fontSize: s(12), fontWeight: 800, textDecoration: "underline", color: "#FFF6DA", cursor: "pointer" }}
+            >
               swap photos
-            </a>
+            </button>
           </div>
           <div
             style={{

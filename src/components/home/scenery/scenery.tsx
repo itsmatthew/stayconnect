@@ -143,7 +143,7 @@ export function Scenery({ variant, ids: sharedIds, foreground, clearZones = [], 
           <Hills ids={ids} />
         </>,
       )}
-      {/* No river here: the wide river follows the center tree, so the tree row draws it (wide-river.tsx). */}
+      {/* No river on wide screens (HOME-11); the phone scenery keeps its own. */}
       {fixed(
         <>
           {WIDE_SMALL_TREES.map((t, i) =>

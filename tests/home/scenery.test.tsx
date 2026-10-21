@@ -85,7 +85,7 @@ describe("Scenery", () => {
     expect(scales.size).toBeGreaterThanOrEqual(3);
   });
 
-  it("wide variant leaves the river to the tree row (HOME-11)", () => {
+  it("wide variant draws no river (HOME-11)", () => {
     // The shared <defs> still carry the river's gradient and clip; nothing draws with them.
     const root = wideRoot();
     expect(root.querySelector("path[fill$='hRiver)']")).toBeNull();
