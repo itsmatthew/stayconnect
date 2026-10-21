@@ -1,0 +1,12 @@
+/* 65 Archive animations. The gold glow is the Me reference's photo-of-the-month glow. Elements opt in with "ar-anim". */
+@keyframes ar-glow {
+  0%, 100% { box-shadow: 0 0 calc(9 * var(--s)) calc(2 * var(--s)) rgba(247, 203, 77, 0.6); }
+  50% { box-shadow: 0 0 calc(15 * var(--s)) calc(5 * var(--s)) rgba(247, 203, 77, 0.85); }
+}
+@keyframes ar-twinkle {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ar-anim { animation: none !important; }
+}

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { IntroClient } from "@/app/intro/intro-client";
 import { HomeClient } from "@/app/intro/home-client";
+import { placeholderGroups } from "@/app/intro/placeholder-data";
 
 // jsdom has no media playback, so stub what the hook touches.
 let readyState = 0;
@@ -25,7 +26,7 @@ afterEach(() => {
 });
 
 function renderIntro() {
-  const utils = render(<IntroClient home={<HomeClient />} />);
+  const utils = render(<IntroClient home={<HomeClient groups={placeholderGroups} />} />);
   const root = utils.container.querySelector("[data-intro]") as HTMLElement;
   const video = utils.container.querySelector("video:not([aria-hidden])") as HTMLVideoElement;
   const home = utils.container.querySelector("[data-intro-home]") as HTMLElement;
