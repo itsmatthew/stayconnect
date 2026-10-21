@@ -25,7 +25,7 @@ export type Daily5ScreenProps = {
 /** Daily 5 (docs/specs/daily5.md): today's five polaroids, the send sheet, and the photo pools. */
 export function Daily5Screen({ todayLabel, cards, pools, recipients, onAddFiles, onSend, nav, loading }: Daily5ScreenProps) {
   const [sending, setSending] = useState<Daily5Card | null>(null);
-  const [flying, setFlying] = useState<{ key: number; src: string } | null>(null);
+  const [flying, setFlying] = useState<{ key: number; src: string; color?: string } | null>(null);
   const landed = useCallback(() => setFlying(null), []);
 
   return (
@@ -60,12 +60,13 @@ export function Daily5Screen({ todayLabel, cards, pools, recipients, onAddFiles,
           onCancel={() => setSending(null)}
           onSend={(recipientId, note) => {
             onSend({ cardId: sending.id, recipientId, note });
-            setFlying({ key: Date.now(), src: sending.src });
+            const to = [...recipients.closest, ...recipients.others, ...recipients.people].find((p) => p.id === recipientId);
+            setFlying({ key: Date.now(), src: sending.src, color: to?.kind === "group" ? to.palette.canopy : undefined });
             setSending(null);
           }}
         />
       )}
-      {flying && <SentFlight key={flying.key} src={flying.src} onDone={landed} />}
+      {flying && <SentFlight key={flying.key} src={flying.src} color={flying.color} onDone={landed} />}
     </TabFrame>
   );
 }

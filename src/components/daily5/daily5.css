@@ -11,6 +11,8 @@
   70% { transform: scale(1.05); opacity: 1; }
   100% { transform: none; opacity: 1; }
 }
+/* The frame fills with the recipient circle's colour (--sd-group) as the photo lifts off. */
+@keyframes sd-tint { to { background: var(--sd-group); border-color: var(--sd-group); } }
 @keyframes sd-out { to { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
   .sd-anim { animation-duration: 0.01s !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; }

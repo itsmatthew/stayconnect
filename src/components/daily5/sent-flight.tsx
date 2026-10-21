@@ -1,12 +1,15 @@
-import { useEffect } from "react";
+import { useEffect, type CSSProperties } from "react";
 import { FRAUNCES, NAVY, PAPER, s } from "../home/units";
-import { FILM } from "./polaroid";
+import { FILM, POLAROID_PAPER } from "./polaroid";
 
 /** How long the whole send moment lasts: the fly-off (0.9s), then "Sent ✓" pops and fades. */
 export const SENT_FLIGHT_MS = 2400;
 
-/** Step 3 of the reference: the photo flies off, then a brief "Sent ✓". */
-export function SentFlight({ src, onDone }: { src: string; onDone: () => void }) {
+/**
+ * Step 3 of the reference: the photo flies off, then a brief "Sent ✓". `color` is the recipient circle's canopy: the frame
+ * fills with it as the photo lifts off (`sd-tint`). Sent to one person, there is none and the frame stays neutral.
+ */
+export function SentFlight({ src, color, onDone }: { src: string; color?: string; onDone: () => void }) {
   useEffect(() => {
     const t = setTimeout(onDone, SENT_FLIGHT_MS);
     return () => clearTimeout(t);
@@ -21,9 +24,11 @@ export function SentFlight({ src, onDone }: { src: string; onDone: () => void })
       />
       <div
         data-fly=""
+        data-tint={color}
         className="sd-anim"
         aria-hidden="true"
         style={{
+          ...(color && ({ "--sd-group": color } as CSSProperties)),
           position: "absolute",
           left: "50%",
           top: "18%",
@@ -33,9 +38,10 @@ export function SentFlight({ src, onDone }: { src: string; onDone: () => void })
           padding: s(14),
           paddingBottom: s(76),
           borderRadius: s(4),
-          background: "#FDFBF5",
+          background: POLAROID_PAPER,
+          border: `${s(2)} solid ${NAVY}`,
           boxShadow: `0 ${s(10)} ${s(20)} rgba(0,0,0,.4)`,
-          animation: "sd-fly .9s cubic-bezier(.5,0,.7,.4) both",
+          animation: `sd-fly .9s cubic-bezier(.5,0,.7,.4) both${color ? ", sd-tint .35s ease .15s both" : ""}`,
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- local blob: URL */}

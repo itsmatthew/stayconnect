@@ -53,10 +53,14 @@ describe("Daily 5 screen", () => {
     });
   });
 
-  it("cycles the reference's frame colours and tilts (D5-9)", () => {
+  it("gives every polaroid the same neutral cream frame with a navy outline, still cycling the tilts (D5-9)", () => {
     renderScreen();
     const polaroids = screen.getAllByRole("article");
-    expect(polaroids.map((p) => p.dataset.frame)).toEqual(["#C8432B", "#F0B429", "#4F8A3C", "#3F9AD8", "#7A4E8C"]);
+    for (const p of polaroids) {
+      expect(p.style.background).toBe("rgb(253, 251, 245)");
+      expect(p.style.border).toContain("#2B3350");
+      expect(p.hasAttribute("data-frame")).toBe(false);
+    }
     expect(polaroids.map((p) => p.style.transform)).toEqual([
       "rotate(-1.2deg)",
       "rotate(1deg)",
@@ -123,6 +127,9 @@ describe("Daily 5 screen", () => {
     expect(flight).not.toBeNull();
     expect(flight.querySelector<HTMLElement>("[data-fly]")!.style.animation).toContain("sd-fly");
     expect(flight.querySelector<HTMLElement>("[data-fly]")!.className).toContain("sd-anim");
+    const madrid = placeholderGroups.find((g) => g.name === "Madrid Crew")!;
+    expect(flight.querySelector<HTMLElement>("[data-fly]")!.dataset.tint).toBe(madrid.palette.canopy);
+    expect(flight.querySelector<HTMLElement>("[data-fly]")!.style.animation).toContain("sd-tint");
     const status = screen.getByRole("status");
     expect(status.textContent).toBe("Sent ✓");
     expect(status.style.animation).toContain("sd-pop");
@@ -132,6 +139,19 @@ describe("Daily 5 screen", () => {
     act(() => vi.advanceTimersByTime(100));
     expect(container.querySelector("[data-sent-flight]")).toBeNull();
     expect(screen.queryByText("Sent ✓")).toBeNull();
+  });
+
+  it("keeps the frame neutral when the photo goes to one person (D5-12)", () => {
+    const { container } = renderScreen();
+    const friend = friends[0];
+    fireEvent.click(within(screen.getAllByRole("article")[0]).getByRole("button", { name: "Send this photo to someone" }));
+    const sheet = screen.getByRole("dialog", { name: "Send this to…" });
+    fireEvent.click(within(sheet).getByRole("button", { name: `Send to ${friend.name}` }));
+    fireEvent.click(within(sheet).getByRole("button", { name: "Send" }));
+    const fly = container.querySelector<HTMLElement>("[data-fly]")!;
+    expect(fly.hasAttribute("data-tint")).toBe(false);
+    expect(fly.style.animation).not.toContain("sd-tint");
+    expect(fly.style.border).toContain("#2B3350");
   });
 
   it("marks the nav's current tab and reports nav taps (D5-1)", () => {
