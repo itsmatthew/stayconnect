@@ -9,7 +9,8 @@ import { openArchiveStore } from "@/app/intro/archive/archive-store";
 import { openPhotoStore } from "@/app/intro/daily5/photo-store";
 import { demoDataEnabled } from "@/app/intro/demo";
 import { ORNAMENT_DB, openOrnamentStore } from "@/app/intro/ornaments/ornament-store";
-import { friends, placeholderGroups, placeholderPosts, placeholderReplies, seedConversations } from "@/app/intro/placeholder-data";
+import { friends, placeholderGoals, placeholderGroups, placeholderPosts, placeholderReplies, placeholderUpTo, seedConversations } from "@/app/intro/placeholder-data";
+import { goalsStorageKey } from "@/app/intro/profile/use-goals";
 
 const NOW = new Date(2026, 9, 20, 12).getTime();
 let n = 0;
@@ -47,6 +48,8 @@ describe("the switch (DEMO-1)", () => {
     expect(emptyData.viewerOf).toEqual([]);
     expect(emptyData.rings).toEqual({});
     expect(emptyData.gifts(NOW)).toEqual([]);
+    expect(emptyData.goals(NOW)).toEqual({});
+    expect(emptyData.upTo).toEqual({});
   });
 });
 
@@ -99,6 +102,18 @@ describe("empty states with the switch off (DEMO-2)", () => {
   });
 });
 
+describe("demo and real goals never mix (DEMO-3, GP-11)", () => {
+  it("goals are kept under a .demo key with the switch on, and with no suffix off", () => {
+    expect(goalsStorageKey(demoData.storageSuffix)).toBe("nowandthen.goals.v1.demo");
+    expect(goalsStorageKey(emptyData.storageSuffix)).toBe("nowandthen.goals.v1");
+  });
+
+  it("the demo has a dated goal and up-to rows", () => {
+    expect(Object.keys(demoData.goals(NOW))).toEqual(["madrid-crew"]);
+    expect(Object.keys(demoData.upTo).length).toBeGreaterThan(0);
+  });
+});
+
 describe("demo and real ornaments never mix (DEMO-3, HOME-18)", () => {
   const renderWith = (data: typeof demoData) => {
     const id = ++n;
@@ -137,6 +152,8 @@ describe("no placeholder data anywhere (DEMO-4)", () => {
     ...placeholderReplies,
     ...seedConversations(NOW).flatMap((c) => c.messages.flatMap((m) => (m.kind === "text" ? [m.text] : []))),
     ...placeholderPosts(NOW).flatMap((p) => (p.caption ? [p.caption] : [])),
+    ...Object.values(placeholderGoals(NOW)).map((g) => g.label),
+    ...Object.values(placeholderUpTo).flatMap((rows) => rows.map((r) => r.text)),
   ];
   const escape = (w: string) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const placeholder = new RegExp(`\\b(${words.map(escape).join("|")})\\b`);

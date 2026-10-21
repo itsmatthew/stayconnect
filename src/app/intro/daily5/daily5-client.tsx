@@ -38,7 +38,16 @@ export function Daily5Client({ store, now, hasFace, recipients, dispatch, nav }:
         const photo = state.photos.find((p) => p.id === cardId);
         if (!photo) return;
         // Sealed until a reply (docs/specs/messages.md, MSG-4).
-        dispatch({ type: "sendMemory", id: crypto.randomUUID(), conversationId: recipientId, photoId: cardId, takenAt: photo.takenAt, note, at: now() });
+        dispatch({
+          type: "sendMemory",
+          id: crypto.randomUUID(),
+          conversationId: recipientId,
+          photoId: cardId,
+          takenAt: photo.takenAt,
+          ...(photo.fileDated ? { fileDated: photo.fileDated } : {}),
+          note,
+          at: now(),
+        });
       }}
       nav={nav}
     />

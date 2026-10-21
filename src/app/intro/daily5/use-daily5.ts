@@ -5,7 +5,7 @@ import { localDateKey, needsNewPick, pickDaily, type PoolId } from "./daily-pick
 import { importPhotos, type ImportProgress } from "./import-photos";
 import type { PhotoStore, StoredPhoto } from "./photo-store";
 
-export type DailyPhoto = { id: string; takenAt: number; src: string };
+export type DailyPhoto = { id: string; takenAt: number; fileDated?: true; src: string };
 type PoolState = { count: number; progress?: ImportProgress; skipped: number };
 
 export type Daily5State = {
@@ -56,7 +56,7 @@ export function useDaily5(store: PhotoStore | null, now: () => number, hasFace: 
     const photos = await Promise.all(
       chosen.map(async (p) => {
         const image = await store.image(p.id);
-        return { id: p.id, takenAt: p.takenAt, src: image ? URL.createObjectURL(image) : "" };
+        return { id: p.id, takenAt: p.takenAt, ...(p.fileDated ? { fileDated: p.fileDated } : {}), src: image ? URL.createObjectURL(image) : "" };
       }),
     );
     urls.current.forEach((u) => URL.revokeObjectURL(u));

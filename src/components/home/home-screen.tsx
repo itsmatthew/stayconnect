@@ -25,6 +25,8 @@ type HomeScreenProps = {
   nav: NavProps;
   /** A tap on one of a group's ornaments (0–2), or on the card's "swap photos" (HOME-13). */
   onOrnament?: (groupId: string, index: number) => void;
+  /** Group id → "46 days · lake weekend": the next time together (HOME-19). */
+  countdowns?: Readonly<Record<string, string>>;
 };
 
 /** Home — Your Circles (docs/specs/home.md). Phone below 768px, wide at 768px and up. */
@@ -87,6 +89,58 @@ function Label({ name, center, glow = center, style }: { name: string; center: b
   );
 }
 
+/**
+ * The next time together (HOME-19): a small pill by the tree's name (above it; `below` it when `top` is the name's bottom),
+ * kept out of the label so the name stays only the name. It centers on the label's column.
+ */
+function CountdownTag({
+  groupId,
+  text,
+  left,
+  top,
+  width,
+  fontSize,
+  below = false,
+  align = "center",
+}: {
+  groupId: string;
+  text?: string;
+  left: number;
+  top: number;
+  width: number;
+  fontSize: number;
+  below?: boolean;
+  /** Phone side trees: a tag wider than the name's column hugs the screen edge instead of running off it. */
+  align?: "start" | "center" | "end";
+}) {
+  if (!text) return null;
+  const height = fontSize * 1.7;
+  const justify = { start: "flex-start", center: "center", end: "flex-end" }[align];
+  return (
+    <div style={abs(left, below ? top + 3 : top - height - 3, { width: s(width), display: "flex", justifyContent: justify, pointerEvents: "none" })}>
+      <span
+        data-countdown={groupId}
+        style={{
+          height: s(height),
+          padding: `0 ${s(fontSize * 0.8)}`,
+          borderRadius: s(height / 2),
+          background: "rgba(255,248,236,.92)",
+          border: `${s(1.5)} solid ${INK}`,
+          color: INK,
+          fontFamily: KARLA,
+          fontWeight: 800,
+          fontSize: s(fontSize),
+          lineHeight: s(height - 3),
+          whiteSpace: "nowrap",
+          boxShadow: `0 ${s(2)} ${s(4)} rgba(27,31,52,.25)`,
+        }}
+      >
+        {text}
+      </span>
+    </div>
+  );
+}
+
 // ─── Phone: the reference's 390×844 canvas, coordinates verbatim ────────────────────────────────
 
 const PHONE_TREES: Record<TreeSlot, { cx: number; cy: number; r: number; bottom: number; shadowRy: number }> = {
@@ -99,6 +153,12 @@ const PHONE_LABELS: Record<TreeSlot, CSSProperties> = {
   center: { left: 0, top: s(346), width: s(390), fontSize: s(20) },
   right: { left: s(284), top: s(402), width: s(106), fontSize: s(13) },
 };
+/** The tags sit above the labels, in the same column (HOME-19). */
+const PHONE_TAGS: Record<TreeSlot, { left: number; top: number; width: number; fontSize: number; align: "start" | "center" | "end" }> = {
+  left: { left: 4, top: 402, width: 382, fontSize: 10, align: "start" },
+  center: { left: 0, top: 346, width: 390, fontSize: 11, align: "center" },
+  right: { left: 4, top: 402, width: 382, fontSize: 10, align: "end" },
+};
 const PHONE_BADGES: Record<TreeSlot, { left: number; top: number; size: number; fontSize: number }> = {
   left: { left: 100, top: 560, size: 24, fontSize: 12 },
   center: { left: 266, top: 574, size: 30, fontSize: 14 },
@@ -106,7 +166,7 @@ const PHONE_BADGES: Record<TreeSlot, { left: number; top: number; size: number; 
 };
 const SLOTS: readonly TreeSlot[] = ["left", "center", "right"];
 
-function PhoneLayout({ phone, view, onViewChange, onPrevious, onNext, nav, onOrnament }: HomeScreenProps) {
+function PhoneLayout({ phone, view, onViewChange, onPrevious, onNext, nav, onOrnament, countdowns = {} }: HomeScreenProps) {
   const ids = useSceneIds();
   const bySlot = { left: phone[0], center: phone[1], right: phone[2] };
   const tree = (slot: TreeSlot) => (
@@ -169,6 +229,9 @@ function PhoneLayout({ phone, view, onViewChange, onPrevious, onNext, nav, onOrn
           {SLOTS.map((slot) => (
             <Label key={slot} name={bySlot[slot].name} center={slot === "center"} style={PHONE_LABELS[slot]} />
           ))}
+          {SLOTS.map((slot) => (
+            <CountdownTag key={`tag-${slot}`} groupId={bySlot[slot].id} text={countdowns[bySlot[slot].id]} {...PHONE_TAGS[slot]} />
+          ))}
           {SLOTS.map((slot) => {
             const { cx, cy, r } = PHONE_TREES[slot];
             return <OrnamentButtons key={slot} group={bySlot[slot]} slot={slot} cx={cx} cy={cy} r={r} onOrnament={onOrnament} />;
@@ -215,7 +278,7 @@ const CENTER = WIDE_SLOTS[WIDE_CENTER_SLOT];
 /** Small trees stay off the labels (HOME-8). There is no river on wide screens (HOME-11). */
 const WIDE_CLEAR_ZONES = wideLabelZones();
 
-function WideLayout({ wide, view, onViewChange, onPrevious, onNext, nav, onOrnament }: HomeScreenProps) {
+function WideLayout({ wide, view, onViewChange, onPrevious, onNext, nav, onOrnament, countdowns = {} }: HomeScreenProps) {
   const ids = useSceneIds();
   return (
     <div
@@ -256,6 +319,23 @@ function WideLayout({ wide, view, onViewChange, onPrevious, onNext, nav, onOrnam
                 center={t.slot === "center"}
                 glow
                 style={{ left: s(b.left), top: s(b.top), width: s(b.width), fontSize: s(b.fontSize), lineHeight: 1.3 }}
+              />
+            );
+          })}
+          {WIDE_SLOTS.map((t, i) => {
+            const b = wideLabelBox(t);
+            // The center name sits right under the toggle, so its tag goes below the name.
+            const center = t.slot === "center";
+            return (
+              <CountdownTag
+                key={`tag-${i}`}
+                groupId={wide[i].id}
+                text={countdowns[wide[i].id]}
+                left={b.left}
+                top={center ? b.top + b.height : b.top}
+                width={b.width}
+                fontSize={center ? 14 : 12}
+                below={center}
               />
             );
           })}

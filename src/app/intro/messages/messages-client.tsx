@@ -1,18 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { NavProps } from "@/components/home/main-nav";
 import type { CircleGroup, Friend, Party } from "@/components/home/types";
 import { ChatThread } from "@/components/messages/chat-thread";
 import { LogoSheet } from "@/components/messages/logo-sheet";
 import { MessagesScreen } from "@/components/messages/messages-screen";
-import type { ChatRow, ThreadHeaderArt, ThreadMessage } from "@/components/messages/types";
+import type { ChatRow, ThreadMessage } from "@/components/messages/types";
+import type { HeaderPane } from "@/components/shared/header-photo";
 import type { PhotoStore } from "../daily5/photo-store";
 import { formatPhotoDate } from "../daily5/format";
 import { friendParty, groupParty } from "../parties";
 import type { CropArea } from "../photo-file";
+import { headerSlots } from "../profile/header-photos";
+import { ProfileClient, type ProfileControls } from "../profile/profile-client";
 import { usePickedPhoto } from "../use-picked-photo";
 import {
+  conversationId,
   hasNew,
   lastActivity,
   listOrder,
@@ -25,6 +29,7 @@ import {
   type ChatState,
 } from "./conversations";
 import { formatChatTime } from "./format";
+import { usePhotoUrls } from "./use-photo-urls";
 
 type MessagesClientProps = {
   chat: ChatState;
@@ -39,6 +44,8 @@ type MessagesClientProps = {
   initialOpenId?: string | null;
   nav: NavProps;
   logos?: LogoControls;
+  /** A group's profile, opened from its thread (docs/specs/group-profile.md). Without it, threads have no profile. */
+  profile?: ProfileControls;
 };
 
 /** Changing a group's logo (docs/specs/group-logo.md, LOGO-4/5). `groups` already carry the changed logos. */
@@ -57,8 +64,9 @@ export type LogoControls = {
 const LOGO_MAX = 512;
 const noLogos: LogoControls = { lineOf: () => undefined, canUndo: () => false, onSave: () => {}, onUndo: () => {}, decode: async (f) => f, crop: async (image) => image };
 
-export function MessagesClient({ chat, dispatch, now, store, groups, friends, replies, initialOpenId = null, nav, logos = noLogos }: MessagesClientProps) {
+export function MessagesClient({ chat, dispatch, now, store, groups, friends, replies, initialOpenId = null, nav, logos = noLogos, profile }: MessagesClientProps) {
   const [logoOpen, setLogoOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const picked = usePickedPhoto(logos.decode);
   const [openId, setOpenId] = useState<string | null>(initialOpenId);
   const parties = useMemo(() => new Map<string, Party>([...groups.map(groupParty), ...friends.map(friendParty)].map((p) => [p.id, p])), [groups, friends]);
@@ -92,6 +100,7 @@ export function MessagesClient({ chat, dispatch, now, store, groups, friends, re
 
   const open = (id: string) => {
     dispatch({ type: "open", conversationId: id, at: now() });
+    setProfileOpen(false);
     setOpenId(id);
   };
 
@@ -113,15 +122,30 @@ export function MessagesClient({ chat, dispatch, now, store, groups, friends, re
   if (openId && party) {
     const group = party.kind === "group" ? party : undefined;
     const groupId = group?.id.slice("group:".length);
+    const circleGroup = groupId ? groupById.get(groupId) : undefined;
     const closeLogo = () => {
       picked.drop();
       setLogoOpen(false);
     };
     return (
       <>
+        {profileOpen && group && circleGroup && profile ? (
+          <ProfileClient
+            group={circleGroup}
+            party={group}
+            chat={chat}
+            friends={friends}
+            store={store}
+            now={now}
+            controls={profile}
+            onBack={() => setProfileOpen(false)}
+            onChangeLogo={() => setLogoOpen(true)}
+            onOpenFriend={(friendId) => open(conversationId("friend", friendId))}
+          />
+        ) : (
         <Thread
           party={party}
-          headerArt={headerArt(party, groupById)}
+          panes={headerPanes(party, groupById)}
           messages={visibleMessages(chat, openId)}
           delivered={showsDelivered(chat, openId)}
           store={store}
@@ -134,8 +158,9 @@ export function MessagesClient({ chat, dispatch, now, store, groups, friends, re
             setOpenId(null);
           }}
           onSendText={(text) => dispatch({ type: "sendText", id: crypto.randomUUID(), conversationId: openId, text, at: now() })}
-          onChangeLogo={group ? () => setLogoOpen(true) : undefined}
+          onOpenProfile={group && profile ? () => setProfileOpen(true) : undefined}
         />
+        )}
         {logoOpen && group && groupId && (
           <LogoSheet
             group={group}
@@ -170,22 +195,29 @@ export function MessagesClient({ chat, dispatch, now, store, groups, friends, re
   );
 }
 
-/** A circle's header shows two of its own memories; a friend's, people then and now. */
-function headerArt(party: Party, groups: Map<string, CircleGroup>): ThreadHeaderArt {
+/** A circle's header is its first photo together and last time together (GP-12); a friend's, placeholder people now and then. */
+function headerPanes(party: Party, groups: Map<string, CircleGroup>): readonly [HeaderPane, HeaderPane] {
   const g = party.kind === "group" ? groups.get(party.id.slice("group:".length)) : undefined;
-  return g ? [g.memories[0].art, g.memories[2].art] : ["people", "faces"];
+  if (g) {
+    const { first, last } = headerSlots(g);
+    return [first.pane, last.pane];
+  }
+  return [
+    { label: `${party.name} now`, art: "people" },
+    { label: `${party.name} then`, art: "faces", faded: true },
+  ];
 }
 
 type ThreadProps = {
   party: Party;
-  headerArt: ThreadHeaderArt;
+  panes: readonly [HeaderPane, HeaderPane];
   messages: readonly ChatMessage[];
   delivered: boolean;
   store: PhotoStore | null;
   senderOf: (from: string) => ThreadMessage["sender"];
   onBack: () => void;
   onSendText: (text: string) => void;
-  onChangeLogo?: () => void;
+  onOpenProfile?: () => void;
 };
 
 function Thread({ messages, store, senderOf, ...rest }: ThreadProps) {
@@ -195,34 +227,7 @@ function Thread({ messages, store, senderOf, ...rest }: ThreadProps) {
     const sender = !mine && messages[i - 1]?.from !== m.from ? senderOf(m.from) : undefined;
     return m.kind === "text"
       ? { id: m.id, mine, sender, kind: "text", text: m.text }
-      : { id: m.id, mine, sender, kind: "memory", src: urls[m.photoId], dateLabel: formatPhotoDate(m.takenAt), note: m.note };
+      : { id: m.id, mine, sender, kind: "memory", src: urls[m.photoId], ...(m.art ? { art: m.art } : {}), dateLabel: formatPhotoDate(m.takenAt), note: m.note };
   });
   return <ChatThread {...rest} messages={view} />;
-}
-
-/** Object URLs for memory photos from the Daily 5 store, revoked when the thread closes. */
-function usePhotoUrls(store: PhotoStore | null, ids: readonly string[]): Record<string, string> {
-  const [urls, setUrls] = useState<Record<string, string>>({});
-  const key = ids.join(",");
-  useEffect(() => {
-    if (!store || !key) return;
-    let live = true;
-    const made: string[] = [];
-    Promise.all(
-      key.split(",").map(async (id) => {
-        const blob = await store.image(id);
-        if (!blob) return [id, undefined] as const;
-        const url = URL.createObjectURL(blob);
-        made.push(url);
-        return [id, url] as const;
-      }),
-    ).then((pairs) => {
-      if (live) setUrls(Object.fromEntries(pairs.filter((pair): pair is readonly [string, string] => !!pair[1])));
-    });
-    return () => {
-      live = false;
-      made.forEach((u) => URL.revokeObjectURL(u));
-    };
-  }, [store, key]);
-  return urls;
 }

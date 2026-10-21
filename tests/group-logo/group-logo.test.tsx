@@ -56,10 +56,18 @@ const choose = () =>
   });
 /** The logo image inside an avatar, if it has one. */
 const imageIn = (el: HTMLElement) => el.querySelector("img")?.getAttribute("src");
-const headerLogo = () => within(changeButton()).getByRole("img", { name: "Madrid Crew logo" });
+/** The logo on the profile header's seam (GP-2). */
+const headerLogo = () => within(screen.getByRole("main", { name: "Madrid Crew profile" })).getAllByRole("img", { name: "Madrid Crew logo" })[0];
+/** The logo in the thread's header, which opens the profile (GP-1). */
+const threadLogo = () => within(screen.getAllByRole("button", { name: "Open Madrid Crew profile" })[0]).getByRole("img", { name: "Madrid Crew logo" });
+/** The logo is changed from the group's profile (LOGO-4, GP-2). */
+const openProfile = () => {
+  openChat("Madrid Crew");
+  fireEvent.click(screen.getAllByRole("button", { name: "Open Madrid Crew profile" })[0]);
+};
 
 async function changeLogo() {
-  openChat("Madrid Crew");
+  openProfile();
   fireEvent.click(changeButton());
   choose();
   await within(dialog()).findByRole("img", { name: "New photo" });
@@ -108,19 +116,21 @@ describe("a custom logo (LOGO-2/3)", () => {
   });
 });
 
-describe("changing it (LOGO-4)", () => {
-  it("only group threads have the button", () => {
+describe("changing it (LOGO-4, GP-2)", () => {
+  it("only a group's profile has the button; threads don't", () => {
     renderMessages();
     openChat("Leo");
     expect(screen.queryByRole("button", { name: /^Change .* logo$/ })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Back to messages" }));
     openChat("Madrid Crew");
+    expect(screen.queryByRole("button", { name: "Change Madrid Crew logo" })).toBeNull();
+    fireEvent.click(screen.getAllByRole("button", { name: "Open Madrid Crew profile" })[0]);
     expect(changeButton()).toBeTruthy();
   });
 
   it("opens a sheet: the current logo, a plain photo picker, Save once a photo is picked", async () => {
     renderMessages();
-    openChat("Madrid Crew");
+    openProfile();
     fireEvent.click(changeButton());
     expect(within(dialog()).getByRole("img", { name: "Madrid Crew logo" }).textContent).toBe("MC");
     const input = within(dialog()).getByLabelText("Choose a photo") as HTMLInputElement;
@@ -135,7 +145,7 @@ describe("changing it (LOGO-4)", () => {
 
   it("Cancel discards the photo", async () => {
     const { crop } = renderMessages();
-    openChat("Madrid Crew");
+    openProfile();
     fireEvent.click(changeButton());
     choose();
     await within(dialog()).findByRole("img", { name: "New photo" });
@@ -145,13 +155,15 @@ describe("changing it (LOGO-4)", () => {
     expect(imageIn(headerLogo())).toBeUndefined();
   });
 
-  it("Save crops to a 512 px square and the logo shows in the thread and on the recents screen", async () => {
+  it("Save crops to a 512 px square and the logo shows on the profile, in the thread and on the recents screen", async () => {
     const { crop } = renderMessages();
     await changeLogo();
     expect(crop).toHaveBeenCalledTimes(1);
     expect(crop.mock.calls[0][2]).toBe(512);
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(headerLogo().style.boxShadow).toContain(CANOPY);
+    fireEvent.click(screen.getByRole("button", { name: "Back to the chat" }));
+    expect(imageIn(threadLogo())).toMatch(/^blob:/);
     fireEvent.click(screen.getByRole("button", { name: "Back to messages" }));
     const pinned = within(screen.getByRole("group", { name: "closest circles" })).getByRole("img", { name: "Madrid Crew logo" });
     expect(imageIn(pinned)).toMatch(/^blob:/);
@@ -162,7 +174,7 @@ describe("changing it (LOGO-4)", () => {
     await changeLogo();
     first.unmount();
     renderMessages();
-    openChat("Madrid Crew");
+    openProfile();
     await waitFor(() => expect(imageIn(headerLogo())).toMatch(/^blob:/));
   });
 });
@@ -170,11 +182,12 @@ describe("changing it (LOGO-4)", () => {
 describe("who changed it, and undo (LOGO-5)", () => {
   it("no line until it's changed; then “You changed the logo”, and undo brings back the initials", async () => {
     renderMessages();
-    openChat("Madrid Crew");
+    openProfile();
     fireEvent.click(changeButton());
     expect(dialog().textContent).not.toContain("changed the logo");
     expect(within(dialog()).queryByRole("button", { name: "undo" })).toBeNull();
     fireEvent.click(within(dialog()).getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Back to the chat" }));
     fireEvent.click(screen.getByRole("button", { name: "Back to messages" }));
 
     await changeLogo();

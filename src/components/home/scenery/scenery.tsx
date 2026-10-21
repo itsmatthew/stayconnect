@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from "react";
+import { memo, useId, useMemo, type ReactNode } from "react";
 import {
   Church, Cloud1, Cloud2, Cloud3, Clouds, Defs, Flowers, Fog, Ground, Hills, Houses, LittleTrees, Ridges, River,
   SCENE_ID_NAMES, Sky, Sun, Town,
@@ -12,7 +12,8 @@ export type { SceneIds, Zone };
 /** Per-instance SVG ids, so several scenes (and their gradients) can share a page. */
 export function useSceneIds(): SceneIds {
   const prefix = `sc${useId().replace(/[^\w-]/g, "")}-`;
-  return Object.fromEntries(SCENE_ID_NAMES.map((n) => [n, prefix + n])) as SceneIds;
+  // Stable across renders, so the memoized scene layers below don't redraw when the screen does.
+  return useMemo(() => Object.fromEntries(SCENE_ID_NAMES.map((n) => [n, prefix + n])) as SceneIds, [prefix]);
 }
 
 const W = 390;
@@ -47,30 +48,56 @@ type SceneryProps = {
   className?: string;
 };
 
-export function Scenery({ variant, ids: sharedIds, foreground, clearZones = [], className }: SceneryProps) {
+export function Scenery({ variant, ids: sharedIds, foreground, clearZones, className }: SceneryProps) {
   const ownIds = useSceneIds();
   const ids = sharedIds ?? ownIds;
 
   if (variant === "phone") {
     return (
       <svg viewBox={`0 0 ${W} ${H}`} aria-hidden="true" className={className}>
-        <Defs ids={ids} />
-        <Sky ids={ids} />
-        <Clouds ids={ids} />
-        <Sun ids={ids} />
-        <Ridges ids={ids} />
-        <Town ids={ids} />
-        <Ground ids={ids} />
-        <Fog ids={ids} />
-        <Hills ids={ids} />
-        <River ids={ids} />
-        <LittleTrees ids={ids} />
-        <Flowers ids={ids} />
+        <PhoneLayers ids={ids} />
         {foreground}
       </svg>
     );
   }
 
+  return <WideScene ids={ids} clearZones={clearZones ?? NO_ZONES} className={className} />;
+}
+
+const NO_ZONES: readonly Zone[] = [];
+
+/**
+ * The scene never changes with what's drawn on it, so its layers are memoized: rotating the
+ * trees (and any other screen state) re-renders only the foreground, not thousands of SVG nodes.
+ */
+const PhoneLayers = memo(function PhoneLayers({ ids }: { ids: SceneIds }) {
+  return (
+    <>
+      <Defs ids={ids} />
+      <Sky ids={ids} />
+      <Clouds ids={ids} />
+      <Sun ids={ids} />
+      <Ridges ids={ids} />
+      <Town ids={ids} />
+      <Ground ids={ids} />
+      <Fog ids={ids} />
+      <Hills ids={ids} />
+      <River ids={ids} />
+      <LittleTrees ids={ids} />
+      <Flowers ids={ids} />
+    </>
+  );
+});
+
+const WideScene = memo(function WideScene({
+  ids,
+  clearZones,
+  className,
+}: {
+  ids: SceneIds;
+  clearZones: readonly Zone[];
+  className?: string;
+}) {
   // Wide: alternate stretched layers (fill the width) with fixed-shape layers (scaled to the height,
   // centered, repeated outward). Paint order matches the phone scene.
   const stretch = (children: ReactNode) => (
@@ -158,4 +185,4 @@ export function Scenery({ variant, ids: sharedIds, foreground, clearZones = [], 
       )}
     </div>
   );
-}
+});

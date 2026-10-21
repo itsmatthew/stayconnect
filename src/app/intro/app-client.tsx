@@ -14,11 +14,14 @@ import { MeClient } from "./me/me-client";
 import { conversationId, ME } from "./messages/conversations";
 import { MessagesClient } from "./messages/messages-client";
 import { ORNAMENT_DB, openOrnamentStore, type OrnamentStore } from "./ornaments/ornament-store";
-import { LOGO, canUndo, changedLine, ornamentKey, withOrnaments } from "./ornaments/ornaments";
+import { FIRST, LAST, LOGO, canUndo, changedLine, ornamentKey, withOrnaments } from "./ornaments/ornaments";
+import type { OrnamentControls } from "./ornaments/ornament-sheet-client";
 import { useOrnaments } from "./ornaments/use-ornaments";
 import { useChat } from "./messages/use-chat";
 import { recipientSections } from "./parties";
 import { captureDate, cropSquare, downscale, type CropArea } from "./photo-file";
+import { activeGoal, countdownTag } from "./profile/goals";
+import { useGoals } from "./profile/use-goals";
 
 type AppClientProps = {
   initialTab?: NavLabel;
@@ -82,6 +85,8 @@ export function AppClient({
   const nameOf = (id: string) => data.friends.find((f) => f.id === id)?.name;
   const [circle, circleDispatch] = useCircle(data.rings, data.storageSuffix);
   const [gifts] = useState(() => data.gifts(now()));
+  const [goalSeed] = useState(() => data.goals(now()));
+  const [goals, dispatchGoal] = useGoals(goalSeed, data.storageSuffix);
   /** A thread for Messages to open on arrival (CIRCLE-6). */
   const [openThread, setOpenThread] = useState<string | null>(null);
 
@@ -97,6 +102,26 @@ export function AppClient({
     setTab("Messages");
   };
 
+  // Shared by Home's trees and the group profile's "Edit" (HOME-14, GP-4).
+  const ornamentControls: OrnamentControls = {
+    lineOf: (groupId, index) => {
+      const v = ornaments.state[ornamentKey(groupId, index)]?.current;
+      return v && changedLine(v, nameOf, now());
+    },
+    canUndo: (groupId, index) => canUndo(ornaments.state, groupId, index),
+    onSave: (groupId, index, edit) => void ornaments.change(groupId, index, edit, ME, now()),
+    onUndo: (groupId, index) => void ornaments.undo(groupId, index),
+    decode,
+    crop,
+  };
+  /** The next time together on Home's trees (HOME-19). */
+  const countdowns = Object.fromEntries(
+    homeGroups.flatMap((g) => {
+      const tag = countdownTag(activeGoal(goals, g.id, now()), now());
+      return tag ? [[g.id, tag]] : [];
+    }),
+  );
+
   switch (tab) {
     case "Circles":
       return (
@@ -110,17 +135,8 @@ export function AppClient({
           now={now}
           onOpenChat={openChat}
           nav={nav}
-          ornaments={{
-            lineOf: (groupId, index) => {
-              const v = ornaments.state[ornamentKey(groupId, index)]?.current;
-              return v && changedLine(v, nameOf, now());
-            },
-            canUndo: (groupId, index) => canUndo(ornaments.state, groupId, index),
-            onSave: (groupId, index, edit) => void ornaments.change(groupId, index, edit, ME, now()),
-            onUndo: (groupId, index) => void ornaments.undo(groupId, index),
-            decode,
-            crop,
-          }}
+          ornaments={ornamentControls}
+          countdowns={countdowns}
         />
       );
     case "Daily 5":
@@ -149,6 +165,18 @@ export function AppClient({
             onUndo: (groupId) => void ornaments.undo(groupId, LOGO),
             decode,
             crop,
+          }}
+          profile={{
+            goals,
+            dispatchGoal,
+            placements: circle.placements,
+            upTo: data.upTo,
+            ornaments: ornamentControls,
+            // Header photos are saved at once, downscaled, with their capture date (GP-12).
+            setHeaderPhoto: async (groupId, slot, file) => {
+              const [image, takenAt] = await Promise.all([decode(file), readCapture(file)]);
+              await ornaments.change(groupId, slot === "first" ? FIRST : LAST, { image, caption: "", takenAt }, ME, now());
+            },
           }}
         />
       );

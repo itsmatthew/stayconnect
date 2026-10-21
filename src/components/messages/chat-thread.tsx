@@ -1,20 +1,22 @@
 import { useState, type CSSProperties } from "react";
 import { MemoryArt } from "../home/memory-art";
-import type { ArtKind, Party } from "../home/types";
+import type { Party } from "../home/types";
 import { CAVEAT, FRAUNCES, KARLA, NAVY, PAPER, s } from "../home/units";
 import { FILM } from "../daily5/polaroid";
+import { HeaderPicture, type HeaderPane } from "../shared/header-photo";
 import { PartyAvatar } from "./avatar";
-import type { ThreadHeaderArt, ThreadMessage } from "./types";
+import type { ThreadMessage } from "./types";
 
 type ChatThreadProps = {
   party: Party;
-  headerArt: ThreadHeaderArt;
+  /** Left and right halves: a group's first photo together and last time together (GP-12), a friend's now and then. */
+  panes: readonly [HeaderPane, HeaderPane];
   messages: readonly ThreadMessage[];
   delivered: boolean;
   onBack: () => void;
   onSendText: (text: string) => void;
-  /** Groups only: tapping the header logo changes it (docs/specs/group-logo.md, LOGO-4). */
-  onChangeLogo?: () => void;
+  /** Groups only: the header logo and name open the group's profile (docs/specs/group-profile.md, GP-1). */
+  onOpenProfile?: () => void;
 };
 
 const roundButton: CSSProperties = {
@@ -33,8 +35,8 @@ const roundButton: CSSProperties = {
 const theirBubble: CSSProperties = { padding: `${s(9)} ${s(13)}`, borderRadius: `${s(18)} ${s(18)} ${s(18)} ${s(5)}`, background: PAPER, border: `${s(1.5)} solid #DCCB9A`, fontSize: s(15), lineHeight: 1.25 };
 const myBubble: CSSProperties = { padding: `${s(9)} ${s(13)}`, borderRadius: `${s(18)} ${s(18)} ${s(5)} ${s(18)}`, background: "#C8432B", color: "#FFF6DA", fontSize: s(15), lineHeight: 1.25 };
 
-/** One chat (docs/specs/messages.md, MSG-3): now/then header, bubbles, composer. */
-export function ChatThread({ party, headerArt, messages, delivered, onBack, onSendText, onChangeLogo }: ChatThreadProps) {
+/** One chat (docs/specs/messages.md, MSG-3): the two-photo header, bubbles, composer. */
+export function ChatThread({ party, panes, messages, delivered, onBack, onSendText, onOpenProfile }: ChatThreadProps) {
   const [draft, setDraft] = useState("");
   const group = party.kind === "group";
 
@@ -44,10 +46,10 @@ export function ChatThread({ party, headerArt, messages, delivered, onBack, onSe
       style={{ background: "linear-gradient(#F6ECCD, #F1E2B8)", fontFamily: KARLA, color: NAVY } as CSSProperties}
     >
       <div className="flex min-h-0 flex-1 flex-col" style={{ width: s(390), margin: "0 auto" }}>
-        <div style={{ position: "relative", flex: "none", height: s(232) }}>
+        <header aria-label={`${party.name} header`} style={{ position: "relative", flex: "none", height: s(232) }}>
           <div style={{ display: "flex", gap: s(2), height: s(172), background: NAVY }}>
-            <HeaderPane art={headerArt[0]} label={`${party.name} now`} />
-            <HeaderPane art={headerArt[1]} label={`${party.name} then`} then />
+            <HeaderPicture pane={panes[0]} />
+            <HeaderPicture pane={panes[1]} />
           </div>
           <div aria-hidden="true" style={{ height: s(7), display: "flex", borderTop: `${s(2)} solid ${NAVY}`, borderBottom: `${s(2)} solid ${NAVY}` }}>
             <span style={{ flex: 1, background: "#C8432B" }} />
@@ -60,11 +62,11 @@ export function ChatThread({ party, headerArt, messages, delivered, onBack, onSe
             </svg>
           </button>
           <div style={{ position: "absolute", left: "50%", top: s(140), translate: "-50% 0", width: s(72), height: s(72), borderRadius: "50%", background: PAPER, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 ${s(4)} ${s(10)} rgba(27,31,52,.4)` }}>
-            {onChangeLogo ? (
+            {onOpenProfile ? (
               <button
                 type="button"
-                aria-label={`Change ${party.name} logo`}
-                onClick={onChangeLogo}
+                aria-label={`Open ${party.name} profile`}
+                onClick={onOpenProfile}
                 style={{ padding: 0, border: 0, borderRadius: "50%", background: "none", cursor: "pointer" }}
               >
                 <PartyAvatar party={party} size={58} />
@@ -74,7 +76,16 @@ export function ChatThread({ party, headerArt, messages, delivered, onBack, onSe
             )}
           </div>
           <h1 style={{ position: "absolute", left: 0, right: 0, top: s(214), margin: 0, textAlign: "center", fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(15) }}>{party.name}</h1>
-        </div>
+          {/* The name is a tap target too, laid over the heading so the heading stays just the name. */}
+          {onOpenProfile && (
+            <button
+              type="button"
+              aria-label={`Open ${party.name} profile`}
+              onClick={onOpenProfile}
+              style={{ position: "absolute", left: "50%", top: s(208), translate: "-50% 0", width: s(220), height: s(30), padding: 0, border: 0, background: "none", cursor: "pointer" }}
+            />
+          )}
+        </header>
 
         <div role="log" aria-label="Conversation" style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: `${s(14)} ${s(14)} ${s(12)}`, display: "flex", flexDirection: "column", gap: s(5) }}>
           {messages.map((m) => (
@@ -126,15 +137,6 @@ export function ChatThread({ party, headerArt, messages, delivered, onBack, onSe
   );
 }
 
-/** Placeholder for the circle's photo now / way back then: a memory's art, the "then" one faded. */
-function HeaderPane({ art, label, then }: { art: ArtKind; label: string; then?: boolean }) {
-  return (
-    <svg role="img" aria-label={label} viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" style={{ display: "block", flex: 1, height: "100%", filter: then ? "sepia(.35) saturate(.9) contrast(1.03)" : undefined }}>
-      <MemoryArt kind={art} cx={50} cy={50} R={50} />
-    </svg>
-  );
-}
-
 function SenderAvatar({ sender }: { sender?: ThreadMessage["sender"] }) {
   if (!sender) return <span style={{ flex: "none", width: s(30) }} />;
   const { skin, hair, shirt, bg } = sender.look;
@@ -161,6 +163,10 @@ function MemoryBubble({ m }: { m: Extract<ThreadMessage, { kind: "memory" }> }) 
         {m.src ? (
           // eslint-disable-next-line @next/next/no-img-element -- local blob: URL
           <img src={m.src} alt="" style={{ display: "block", width: "100%", height: s(132), objectFit: "cover", filter: FILM }} />
+        ) : m.art ? (
+          <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true" style={{ display: "block", width: "100%", height: s(132), filter: FILM }}>
+            <MemoryArt kind={m.art} cx={50} cy={50} R={50} />
+          </svg>
         ) : (
           <div aria-hidden="true" style={{ height: s(132), background: "#1A1714" }} />
         )}

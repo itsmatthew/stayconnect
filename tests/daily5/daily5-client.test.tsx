@@ -68,4 +68,26 @@ describe("Daily 5, wired (D5-6/8/12, MSG-4)", () => {
     const list = within(screen.getByRole("list", { name: "Chats" })).getAllByRole("button");
     expect(list.at(-1)!.getAttribute("aria-label")).toBe("Work Mates, nothing new");
   });
+
+  it("a memory sent from a photo dated by its file says so; others don't (D5-4, GP-6)", async () => {
+    const send = async () => {
+      const cards = await screen.findAllByRole("article");
+      fireEvent.click(within(cards[0]).getByRole("button", { name: "Send this photo to someone" }));
+      const sheet = screen.getByRole("dialog", { name: "Send this to…" });
+      fireEvent.click(within(sheet).getByRole("button", { name: "Send to Work Mates" }));
+      fireEvent.click(within(sheet).getByRole("button", { name: "Send" }));
+      return (JSON.parse(localStorage.getItem(chatStorageKey(demoData.storageSuffix))!) as ChatState).sealed[0];
+    };
+    renderDaily5();
+    expect((await send()).fileDated).toBeUndefined();
+    cleanup();
+    localStorage.clear();
+    store.close();
+    dbName = `client-test-${++n}`;
+    store = await openPhotoStore(dbName);
+    for (let i = 0; i < 8; i++) await store.add({ pool: "mine", fileKey: `m${i}`, takenAt: OLD + i, fileDated: true, image: new Blob([`m${i}`]) });
+    for (let i = 0; i < 8; i++) await store.add({ pool: "family", fileKey: `f${i}`, takenAt: OLD + i, fileDated: true, image: new Blob([`f${i}`]) });
+    renderDaily5();
+    expect((await send()).fileDated).toBe(true);
+  });
 });

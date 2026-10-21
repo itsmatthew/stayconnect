@@ -44,6 +44,15 @@ describe("placeholder data (HOME-1)", () => {
     }
   });
 
+  it("seeds both header photos for every group, as dated art, first before last (GP-12)", () => {
+    for (const g of placeholderGroups) {
+      expect(g.firstPhoto?.art).toBeTruthy();
+      expect(g.lastPhoto?.art).toBeTruthy();
+      expect(g.firstPhoto!.takenAt!).toBeLessThan(g.lastPhoto!.takenAt!);
+      expect(g.firstPhoto?.src).toBeUndefined();
+    }
+  });
+
   it("has a few friends, some of them closest, plus seed conversations and replies in the same file", () => {
     expect(friends.length).toBeGreaterThanOrEqual(4);
     expect(new Set(friends.map((f) => f.id)).size).toBe(friends.length);
