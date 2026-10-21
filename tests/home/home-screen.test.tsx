@@ -142,8 +142,11 @@ describe("Home — Your Circles", () => {
     expect(circles.getAttribute("aria-pressed")).toBe("true");
     expect(circle.getAttribute("aria-pressed")).toBe("false");
     fireEvent.click(circle);
-    expect(circles.getAttribute("aria-pressed")).toBe("false");
-    expect(circle.getAttribute("aria-pressed")).toBe("true");
+    // "your circle" swaps in the private tree (CIRCLE-1), with the same toggle on top.
+    const now = document.querySelector("[data-layout='phone']") as HTMLElement;
+    expect(within(now).getByRole("button", { name: "your circles" }).getAttribute("aria-pressed")).toBe("false");
+    expect(within(now).getByRole("button", { name: "your circle" }).getAttribute("aria-pressed")).toBe("true");
+    expect(within(now).getByRole("group", { name: "Your circle tree" })).toBeTruthy();
   });
 
   it("has the header and nav, with the current tab marked, in both layouts (HOME-6)", () => {

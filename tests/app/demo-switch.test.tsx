@@ -44,6 +44,7 @@ describe("the switch (DEMO-1)", () => {
     expect(emptyData.replies).toEqual([]);
     expect(emptyData.posts(NOW)).toEqual([]);
     expect(emptyData.viewerOf).toEqual([]);
+    expect(emptyData.rings).toEqual({});
   });
 });
 
@@ -69,6 +70,12 @@ describe("empty states with the switch off (DEMO-2)", () => {
     expect(screen.getByText("Your circles grow when someone sends you a memory — or send one first")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Go to Daily 5" }));
     expect(screen.getByRole("heading", { name: "Daily 5" })).toBeTruthy();
+  });
+
+  it("Your circle: an empty tree that fills as you connect (CIRCLE-11)", () => {
+    renderOff("Circles");
+    fireEvent.click(screen.getByRole("button", { name: "your circle" }));
+    expect(screen.getAllByText("Your circle fills as you connect with people").length).toBeGreaterThan(0);
   });
 
   it("Messages: no messages yet", () => {
@@ -112,6 +119,8 @@ describe("no placeholder data anywhere (DEMO-4)", () => {
 
   it("on every tab, and in what's saved", async () => {
     renderOff("Circles");
+    fireEvent.click(screen.getByRole("button", { name: "your circle" }));
+    expect(visibleText()).not.toMatch(placeholder);
     for (const tab of ["Circles", "Daily 5", "Archive", "Messages", "Me"]) {
       tap(tab);
       if (tab === "Archive") await screen.findByRole("region", { name: "Photo of the week" });

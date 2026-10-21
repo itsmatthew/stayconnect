@@ -1,12 +1,17 @@
+import { CircleToggle, type CirclesView } from "./circle-toggle";
 import { FRAUNCES, NAVY, s } from "./units";
 import type { NavProps } from "./main-nav";
 import { TabFrame } from "../shell/tab-frame";
 
-/** Home with no circles yet (docs/specs/home.md, HOME-12): one young sapling, and a way to send a first memory. */
-export function HomeEmpty({ nav, onDaily5 }: { nav: NavProps; onDaily5: () => void }) {
+type HomeEmptyProps = { nav: NavProps; onDaily5: () => void; view: CirclesView; onViewChange: (v: CirclesView) => void };
+
+/** Home with no circles yet (docs/specs/home.md, HOME-12): one young sapling, and a way to send a first memory. The toggle still leads to Your circle. */
+export function HomeEmpty({ nav, onDaily5, view, onViewChange }: HomeEmptyProps) {
   return (
     <TabFrame nav={nav}>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: `${s(72)} ${s(28)} ${s(32)}`, textAlign: "center" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: `${s(24)} ${s(28)} ${s(32)}`, textAlign: "center" }}>
+        <CircleToggle value={view} onChange={onViewChange} />
+        <div style={{ height: s(48) }} />
         <Sapling />
         <p style={{ margin: `${s(22)} 0 0`, fontFamily: FRAUNCES, fontWeight: 700, fontSize: s(20), lineHeight: 1.3, letterSpacing: s(-0.2) }}>
           Your circles grow when someone sends you a memory — or send one first
