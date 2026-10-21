@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type CSSProperties, type PointerEve
 import "./circle.css";
 import { faceGradient } from "../messages/avatar";
 import { FRAUNCES, s } from "../home/units";
+import { giftSpots, GROUND, LID_OVERHANG, moreChip, pileBox } from "./gift-layout";
 import { BANDS, LABELS, layoutRing, ringAt, TREE_BOX } from "./ring-layout";
 import { RINGS, type CirclePerson, type Ring } from "./types";
 
@@ -223,13 +224,7 @@ export function CircleTree({ people, gifts, onOpenChat, onMove }: CircleTreeProp
         );
       })}
 
-      {gifts.length > 0 && (
-        <span
-          role="img"
-          aria-label={`${gifts.length} ${gifts.length === 1 ? "gift" : "gifts"} received`}
-          style={{ position: "absolute", left: s(PILE_BOX.x + TREE_BOX.cx - 195), top: s(PILE_BOX.y + TREE_BOX.cy - 318), width: s(PILE_BOX.w), height: s(PILE_BOX.h), pointerEvents: "none" }}
-        />
-      )}
+      {gifts.length > 0 && <PileLabel count={gifts.length} />}
 
       <div role="status" aria-live="polite" style={{ position: "absolute", left: 0, width: "100%", top: s(TREE_BOX.cy + BANDS.bloom.outer + 6), textAlign: "center", pointerEvents: "none" }}>
         {announcement && (
@@ -253,18 +248,6 @@ const dot = (x: number, y: number, size: number): CSSProperties => ({
   border: 0,
 });
 
-/**
- * Where a gift box sits under the trunk (reference canvas px), front first: the newest gift takes slot 0.
- * High enough that the phone card (top ≈ 556) doesn't hide them.
- */
-const GIFT_SLOTS: readonly { x: number; y: number; w: number; h: number }[] = [
-  { x: 128, y: 516, w: 34, h: 26 },
-  { x: 178, y: 518, w: 28, h: 22 },
-  { x: 92, y: 508, w: 30, h: 24 },
-  { x: 150, y: 504, w: 26, h: 20 },
-];
-/** The pile's footprint, for its accessible label. */
-const PILE_BOX = { x: 88, y: 498, w: 152, h: 56 };
 /** Wrapping paper from the reference: box, lid, outline, ribbon. */
 const WRAPS: readonly (readonly [string, string, string, string])[] = [
   ["#C8402D", "#E0553C", "#6E1D13", "#F7CB4D"],
@@ -274,6 +257,18 @@ const WRAPS: readonly (readonly [string, string, string, string])[] = [
   ["#7A4E8C", "#9668A8", "#432650", "#F4E9C8"],
   ["#E49B2E", "#F2B546", "#8F5A12", "#B43A2A"],
 ];
+/** Names the pile for screen readers, over the boxes' footprint (the SVG itself is hidden). */
+function PileLabel({ count }: { count: number }) {
+  const b = pileBox(count);
+  return (
+    <span
+      role="img"
+      aria-label={`${count} ${count === 1 ? "gift" : "gifts"} received`}
+      style={{ position: "absolute", left: s(b.x + TREE_BOX.cx - 195), top: s(b.y + TREE_BOX.cy - 318), width: s(b.w), height: s(b.h), pointerEvents: "none" }}
+    />
+  );
+}
+
 /** A gift keeps its wrapping however the pile shifts. */
 const wrapOf = (id: string) => WRAPS[[...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % WRAPS.length];
 
@@ -282,30 +277,35 @@ const wrapOf = (id: string) => WRAPS[[...id].reduce((h, c) => (h * 31 + c.charCo
  * TODO(re-evaluate when the memory mailbox is built): gifts can't be opened yet; this pile is where the mailbox goes.
  */
 function GiftPile({ gifts }: { gifts: readonly { id: string }[] }) {
-  const shown = gifts.slice(0, GIFT_SLOTS.length);
-  const more = gifts.length - shown.length;
+  const spots = giftSpots(gifts.length);
+  const more = gifts.length - spots.length;
+  const chip = moreChip();
   return (
     <g data-gift-pile="">
-      {/* Back to front, so the newest is drawn last. */}
-      {shown
-        .map((g, i) => ({ g, slot: GIFT_SLOTS[i] }))
+      {/* Back to front: the outermost first, so the newest (nearest the trunk) is drawn last. */}
+      {spots
+        .map((spot, i) => ({ g: gifts[i], spot }))
         .reverse()
-        .map(({ g, slot: { x, y, w, h } }) => {
+        .map(({ g, spot: { x, w, h } }) => {
           const [box, lid, line, ribbon] = wrapOf(g.id);
           return (
-            <g key={g.id} data-gift={g.id} transform={`translate(${x} ${y})`}>
-              <rect x="0" y="10" width={w} height={h} rx="3" fill={box} stroke={line} strokeWidth="1.5" />
-              <rect x={w / 2 - 4} y="10" width="8" height={h} fill={ribbon} />
-              <rect x="-3" y="4" width={w + 6} height="9" rx="2.5" fill={lid} stroke={line} strokeWidth="1.5" />
-              <rect x={w / 2 - 4} y="4" width="8" height="9" fill={ribbon} />
-              <path transform={`translate(${w / 2} 4)`} d="M0 0c-4-13-13-11-10-4 2 4 6 4 10 4zm0 0c4-13 13-11 10-4-2 4-6 4-10 4z" fill={ribbon} stroke={line} strokeWidth="1.1" />
+            <g key={g.id} data-gift={g.id}>
+              <ellipse cx={x + w / 2} cy={GROUND} rx={w / 2 + 5} ry="3" fill="#3F5A22" opacity=".35" />
+              <g transform={`translate(${x} ${GROUND - h - 10})`}>
+                <rect x="0" y="10" width={w} height={h} rx="3" fill={box} stroke={line} strokeWidth="1.5" />
+                <rect x={w / 2 - 3.5} y="10" width="7" height={h} fill={ribbon} />
+                <rect x={-LID_OVERHANG} y="4" width={w + 2 * LID_OVERHANG} height="8" rx="2.5" fill={lid} stroke={line} strokeWidth="1.5" />
+                <rect x={w / 2 - 3.5} y="4" width="7" height="8" fill={ribbon} />
+                <path transform={`translate(${w / 2} 4) scale(.85)`} d="M0 0c-4-13-13-11-10-4 2 4 6 4 10 4zm0 0c4-13 13-11 10-4-2 4-6 4-10 4z" fill={ribbon} stroke={line} strokeWidth="1.2" />
+              </g>
             </g>
           );
         })}
       {more > 0 && (
-        <g data-gift-more="" transform="translate(212 532)">
-          <rect width="26" height="16" rx="8" fill="#2B3350" stroke="#FFF3C4" strokeWidth="1.2" />
-          <text x="13" y="11.5" textAnchor="middle" fontSize="10" fontWeight="800" fill="#F7CB4D" fontFamily="var(--font-karla), system-ui, sans-serif">
+        <g data-gift-more="" transform={`translate(${chip.x} ${chip.y})`}>
+          <ellipse cx={chip.w / 2} cy={chip.h} rx={chip.w / 2 + 3} ry="2.5" fill="#3F5A22" opacity=".35" />
+          <rect width={chip.w} height={chip.h} rx={chip.h / 2} fill="#2B3350" stroke="#FFF3C4" strokeWidth="1.2" />
+          <text x={chip.w / 2} y={chip.h / 2 + 3.5} textAnchor="middle" fontSize="9.5" fontWeight="800" fill="#F7CB4D" fontFamily="var(--font-karla), system-ui, sans-serif">
             +{more}
           </text>
         </g>

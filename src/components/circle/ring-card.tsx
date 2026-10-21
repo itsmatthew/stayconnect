@@ -43,13 +43,13 @@ export function RingCard({ people, crowded, suggestion, onAcceptSuggestion, onDi
         position: "relative",
         boxSizing: "border-box",
         width: s(362),
-        padding: `${s(10)} ${s(12)}`,
+        padding: `${s(9)} ${s(12)}`,
         borderRadius: s(18),
         background: PAPER,
         border: `${s(2)} solid ${NAVY}`,
         display: "flex",
         flexDirection: "column",
-        gap: s(7),
+        gap: s(6),
         fontFamily: KARLA,
         color: NAVY,
       }}
@@ -101,32 +101,32 @@ export function RingCard({ people, crowded, suggestion, onAcceptSuggestion, onDi
         })}
       </div>
 
-      <div style={{ fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 500, fontSize: s(14), paddingLeft: s(2) }}>{BLURBS[ring]}</div>
+      <div style={{ fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 500, fontSize: s(14), lineHeight: 1.2, paddingLeft: s(2) }}>{BLURBS[ring]}</div>
       {crowded.includes(ring) && <div style={{ fontSize: s(11.5), fontWeight: 700, color: "#8E2A1E", paddingLeft: s(2) }}>{NOTES[ring]}</div>}
       {nobody && <div style={{ fontSize: s(12), fontWeight: 600, paddingLeft: s(2) }}>Your circle fills as you connect with people</div>}
 
       <div style={{ display: "flex", alignItems: "flex-start", gap: s(8) }}>
-        <ul aria-label="People in this ring" style={{ display: "flex", gap: s(8), margin: 0, padding: `${s(2)} ${s(2)} ${s(4)}`, listStyle: "none", overflowX: "auto", flex: "0 1 auto", minWidth: 0 }}>
+        <ul aria-label="People in this ring" style={{ display: "flex", gap: s(8), margin: 0, padding: `${s(1)} ${s(2)} ${s(2)}`, listStyle: "none", overflowX: "auto", flex: "0 1 auto", minWidth: 0 }}>
           {theirs.map((p) => (
             <li key={p.id}>
               <button type="button" aria-haspopup="menu" onClick={() => setMenuFor(p)} style={personButton}>
                 <Face person={p} />
-                <span style={{ fontSize: s(11), fontWeight: 700 }}>{p.name}</span>
+                <span style={{ fontSize: s(11), lineHeight: 1.1, fontWeight: 700 }}>{p.name}</span>
               </button>
             </li>
           ))}
         </ul>
-        <button type="button" aria-label={`Add to ${RING_NAMES[ring]}`} onClick={() => setAdding(true)} style={{ ...personButton, flex: "none", paddingTop: s(2) }}>
+        <button type="button" aria-label={`Add to ${RING_NAMES[ring]}`} onClick={() => setAdding(true)} style={{ ...personButton, flex: "none", paddingTop: s(1) }}>
           <span aria-hidden="true" style={{ width: s(44), height: s(44), boxSizing: "border-box", borderRadius: "50%", border: `${s(2)} dashed ${NAVY}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <svg width={s(16)} height={s(16)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round">
               <path d="M12 5v14M5 12h14" />
             </svg>
           </span>
-          <span style={{ fontSize: s(11), fontWeight: 700 }}>add</span>
+          <span style={{ fontSize: s(11), lineHeight: 1.1, fontWeight: 700 }}>add</span>
         </button>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: s(5), fontSize: s(10.5), fontWeight: 500, color: "#3F4664", paddingLeft: s(2) }}>
+      <div style={{ display: "flex", alignItems: "center", gap: s(5), fontSize: s(10.5), lineHeight: 1.2, fontWeight: 500, color: "#3F4664", paddingLeft: s(2) }}>
         <svg width={s(11)} height={s(11)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <rect x="5" y="11" width="14" height="9" rx="2" />
           <path d="M8 11V8a4 4 0 0 1 8 0v3" />
@@ -193,7 +193,7 @@ function AddChoices({ people, onPick }: { people: readonly CirclePerson[]; onPic
       {people.map((p) => (
         <button key={p.id} type="button" aria-label={p.ring ? `${p.name}, in ${RING_NAMES[p.ring]}` : p.name} onClick={() => onPick(p.id)} style={personButton}>
           <Face person={p} />
-          <span style={{ fontSize: s(11), fontWeight: 700 }}>{p.name}</span>
+          <span style={{ fontSize: s(11), lineHeight: 1.1, fontWeight: 700 }}>{p.name}</span>
           {p.ring && <span style={{ fontSize: s(9.5), fontWeight: 600, opacity: 0.75 }}>in {RING_NAMES[p.ring]}</span>}
         </button>
       ))}
