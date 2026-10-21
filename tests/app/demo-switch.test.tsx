@@ -4,10 +4,11 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { AppClient } from "@/app/intro/app-client";
-import { emptyData } from "@/app/intro/app-data";
+import { demoData, emptyData } from "@/app/intro/app-data";
 import { openArchiveStore } from "@/app/intro/archive/archive-store";
 import { openPhotoStore } from "@/app/intro/daily5/photo-store";
 import { demoDataEnabled } from "@/app/intro/demo";
+import { ORNAMENT_DB, openOrnamentStore } from "@/app/intro/ornaments/ornament-store";
 import { friends, placeholderGroups, placeholderPosts, placeholderReplies, seedConversations } from "@/app/intro/placeholder-data";
 
 const NOW = new Date(2026, 9, 20, 12).getTime();
@@ -95,6 +96,36 @@ describe("empty states with the switch off (DEMO-2)", () => {
     const items = within(await screen.findByRole("list", { name: "Your 65 for 2026" })).getAllByRole("listitem");
     expect(items).toHaveLength(66);
     for (const i of items) expect(i.getAttribute("aria-label")).toMatch(/waiting to be filled$/);
+  });
+});
+
+describe("demo and real ornaments never mix (DEMO-3, HOME-18)", () => {
+  const renderWith = (data: typeof demoData) => {
+    const id = ++n;
+    const openOrnaments = vi.fn((name: string) => openOrnamentStore(`${name}-${id}`));
+    render(
+      <AppClient
+        data={data}
+        now={() => NOW}
+        openStore={() => openPhotoStore(`demo-orn-photos-${id}`)}
+        openArchive={() => openArchiveStore(`demo-orn-archive-${id}`)}
+        openOrnaments={openOrnaments}
+        hasFace={async () => true}
+      />,
+    );
+    return openOrnaments;
+  };
+
+  it("with the switch on, ornaments are stored under a .demo name", async () => {
+    const open = renderWith(demoData);
+    await waitFor(() => expect(open).toHaveBeenCalledWith(`${ORNAMENT_DB}.demo`));
+    expect(screen.getAllByRole("button", { name: /^Change ornament / }).length).toBeGreaterThan(0);
+  });
+
+  it("with it off, there's nothing to change and the name has no suffix", async () => {
+    const open = renderWith(emptyData);
+    await waitFor(() => expect(open).toHaveBeenCalledWith(ORNAMENT_DB));
+    expect(screen.queryAllByRole("button", { name: /^Change ornament / })).toEqual([]);
   });
 });
 

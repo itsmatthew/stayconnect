@@ -28,7 +28,7 @@ describe("Home — Your Circles", () => {
     expect(cardName(phone)).toBe("Hoops Since ’14");
     expect(c.textContent).toContain("5");
     expect(c.textContent).toContain("FRIENDS");
-    expect(within(c).getByRole("link", { name: "swap photos" })).toBeTruthy();
+    expect(within(c).getByRole("button", { name: "swap photos" })).toBeTruthy();
     for (const caption of ["buzzer beater", "the 6am run", "post-game tacos"]) {
       expect(c.textContent!.replace(/\s+/g, " ")).toContain(caption);
     }
