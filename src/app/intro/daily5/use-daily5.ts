@@ -18,8 +18,15 @@ export type Daily5State = {
 /**
  * Wires the pure Daily 5 rules to the photo store (docs/specs/daily5.md, D5-2/6–8):
  * re-shows the day's saved set or picks a new one, imports into pools, and turns stored images into URLs.
+ * Each refresh and import goes through `track`, so the store's owner closes it only after their writes (cached face
+ * results, the day's set, imported photos) have finished.
  */
-export function useDaily5(store: PhotoStore | null, now: () => number, hasFace: (image: Blob) => Promise<boolean>) {
+export function useDaily5(
+  store: PhotoStore | null,
+  now: () => number,
+  hasFace: (image: Blob) => Promise<boolean>,
+  track: (work: Promise<void>) => Promise<void> = (work) => work,
+) {
   const [state, setState] = useState<Daily5State>(() => ({
     loading: true,
     dateKey: localDateKey(new Date(now())),
@@ -29,7 +36,7 @@ export function useDaily5(store: PhotoStore | null, now: () => number, hasFace: 
   const urls = useRef<string[]>([]);
   const dayIds = useRef<string[] | undefined>(undefined);
 
-  const refresh = useCallback(async () => {
+  const load = useCallback(async () => {
     if (!store) return;
     const today = new Date(now());
     const dateKey = localDateKey(today);
@@ -73,6 +80,7 @@ export function useDaily5(store: PhotoStore | null, now: () => number, hasFace: 
       },
     }));
   }, [store, now, hasFace]);
+  const refresh = useCallback(() => track(load()), [track, load]);
 
   useEffect(() => {
     // Loading from IndexedDB is the external system this effect syncs with.
@@ -92,16 +100,19 @@ export function useDaily5(store: PhotoStore | null, now: () => number, hasFace: 
   useEffect(() => () => urls.current.forEach((u) => URL.revokeObjectURL(u)), []);
 
   const addFiles = useCallback(
-    async (pool: PoolId, files: File[]) => {
-      if (!store) return;
-      const setPool = (patch: Partial<PoolState>) =>
-        setState((s) => ({ ...s, pools: { ...s.pools, [pool]: { ...s.pools[pool], ...patch } } }));
-      const result = await importPhotos(files, pool, store, { onProgress: (progress) => setPool({ progress }) });
-      setPool({ progress: undefined, skipped: result.skipped, count: (await store.counts())[pool] });
-      // The day's set is fixed once full; until then, new photos can fill it.
-      if (needsNewPick(dayIds.current)) await refresh();
-    },
-    [store, refresh],
+    (pool: PoolId, files: File[]) =>
+      track(
+        (async () => {
+          if (!store) return;
+          const setPool = (patch: Partial<PoolState>) =>
+            setState((s) => ({ ...s, pools: { ...s.pools, [pool]: { ...s.pools[pool], ...patch } } }));
+          const result = await importPhotos(files, pool, store, { onProgress: (progress) => setPool({ progress }) });
+          setPool({ progress: undefined, skipped: result.skipped, count: (await store.counts())[pool] });
+          // The day's set is fixed once full; until then, new photos can fill it.
+          if (needsNewPick(dayIds.current)) await refresh();
+        })(),
+      ),
+    [store, refresh, track],
   );
 
   return { state, addFiles };

@@ -38,9 +38,21 @@ type AppClientProps = {
   crop?: (image: Blob, area: CropArea | undefined, max: number) => Promise<Blob>;
 };
 
-/** Opens a store once, closes it on unmount (or if it arrives after unmount). */
-function useStore<T extends { close(): void }>(open: () => Promise<T>): T | null {
+/** Work on a store that must finish before it closes. */
+export type TrackStoreWork = (work: Promise<void>) => Promise<void>;
+
+/**
+ * Opens a store once, closes it on unmount (or if it arrives after unmount). Work passed to `track` keeps it open
+ * until that work settles, so a write started before unmount never hits a closed database.
+ */
+function useStore<T extends { close(): void }>(open: () => Promise<T>): [T | null, TrackStoreWork] {
   const [store, setStore] = useState<T | null>(null);
+  const [inFlight] = useState(() => new Set<Promise<void>>());
+  const [track] = useState(() => (work: Promise<void>) => {
+    inFlight.add(work);
+    work.finally(() => inFlight.delete(work)).catch(() => {});
+    return work;
+  });
   useEffect(() => {
     let opened: T | null = null;
     let live = true;
@@ -51,10 +63,11 @@ function useStore<T extends { close(): void }>(open: () => Promise<T>): T | null
     });
     return () => {
       live = false;
-      opened?.close();
+      const s = opened;
+      if (s) Promise.allSettled(inFlight).then(() => s.close());
     };
-  }, [open]);
-  return store;
+  }, [open, inFlight]);
+  return [store, track];
 }
 
 /**
@@ -74,9 +87,9 @@ export function AppClient({
   crop = cropSquare,
 }: AppClientProps) {
   const [tab, setTab] = useState<NavLabel>(initialTab);
-  const store = useStore(openStore);
+  const [store, trackStoreWork] = useStore(openStore);
   const [openArchiveNamed] = useState(() => () => openArchive(ARCHIVE_DB + data.storageSuffix));
-  const archive = useStore(openArchiveNamed);
+  const [archive] = useStore(openArchiveNamed);
   const [openOrnamentsNamed] = useState(() => () => openOrnaments(ORNAMENT_DB + data.storageSuffix));
   const ornaments = useOrnaments(openOrnamentsNamed);
   const homeGroups = useMemo(() => withOrnaments(data.groups, ornaments.state, ornaments.urls), [data.groups, ornaments.state, ornaments.urls]);
@@ -140,7 +153,7 @@ export function AppClient({
         />
       );
     case "Daily 5":
-      return <Daily5Client store={store} now={now} hasFace={hasFace} recipients={recipients} dispatch={dispatch} nav={nav} />;
+      return <Daily5Client store={store} track={trackStoreWork} now={now} hasFace={hasFace} recipients={recipients} dispatch={dispatch} nav={nav} />;
     case "Archive":
       return <ArchiveClient data={data} now={now} store={archive} readCapture={readCapture} decode={decode} nav={nav} />;
     case "Messages":

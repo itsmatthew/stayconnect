@@ -1,6 +1,6 @@
 import "fake-indexeddb/auto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { AppClient } from "@/app/intro/app-client";
 import { openPhotoStore, type PhotoStore } from "@/app/intro/daily5/photo-store";
 import { chatStorageKey } from "@/app/intro/messages/use-chat";
@@ -89,5 +89,27 @@ describe("Daily 5, wired (D5-6/8/12, MSG-4)", () => {
     for (let i = 0; i < 8; i++) await store.add({ pool: "family", fileKey: `f${i}`, takenAt: OLD + i, fileDated: true, image: new Blob([`f${i}`]) });
     renderDaily5();
     expect((await send()).fileDated).toBe(true);
+  });
+
+  it("closing mid-pick still caches face results and saves the day's set before the store closes (D5-3, D5-8)", async () => {
+    let release: (() => void) | null = null;
+    const hasFace = vi.fn(async () => {
+      if (hasFace.mock.calls.length === 1) await new Promise<void>((r) => (release = r));
+      return true;
+    });
+    let close = vi.fn();
+    const openStore = async () => {
+      const s = await openPhotoStore(dbName);
+      close = vi.fn(s.close);
+      return { ...s, close };
+    };
+    const { unmount } = render(<AppClient initialTab="Daily 5" data={demoData} now={() => NOW} openStore={openStore} hasFace={hasFace} />);
+    await waitFor(() => expect(release).not.toBeNull());
+    unmount();
+    release!();
+
+    await waitFor(() => expect(close).toHaveBeenCalled());
+    expect(await store.getDay("2026-10-14")).toHaveLength(5);
+    expect((await store.list()).filter((p) => p.hasFace === true).length).toBeGreaterThanOrEqual(5);
   });
 });
