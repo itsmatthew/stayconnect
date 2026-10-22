@@ -3,11 +3,11 @@
 import { useMemo, useState } from "react";
 import type { NavProps } from "@/components/home/main-nav";
 import type { CircleGroup, Friend, Party } from "@/components/home/types";
-import { ChatThread } from "@/components/messages/chat-thread";
+import { ChatThread, type ThreadPane } from "@/components/messages/chat-thread";
 import { LogoSheet } from "@/components/messages/logo-sheet";
 import { MessagesScreen } from "@/components/messages/messages-screen";
 import type { ChatRow, ThreadMessage } from "@/components/messages/types";
-import type { HeaderPane } from "@/components/shared/header-photo";
+import type { HeaderSlotName } from "@/components/profile/types";
 import type { PhotoStore } from "../daily5/photo-store";
 import { formatPhotoDate } from "../daily5/format";
 import { friendParty, groupParty } from "../parties";
@@ -159,6 +159,7 @@ export function MessagesClient({ chat, dispatch, now, store, groups, friends, re
           }}
           onSendText={(text) => dispatch({ type: "sendText", id: crypto.randomUUID(), conversationId: openId, text, at: now() })}
           onOpenProfile={group && profile ? () => setProfileOpen(true) : undefined}
+          onPickHeader={groupId && profile ? (slot, file) => void profile.setHeaderPhoto(groupId, slot, file) : undefined}
         />
         )}
         {logoOpen && group && groupId && (
@@ -196,11 +197,14 @@ export function MessagesClient({ chat, dispatch, now, store, groups, friends, re
 }
 
 /** A circle's header is its first photo together and last time together (GP-12); a friend's, placeholder people now and then. */
-function headerPanes(party: Party, groups: Map<string, CircleGroup>): readonly [HeaderPane, HeaderPane] {
+function headerPanes(party: Party, groups: Map<string, CircleGroup>): readonly [ThreadPane, ThreadPane] {
   const g = party.kind === "group" ? groups.get(party.id.slice("group:".length)) : undefined;
   if (g) {
     const { first, last } = headerSlots(g);
-    return [first.pane, last.pane];
+    return [
+      { ...first.pane, empty: !first.set },
+      { ...last.pane, empty: !last.set },
+    ];
   }
   return [
     { label: `${party.name} now`, art: "people" },
@@ -210,7 +214,7 @@ function headerPanes(party: Party, groups: Map<string, CircleGroup>): readonly [
 
 type ThreadProps = {
   party: Party;
-  panes: readonly [HeaderPane, HeaderPane];
+  panes: readonly [ThreadPane, ThreadPane];
   messages: readonly ChatMessage[];
   delivered: boolean;
   store: PhotoStore | null;
@@ -218,6 +222,7 @@ type ThreadProps = {
   onBack: () => void;
   onSendText: (text: string) => void;
   onOpenProfile?: () => void;
+  onPickHeader?: (slot: HeaderSlotName, file: File) => void;
 };
 
 function Thread({ messages, store, senderOf, ...rest }: ThreadProps) {

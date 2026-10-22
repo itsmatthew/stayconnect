@@ -143,11 +143,66 @@ describe("empty (GP-12)", () => {
     expect(profile().querySelectorAll("[data-empty]")).toHaveLength(2);
   });
 
-  it("the thread shows the group's art, with no instructions and no dates", () => {
+  it("the thread shows the group's art with a small “+ first photo together” / “+ last time together”, and no dates", () => {
     renderApp(unset);
     openThread();
     expect(first().querySelector("svg")).toBeTruthy();
-    expect(header().textContent).not.toMatch(/Add |oldest photo|since/);
+    expect(last().querySelector("svg")).toBeTruthy();
+    expect(header().textContent).toContain("+ first photo together");
+    expect(header().textContent).toContain("+ last time together");
+    expect(header().textContent).not.toMatch(/oldest photo|since/);
+  });
+});
+
+describe("in the thread (GP-1, GP-12)", () => {
+  const pickInThread = (label: string) => fireEvent.change(within(header()).getByLabelText(label), { target: { files: [new File(["x"], "pic.jpg", { type: "image/jpeg" })] } });
+
+  it("an empty half is a plain photo picker, and doesn't open the profile", () => {
+    renderApp(unset);
+    openThread();
+    for (const label of ["Add first photo together", "Add last time together"]) {
+      const input = within(header()).getByLabelText(label) as HTMLInputElement;
+      expect(input.type).toBe("file");
+      expect(input.accept).toBe("image/*");
+    }
+    // Only the logo and the name open the profile while both halves are empty.
+    expect(within(header()).getAllByRole("button", { name: "Open Madrid Crew profile" })).toHaveLength(2);
+  });
+
+  it("picking there saves it at once, downscaled, with its capture date, in the thread and on the profile", async () => {
+    const { decode } = renderApp(unset, async () => new Date(2012, 6, 4).getTime());
+    openThread();
+    pickInThread("Add first photo together");
+    await waitFor(() => expect(imageIn(first())).toMatch(/^blob:/));
+    expect(decode).toHaveBeenCalledTimes(1);
+    expect(first().textContent).toContain("since Jul 2012");
+    expect(header().textContent).not.toContain("+ first photo together");
+    expect(header().textContent).toContain("+ last time together");
+    toProfile();
+    expect(imageIn(first(profile()))).toMatch(/^blob:/);
+  });
+
+  it("a filled half opens the profile, like the logo and the name; changing it happens there", () => {
+    renderApp();
+    openThread();
+    expect(within(header()).queryByLabelText(/^Add (first photo|last time) together$/)).toBeNull();
+    for (const half of [first, last]) {
+      const button = half().closest("button");
+      expect(button?.getAttribute("aria-label")).toBe("Open Madrid Crew profile");
+      fireEvent.click(button!);
+      expect(profile()).toBeTruthy();
+      toChat();
+    }
+  });
+});
+
+describe("in the demo (GP-12)", () => {
+  it("Fall 24 starts with both halves empty, so the empty state shows in development", () => {
+    renderApp();
+    openThread("Fall 24");
+    const fall = screen.getByRole("banner", { name: "Fall 24 header" });
+    expect(fall.textContent).toContain("+ first photo together");
+    expect(fall.textContent).toContain("+ last time together");
   });
 });
 

@@ -3,20 +3,26 @@ import { MemoryArt } from "../home/memory-art";
 import type { Party } from "../home/types";
 import { CAVEAT, FRAUNCES, KARLA, NAVY, PAPER, s } from "../home/units";
 import { FILM } from "../daily5/polaroid";
-import { HeaderPicture, type HeaderPane } from "../shared/header-photo";
+import type { HeaderSlotName } from "../profile/types";
+import { HeaderPicture, PickArea, type HeaderPane } from "../shared/header-photo";
 import { PartyAvatar } from "./avatar";
 import type { ThreadMessage } from "./types";
+
+/** A header half; `empty` marks a group half nobody has set yet (GP-12), drawn as the group's art. */
+export type ThreadPane = HeaderPane & { empty?: boolean };
 
 type ChatThreadProps = {
   party: Party;
   /** Left and right halves: a group's first photo together and last time together (GP-12), a friend's now and then. */
-  panes: readonly [HeaderPane, HeaderPane];
+  panes: readonly [ThreadPane, ThreadPane];
   messages: readonly ThreadMessage[];
   delivered: boolean;
   onBack: () => void;
   onSendText: (text: string) => void;
   /** Groups only: the header logo and name open the group's profile (docs/specs/group-profile.md, GP-1). */
   onOpenProfile?: () => void;
+  /** Groups only: an empty header half picks its photo here (GP-12). */
+  onPickHeader?: (slot: HeaderSlotName, file: File) => void;
 };
 
 const roundButton: CSSProperties = {
@@ -36,7 +42,7 @@ const theirBubble: CSSProperties = { padding: `${s(9)} ${s(13)}`, borderRadius: 
 const myBubble: CSSProperties = { padding: `${s(9)} ${s(13)}`, borderRadius: `${s(18)} ${s(18)} ${s(5)} ${s(18)}`, background: "#C8432B", color: "#FFF6DA", fontSize: s(15), lineHeight: 1.25 };
 
 /** One chat (docs/specs/messages.md, MSG-3): the two-photo header, bubbles, composer. */
-export function ChatThread({ party, panes, messages, delivered, onBack, onSendText, onOpenProfile }: ChatThreadProps) {
+export function ChatThread({ party, panes, messages, delivered, onBack, onSendText, onOpenProfile, onPickHeader }: ChatThreadProps) {
   const [draft, setDraft] = useState("");
   const group = party.kind === "group";
 
@@ -48,8 +54,8 @@ export function ChatThread({ party, panes, messages, delivered, onBack, onSendTe
       <div className="flex min-h-0 flex-1 flex-col" style={{ width: s(390), margin: "0 auto" }}>
         <header aria-label={`${party.name} header`} style={{ position: "relative", flex: "none", height: s(232) }}>
           <div style={{ display: "flex", gap: s(2), height: s(172), background: NAVY }}>
-            <HeaderPicture pane={panes[0]} />
-            <HeaderPicture pane={panes[1]} />
+            <ThreadHalf pane={panes[0]} slot="first" name={party.name} onOpenProfile={onOpenProfile} onPickHeader={onPickHeader} />
+            <ThreadHalf pane={panes[1]} slot="last" name={party.name} onOpenProfile={onOpenProfile} onPickHeader={onPickHeader} />
           </div>
           <div aria-hidden="true" style={{ height: s(7), display: "flex", borderTop: `${s(2)} solid ${NAVY}`, borderBottom: `${s(2)} solid ${NAVY}` }}>
             <span style={{ flex: 1, background: "#C8432B" }} />
@@ -135,6 +141,37 @@ export function ChatThread({ party, panes, messages, delivered, onBack, onSendTe
       </div>
     </div>
   );
+}
+
+const HALF_NAMES: Record<HeaderSlotName, string> = { first: "first photo together", last: "last time together" };
+
+/**
+ * A group half (GP-1, GP-12): empty, a photo picker with a small "+ ‹name›" over the art; set, a way into the profile, like the logo and name.
+ * Friend halves, and groups without a profile, are pictures only.
+ */
+function ThreadHalf({ pane, slot, name, onOpenProfile, onPickHeader }: { pane: ThreadPane; slot: HeaderSlotName; name: string; onOpenProfile?: () => void; onPickHeader?: (slot: HeaderSlotName, file: File) => void }) {
+  if (pane.empty && onPickHeader) {
+    return (
+      <PickArea label={`Add ${HALF_NAMES[slot]}`} onPick={(f) => onPickHeader(slot, f)} style={{ flex: 1, minWidth: 0 }}>
+        <HeaderPicture pane={pane} />
+        {/* Below the back button, above the logo. */}
+        <span
+          aria-hidden="true"
+          style={{ position: "absolute", left: "50%", top: s(96), translate: "-50% 0", whiteSpace: "nowrap", padding: `${s(4)} ${s(10)}`, borderRadius: s(14), background: "rgba(27,31,52,.72)", color: "#FFF6DA", fontWeight: 800, fontSize: s(12) }}
+        >
+          + {HALF_NAMES[slot]}
+        </span>
+      </PickArea>
+    );
+  }
+  if (!pane.empty && onOpenProfile) {
+    return (
+      <button type="button" aria-label={`Open ${name} profile`} onClick={onOpenProfile} style={{ flex: 1, minWidth: 0, display: "flex", padding: 0, border: 0, background: "none", cursor: "pointer" }}>
+        <HeaderPicture pane={pane} />
+      </button>
+    );
+  }
+  return <HeaderPicture pane={pane} />;
 }
 
 function SenderAvatar({ sender }: { sender?: ThreadMessage["sender"] }) {

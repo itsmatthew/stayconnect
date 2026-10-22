@@ -128,18 +128,18 @@ const recent = () => within(profile()).getByRole("region", { name: "Recent photo
 const photos = (el: HTMLElement) => within(el).queryAllByRole("img", { name: /^Photo from / }).map((p) => p.getAttribute("aria-label"));
 
 describe("open and close (GP-1)", () => {
-  it("in a group thread, the logo and the name both open the profile; Back returns to the chat", () => {
+  it("in a group thread, the logo, the name and each filled header photo open the profile; Back returns to the chat", () => {
     renderApp();
     openThread("Madrid Crew");
-    expect(profileButtons()).toHaveLength(2);
+    // Both demo halves are set (GP-12): photo, photo, logo, name.
+    expect(profileButtons()).toHaveLength(4);
 
-    fireEvent.click(profileButtons()[0]);
-    expect(within(profile()).getByRole("heading", { level: 1, name: "Madrid Crew" })).toBeTruthy();
-    tap("Back to the chat");
-    expect(screen.getByRole("textbox", { name: "Message Madrid Crew" })).toBeTruthy();
-
-    fireEvent.click(profileButtons()[1]);
-    expect(profile()).toBeTruthy();
+    for (let i = 0; i < 4; i++) {
+      fireEvent.click(profileButtons()[i]);
+      expect(within(profile()).getByRole("heading", { level: 1, name: "Madrid Crew" })).toBeTruthy();
+      tap("Back to the chat");
+      expect(screen.getByRole("textbox", { name: "Message Madrid Crew" })).toBeTruthy();
+    }
   });
 
   it("the thread no longer changes the logo; friend threads have no profile", () => {

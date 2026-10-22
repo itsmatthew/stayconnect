@@ -59,7 +59,7 @@ const imageIn = (el: HTMLElement) => el.querySelector("img")?.getAttribute("src"
 /** The logo on the profile header's seam (GP-2). */
 const headerLogo = () => within(screen.getByRole("main", { name: "Madrid Crew profile" })).getAllByRole("img", { name: "Madrid Crew logo" })[0];
 /** The logo in the thread's header, which opens the profile (GP-1). */
-const threadLogo = () => within(screen.getAllByRole("button", { name: "Open Madrid Crew profile" })[0]).getByRole("img", { name: "Madrid Crew logo" });
+const threadLogo = () => within(screen.getByRole("banner", { name: "Madrid Crew header" })).getByRole("img", { name: "Madrid Crew logo" });
 /** The logo is changed from the group's profile (LOGO-4, GP-2). */
 const openProfile = () => {
   openChat("Madrid Crew");

@@ -165,9 +165,7 @@ export const placeholderGroups: readonly CircleGroup[] = [
       { id: "fall-3", art: "people", caption: "dorm\nmove-in" },
     ],
     lastMemory: "last memory 2 weeks ago",
-    // Header photos (GP-12), drawn as art with their capture dates.
-    firstPhoto: { art: "churro", takenAt: new Date(2024, 8, 2).getTime() },
-    lastPhoto: { art: "basketball", takenAt: new Date(2026, 9, 3).getTime() },
+    // No header photos (GP-12), so the empty state shows in development.
   },
 ];
 
