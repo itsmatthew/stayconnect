@@ -6,12 +6,16 @@ import { demoData } from "@/app/intro/app-data";
 import { openArchiveStore } from "@/app/intro/archive/archive-store";
 import { openPhotoStore } from "@/app/intro/daily5/photo-store";
 import { openOrnamentStore } from "@/app/intro/ornaments/ornament-store";
+import type { CropArea } from "@/app/intro/photo-file";
 
 const NOW = new Date(2026, 9, 20, 12).getTime();
 let n = 0;
 let dbName = "";
 let urls = 0;
+const cropStub = () => vi.fn<(image: Blob, area: CropArea | undefined, max: number) => Promise<Blob>>(async () => new Blob(["square"], { type: "image/jpeg" }));
+let crop = cropStub();
 beforeEach(() => {
+  crop = cropStub();
   localStorage.clear();
   URL.createObjectURL = vi.fn(() => `blob:ornament-${++urls}`);
   URL.revokeObjectURL = vi.fn();
@@ -28,6 +32,7 @@ function renderHome() {
       openArchive={() => openArchiveStore(`${dbName}-archive`)}
       openOrnaments={() => openOrnamentStore(dbName)}
       decode={async () => new Blob(["jpeg"], { type: "image/jpeg" })}
+      crop={crop}
       hasFace={async () => true}
     />,
   );
@@ -40,7 +45,7 @@ const HOOPS = "Hoops Since ’14";
 const ornamentButtons = (layout: HTMLElement) => within(layout).getAllByRole("button", { name: /^Change ornament \d of / });
 const tapOrnament = (layout: HTMLElement, n: number, group = HOOPS) =>
   fireEvent.click(within(layout).getByRole("button", { name: `Change ornament ${n} of ${group}` }));
-const dialog = () => screen.getByRole("dialog", { name: HOOPS });
+const dialog = () => screen.getByRole("dialog", { name: `${HOOPS}’s defining memories` });
 const caption = () => within(dialog()).getByRole("textbox", { name: "Caption" }) as HTMLInputElement;
 const save = () => within(dialog()).getByRole("button", { name: "Save" }) as HTMLButtonElement;
 const choose = () =>
@@ -85,7 +90,7 @@ describe("ornaments are buttons (HOME-13)", () => {
   it("a side tree's ornament opens that group", () => {
     const { phone } = renderHome();
     tapOrnament(phone, 1, "Madrid Crew");
-    expect(screen.getByRole("dialog", { name: "Madrid Crew" })).toBeTruthy();
+    expect(screen.getByRole("dialog", { name: "Madrid Crew’s defining memories" })).toBeTruthy();
   });
 
   it("“swap photos” opens the sheet on the center group's first ornament (HOME-4)", () => {
@@ -106,6 +111,8 @@ describe("the sheet (HOME-14)", () => {
     expect(input.accept).toBe("image/*");
     expect(input.hasAttribute("capture")).toBe(false);
     expect(caption().maxLength).toBe(40);
+    expect(caption().placeholder).toBe("what makes this one ours");
+    expect(dialog().textContent).toContain("Pick a photo that defines this group — the inside joke, the trip, the night everyone still talks about.");
     expect(save().disabled).toBe(true);
     fireEvent.change(caption(), { target: { value: "buzzer beater " } });
     expect(save().disabled).toBe(true);
@@ -113,12 +120,13 @@ describe("the sheet (HOME-14)", () => {
     expect(save().disabled).toBe(false);
   });
 
-  it("previews a picked photo", async () => {
+  it("opens a picked photo in the round cropper (LOGO-7)", async () => {
     const { phone } = renderHome();
     tapOrnament(phone, 1);
     choose();
     const img = await within(dialog()).findByRole("img", { name: "New photo" });
     expect(img.getAttribute("src")).toMatch(/^blob:/);
+    expect(within(dialog()).getByRole("slider", { name: "Zoom" })).toBeTruthy();
     expect(save().disabled).toBe(false);
   });
 
@@ -143,6 +151,8 @@ describe("saving (HOME-15)", () => {
     const { phone, wide } = renderHome();
     await changeFirst(phone);
     expect(screen.queryByRole("dialog")).toBeNull();
+    expect(crop).toHaveBeenCalledTimes(1);
+    expect(crop.mock.calls[0][2]).toBe(1024);
     expect(hoopsOrnaments(wide)[0].querySelector("image[href^='blob:']")).toBeTruthy();
     expect(hoopsOrnaments(phone)[1].querySelector("image")).toBeNull();
     for (const layout of [phone, wide]) {
