@@ -2,29 +2,25 @@ import { CAVEAT, NAVY, s } from "../home/units";
 import { SendIcon } from "./send-icon";
 import type { Daily5Card } from "./types";
 
-/** Frame colour, send-button text colour and tilt, cycling as in the reference. */
-const FRAMES = [
-  { frame: "#C8432B", fg: "#FFF6DA", tilt: -1.2 },
-  { frame: "#F0B429", fg: NAVY, tilt: 1 },
-  { frame: "#4F8A3C", fg: "#FFF6DA", tilt: -0.8 },
-  { frame: "#3F9AD8", fg: "#FFF6DA", tilt: 1.3 },
-  { frame: "#7A4E8C", fg: "#FFF6DA", tilt: -1 },
-] as const;
+/** Tilts cycle as in the reference. The frame is always neutral: colour means a group everywhere else in the app (D5-9). */
+const TILTS = [-1.2, 1, -0.8, 1.3, -1] as const;
+
+/** The polaroid's cream paper, shared with the send flight. */
+export const POLAROID_PAPER = "#FDFBF5";
 
 /** The warm, slightly faded film look the reference gives every photo. */
 export const FILM = "sepia(.22) saturate(.82) contrast(.92) brightness(1.06)";
 
 export function Polaroid({ card, index, onSend }: { card: Daily5Card; index: number; onSend: () => void }) {
-  const { frame, fg, tilt } = FRAMES[index % FRAMES.length];
+  const tilt = TILTS[index % TILTS.length];
   return (
     <article
-      data-frame={frame}
       style={{
         boxSizing: "border-box",
         padding: `${s(14)} ${s(14)} 0`,
         borderRadius: s(5),
-        background: "#FDFBF5",
-        border: `${s(4)} solid ${frame}`,
+        background: POLAROID_PAPER,
+        border: `${s(2)} solid ${NAVY}`,
         boxShadow: `0 ${s(10)} ${s(22)} rgba(74,44,20,.32)`,
         transform: `rotate(${tilt}deg)`,
       }}
@@ -53,8 +49,8 @@ export function Polaroid({ card, index, onSend }: { card: Daily5Card; index: num
             height: s(46),
             borderRadius: "50%",
             border: `${s(2)} solid ${NAVY}`,
-            background: frame,
-            color: fg,
+            background: "#FFF8EC",
+            color: NAVY,
             padding: `0 ${s(2)} 0 0`,
             boxSizing: "border-box",
             display: "flex",

@@ -145,7 +145,8 @@ describe("Messages — sealed until reply (MSG-4/5/6)", () => {
     const items = Array.from(log.querySelectorAll("[data-message]"));
     const memory = items.findIndex((el) => el.querySelector("figure"));
     expect(memory).toBe(items.length - 2);
-    expect(within(items[memory] as HTMLElement).getByRole("figure", { name: "Memory from Jul 2, 2023" }).textContent).toContain("remember this?");
+    const figure = within(items[memory] as HTMLElement).getByRole("figure", { name: "Memory from Jul 2, 2023" });
+    expect(figure.querySelector("figcaption")!.textContent).toBe("remember this?");
     expect(items.at(-1)!.getAttribute("data-mine")).toBe("false");
     expect(within(log).queryByText("Delivered")).toBeNull();
   });
