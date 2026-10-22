@@ -44,6 +44,19 @@ describe("placeholder data (HOME-1)", () => {
     }
   });
 
+  it("seeds both header photos for every group but Fall 24, as dated art, first before last (GP-12)", () => {
+    const fall = placeholderGroups.find((g) => g.id === "fall-24")!;
+    // Left empty so the empty state shows in development.
+    expect(fall.firstPhoto).toBeUndefined();
+    expect(fall.lastPhoto).toBeUndefined();
+    for (const g of placeholderGroups.filter((g) => g !== fall)) {
+      expect(g.firstPhoto?.art).toBeTruthy();
+      expect(g.lastPhoto?.art).toBeTruthy();
+      expect(g.firstPhoto!.takenAt!).toBeLessThan(g.lastPhoto!.takenAt!);
+      expect(g.firstPhoto?.src).toBeUndefined();
+    }
+  });
+
   it("has a few friends, some of them closest, plus seed conversations and replies in the same file", () => {
     expect(friends.length).toBeGreaterThanOrEqual(4);
     expect(new Set(friends.map((f) => f.id)).size).toBe(friends.length);

@@ -3,7 +3,8 @@
 
 import type { PhotoMeta, PoolId } from "./daily-pick";
 
-export type StoredPhoto = PhotoMeta & { fileKey: string; hasFace?: boolean };
+/** `fileDated`: dated by the file, not EXIF (D5-4). */
+export type StoredPhoto = PhotoMeta & { fileKey: string; hasFace?: boolean; fileDated?: true };
 export type NewPhoto = Omit<StoredPhoto, "id" | "hasFace"> & { image: Blob };
 
 export type PhotoStore = {

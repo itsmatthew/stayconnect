@@ -3,7 +3,7 @@
 
 import { downscale } from "../photo-file";
 import type { PoolId } from "./daily-pick";
-import { photoDate } from "./photo-date";
+import { photoDate, type PhotoDating } from "./photo-date";
 import type { PhotoStore } from "./photo-store";
 
 const IMAGE_EXT = /\.(jpe?g|png|gif|webp|heic|heif|avif|bmp|tiff?)$/i;
@@ -21,7 +21,7 @@ export type ImportResult = { added: number; duplicates: number; skipped: number 
 type ImportOptions = {
   /** Decodes and downscales to a JPEG; throws if the browser can't read the file. */
   decode?: (f: File) => Promise<Blob>;
-  readDate?: (f: File) => Promise<number>;
+  readDate?: (f: File) => Promise<PhotoDating>;
   onProgress?: (p: ImportProgress) => void;
 };
 
@@ -38,8 +38,8 @@ export async function importPhotos(
     if (await store.has(pool, key)) result.duplicates++;
     else {
       try {
-        const [image, takenAt] = await Promise.all([decode(f), readDate(f)]);
-        await store.add({ pool, fileKey: key, takenAt, image });
+        const [image, dating] = await Promise.all([decode(f), readDate(f)]);
+        await store.add({ pool, fileKey: key, ...dating, image });
         result.added++;
       } catch {
         result.skipped++;

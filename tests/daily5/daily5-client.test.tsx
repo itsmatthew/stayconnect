@@ -1,6 +1,6 @@
 import "fake-indexeddb/auto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { AppClient } from "@/app/intro/app-client";
 import { openPhotoStore, type PhotoStore } from "@/app/intro/daily5/photo-store";
 import { chatStorageKey } from "@/app/intro/messages/use-chat";
@@ -67,5 +67,49 @@ describe("Daily 5, wired (D5-6/8/12, MSG-4)", () => {
     fireEvent.click(within(screen.getAllByRole("navigation", { name: "Main" })[0]).getByRole("button", { name: "Messages" }));
     const list = within(screen.getByRole("list", { name: "Chats" })).getAllByRole("button");
     expect(list.at(-1)!.getAttribute("aria-label")).toBe("Work Mates, nothing new");
+  });
+
+  it("a memory sent from a photo dated by its file says so; others don't (D5-4, GP-6)", async () => {
+    const send = async () => {
+      const cards = await screen.findAllByRole("article");
+      fireEvent.click(within(cards[0]).getByRole("button", { name: "Send this photo to someone" }));
+      const sheet = screen.getByRole("dialog", { name: "Send this to…" });
+      fireEvent.click(within(sheet).getByRole("button", { name: "Send to Work Mates" }));
+      fireEvent.click(within(sheet).getByRole("button", { name: "Send" }));
+      return (JSON.parse(localStorage.getItem(chatStorageKey(demoData.storageSuffix))!) as ChatState).sealed[0];
+    };
+    renderDaily5();
+    expect((await send()).fileDated).toBeUndefined();
+    cleanup();
+    localStorage.clear();
+    store.close();
+    dbName = `client-test-${++n}`;
+    store = await openPhotoStore(dbName);
+    for (let i = 0; i < 8; i++) await store.add({ pool: "mine", fileKey: `m${i}`, takenAt: OLD + i, fileDated: true, image: new Blob([`m${i}`]) });
+    for (let i = 0; i < 8; i++) await store.add({ pool: "family", fileKey: `f${i}`, takenAt: OLD + i, fileDated: true, image: new Blob([`f${i}`]) });
+    renderDaily5();
+    expect((await send()).fileDated).toBe(true);
+  });
+
+  it("closing mid-pick still caches face results and saves the day's set before the store closes (D5-3, D5-8)", async () => {
+    let release: (() => void) | null = null;
+    const hasFace = vi.fn(async () => {
+      if (hasFace.mock.calls.length === 1) await new Promise<void>((r) => (release = r));
+      return true;
+    });
+    let close = vi.fn();
+    const openStore = async () => {
+      const s = await openPhotoStore(dbName);
+      close = vi.fn(s.close);
+      return { ...s, close };
+    };
+    const { unmount } = render(<AppClient initialTab="Daily 5" data={demoData} now={() => NOW} openStore={openStore} hasFace={hasFace} />);
+    await waitFor(() => expect(release).not.toBeNull());
+    unmount();
+    release!();
+
+    await waitFor(() => expect(close).toHaveBeenCalled());
+    expect(await store.getDay("2026-10-14")).toHaveLength(5);
+    expect((await store.list()).filter((p) => p.hasFace === true).length).toBeGreaterThanOrEqual(5);
   });
 });

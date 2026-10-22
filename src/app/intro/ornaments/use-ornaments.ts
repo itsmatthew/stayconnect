@@ -4,29 +4,34 @@ import { useEffect, useRef, useState } from "react";
 import type { OrnamentStore } from "./ornament-store";
 import { ornamentReducer, unreachableImages, type OrnamentAction, type OrnamentState, type Slot } from "./ornaments";
 
-export type OrnamentEdit = { image?: Blob; caption: string };
+/** `takenAt`: a header photo's capture date (GP-12). */
+export type OrnamentEdit = { image?: Blob; caption: string; takenAt?: number };
 
 type Ornaments = {
   state: OrnamentState;
   /** Object URLs for the photos the state can show, by photo id. */
   urls: Record<string, string>;
-  change(groupId: string, index: Slot, edit: OrnamentEdit, by: string, at: number): Promise<void>;
+  /** `edit` may still be on its way (a photo being downscaled or cropped); the store stays open until it's saved. */
+  change(groupId: string, index: Slot, edit: OrnamentEdit | Promise<OrnamentEdit>, by: string, at: number): Promise<void>;
   undo(groupId: string, index: Slot): Promise<void>;
 };
 
 /**
  * Ornament changes (docs/specs/home.md, HOME-15/17): loaded from the store, saved after every change, with unreachable
  * images deleted. Opens the store itself, and every change waits until it's open and loaded, so an early tap is neither
- * lost nor overwritten by the load.
+ * lost nor overwritten by the load. On unmount the store closes only once changes in flight have finished writing,
+ * including a photo still being prepared when the change was made.
  */
 export function useOrnaments(open: () => Promise<OrnamentStore>): Ornaments {
   const [state, setState] = useState<OrnamentState>({});
   const [store, setStore] = useState<OrnamentStore | null>(null);
   const latest = useRef(state);
   const ready = useRef<Promise<OrnamentStore> | null>(null);
+  const inFlight = useRef(new Set<Promise<void>>());
 
   useEffect(() => {
     let live = true;
+    const pending = inFlight.current;
     const opened = open().then(async (s) => {
       const saved = await s.load();
       if (live) {
@@ -40,7 +45,10 @@ export function useOrnaments(open: () => Promise<OrnamentStore>): Ornaments {
     return () => {
       live = false;
       ready.current = null;
-      opened.then((s) => s.close());
+      opened.then(async (s) => {
+        await Promise.allSettled(pending);
+        s.close();
+      });
     };
   }, [open]);
 
@@ -54,19 +62,33 @@ export function useOrnaments(open: () => Promise<OrnamentStore>): Ornaments {
     await Promise.all(unreachableImages(before, after).map((id) => s.deleteImage(id)));
   };
 
+  const track = (work: Promise<void>) => {
+    inFlight.current.add(work);
+    work.finally(() => inFlight.current.delete(work)).catch(() => {});
+    return work;
+  };
+
   return {
     state,
     urls: usePhotoUrls(store, state),
-    async change(groupId, index, { image, caption }, by, at) {
-      const s = await ready.current;
-      if (!s) return;
-      const photoId = image ? await s.putImage(image) : undefined;
-      await apply(s, { type: "change", groupId, index, photoId, caption, by, at });
-    },
-    async undo(groupId, index) {
-      const s = await ready.current;
-      if (s) await apply(s, { type: "undo", groupId, index });
-    },
+    change: (groupId, index, edit, by, at) =>
+      track(
+        (async () => {
+          // Read before the first await: after unmount `ready` is cleared, but this change was made while open.
+          const s = await ready.current;
+          if (!s) return;
+          const { image, caption, takenAt } = await edit;
+          const photoId = image ? await s.putImage(image) : undefined;
+          await apply(s, { type: "change", groupId, index, photoId, caption, takenAt, by, at });
+        })(),
+      ),
+    undo: (groupId, index) =>
+      track(
+        (async () => {
+          const s = await ready.current;
+          if (s) await apply(s, { type: "undo", groupId, index });
+        })(),
+      ),
   };
 }
 

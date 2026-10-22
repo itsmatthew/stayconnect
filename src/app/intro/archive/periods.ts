@@ -22,7 +22,8 @@ function mondayOf(t: number): Date {
 const plusDays = (d: Date, n: number) => date(d.getFullYear(), d.getMonth(), d.getDate() + n);
 const firstMonday = (isoYear: number) => mondayOf(date(isoYear, 0, 4).getTime());
 
-function isoWeek(t: number): { year: number; week: number; monday: Date } {
+/** The ISO week a time falls in: its year is the year of that week's Thursday (ARC-2). */
+export function isoWeek(t: number): { year: number; week: number; monday: Date } {
   const monday = mondayOf(t);
   const year = plusDays(monday, 3).getFullYear();
   return { year, week: dayDiff(firstMonday(year), monday) / 7 + 1, monday };

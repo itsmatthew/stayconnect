@@ -23,6 +23,18 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
+/** Spies on the ornament store's close, so a test can wait until the app has finished with it. Reset per test, so a
+ * store still opening can't leave the last test's (already called) spy in place. */
+let closeOrnaments = vi.fn();
+beforeEach(() => {
+  closeOrnaments = vi.fn();
+});
+const openOrnaments = async () => {
+  const s = await openOrnamentStore(dbName);
+  closeOrnaments = vi.fn(s.close);
+  return { ...s, close: closeOrnaments };
+};
+
 function renderHome() {
   const utils = render(
     <AppClient
@@ -30,7 +42,7 @@ function renderHome() {
       now={() => NOW}
       openStore={() => openPhotoStore(`${dbName}-photos`)}
       openArchive={() => openArchiveStore(`${dbName}-archive`)}
-      openOrnaments={() => openOrnamentStore(dbName)}
+      openOrnaments={openOrnaments}
       decode={async () => new Blob(["jpeg"], { type: "image/jpeg" })}
       crop={crop}
       hasFace={async () => true}
@@ -166,6 +178,29 @@ describe("saving (HOME-15)", () => {
     const first = renderHome();
     await changeFirst(first.phone);
     first.unmount();
+    const { phone } = renderHome();
+    await waitFor(() => expect(hoopsOrnaments(phone)[0].querySelector("image[href^='blob:']")).toBeTruthy());
+    expect(flat(card(phone).textContent)).toContain("new rim");
+  });
+
+  it("is kept when the app closes while the photo is still being cropped", async () => {
+    let release: (() => void) | null = null;
+    crop = vi.fn(async () => {
+      await new Promise<void>((r) => (release = r));
+      return new Blob(["square"], { type: "image/jpeg" });
+    });
+    const first = renderHome();
+    tapOrnament(first.phone, 1);
+    choose();
+    await waitFor(() => expect(within(dialog()).getByRole("img", { name: "New photo" })).toBeTruthy());
+    fireEvent.change(caption(), { target: { value: "new rim" } });
+    fireEvent.click(save());
+    await waitFor(() => expect(release).not.toBeNull());
+    first.unmount();
+    release!();
+    await waitFor(() => expect(closeOrnaments).toHaveBeenCalled());
+
+    crop = cropStub();
     const { phone } = renderHome();
     await waitFor(() => expect(hoopsOrnaments(phone)[0].querySelector("image[href^='blob:']")).toBeTruthy());
     expect(flat(card(phone).textContent)).toContain("new rim");

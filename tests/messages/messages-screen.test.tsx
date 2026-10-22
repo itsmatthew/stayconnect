@@ -98,11 +98,20 @@ describe("Messages — thread (MSG-3)", () => {
     renderMessages();
     open("Madrid Crew, nothing new");
     expect(screen.getByRole("heading", { name: "Madrid Crew" })).toBeTruthy();
-    expect(screen.getByRole("img", { name: "Madrid Crew now" })).toBeTruthy();
-    expect(screen.getByRole("img", { name: "Madrid Crew then" })).toBeTruthy();
+    // A group's halves are its header photos (GP-12); a friend's stay now / then.
+    expect(screen.getByRole("img", { name: "Madrid Crew first photo together" })).toBeTruthy();
+    expect(screen.getByRole("img", { name: "Madrid Crew last time together" })).toBeTruthy();
     const log = screen.getByRole("log", { name: "Conversation" });
     expect(log.textContent).toContain("rooftop again friday?");
     expect(within(log).getByText("Delivered")).toBeTruthy();
+  });
+
+  it("a memory with no stored photo draws its art, never a blank frame (GP-11 demo memories)", () => {
+    renderMessages();
+    open("Madrid Crew, nothing new");
+    const memories = within(screen.getByRole("log", { name: "Conversation" })).getAllByRole("figure");
+    expect(memories.length).toBeGreaterThan(0);
+    for (const m of memories) expect(m.querySelector("svg")).toBeTruthy();
   });
 
   it("sends text from the composer, bumping the chat", () => {

@@ -18,8 +18,12 @@ const cardName = (layout: HTMLElement) => within(card(layout)).getByRole("headin
 const treeNames = (layout: HTMLElement) =>
   Array.from(layout.querySelectorAll("[data-tree-label]"), (el) => el.textContent);
 const next = (layout: HTMLElement) => fireEvent.click(within(layout).getByRole("button", { name: "Next circle" }));
-const prev = (layout: HTMLElement) =>
-  fireEvent.click(within(layout).getByRole("button", { name: "Previous circle" }));
+/** For many presses in a row: the arrows stay put while the trees rotate, so find them (by role) once. */
+const arrows = (layout: HTMLElement) => {
+  const nextButton = within(layout).getByRole("button", { name: "Next circle" });
+  const prevButton = within(layout).getByRole("button", { name: "Previous circle" });
+  return { next: () => fireEvent.click(nextButton), prev: () => fireEvent.click(prevButton) };
+};
 
 describe("Home — Your Circles", () => {
   it("opens on Hoops Since ’14, the middle closest circle, with the reference card (HOME-2/4)", () => {
@@ -42,24 +46,26 @@ describe("Home — Your Circles", () => {
 
   it("Next and Previous rotate the center group, from the closest circles into the other groups (HOME-2)", () => {
     const { phone } = renderHome();
-    next(phone);
+    const { next, prev } = arrows(phone);
+    next();
     expect(cardName(phone)).toBe("Apt 4B");
-    next(phone);
-    next(phone);
+    next();
+    next();
     expect(cardName(phone)).toBe("Uni Mates");
-    prev(phone);
-    prev(phone);
-    prev(phone);
-    prev(phone);
+    prev();
+    prev();
+    prev();
+    prev();
     expect(cardName(phone)).toBe("Madrid Crew");
   });
 
   it("wraps around (HOME-2)", () => {
     const { phone } = renderHome();
-    for (let i = 0; i < 7; i++) next(phone);
+    const { next, prev } = arrows(phone);
+    for (let i = 0; i < 7; i++) next();
     expect(cardName(phone)).toBe("Hoops Since ’14");
-    prev(phone);
-    prev(phone);
+    prev();
+    prev();
     expect(cardName(phone)).toBe("Fall 24");
   });
 
