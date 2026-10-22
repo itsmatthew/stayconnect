@@ -11,14 +11,16 @@ type Ornaments = {
   state: OrnamentState;
   /** Object URLs for the photos the state can show, by photo id. */
   urls: Record<string, string>;
-  change(groupId: string, index: Slot, edit: OrnamentEdit, by: string, at: number): Promise<void>;
+  /** `edit` may still be on its way (a photo being downscaled or cropped); the store stays open until it's saved. */
+  change(groupId: string, index: Slot, edit: OrnamentEdit | Promise<OrnamentEdit>, by: string, at: number): Promise<void>;
   undo(groupId: string, index: Slot): Promise<void>;
 };
 
 /**
  * Ornament changes (docs/specs/home.md, HOME-15/17): loaded from the store, saved after every change, with unreachable
  * images deleted. Opens the store itself, and every change waits until it's open and loaded, so an early tap is neither
- * lost nor overwritten by the load. On unmount the store closes only once changes in flight have finished writing.
+ * lost nor overwritten by the load. On unmount the store closes only once changes in flight have finished writing,
+ * including a photo still being prepared when the change was made.
  */
 export function useOrnaments(open: () => Promise<OrnamentStore>): Ornaments {
   const [state, setState] = useState<OrnamentState>({});
@@ -69,11 +71,13 @@ export function useOrnaments(open: () => Promise<OrnamentStore>): Ornaments {
   return {
     state,
     urls: usePhotoUrls(store, state),
-    change: (groupId, index, { image, caption, takenAt }, by, at) =>
+    change: (groupId, index, edit, by, at) =>
       track(
         (async () => {
+          // Read before the first await: after unmount `ready` is cleared, but this change was made while open.
           const s = await ready.current;
           if (!s) return;
+          const { image, caption, takenAt } = await edit;
           const photoId = image ? await s.putImage(image) : undefined;
           await apply(s, { type: "change", groupId, index, photoId, caption, takenAt, by, at });
         })(),

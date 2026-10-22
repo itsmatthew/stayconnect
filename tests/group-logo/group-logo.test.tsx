@@ -29,6 +29,18 @@ const CANOPY = madrid.palette.canopy;
 
 const cropStub = () => vi.fn<(image: Blob, area: CropArea | undefined, max: number) => Promise<Blob>>(async () => new Blob(["logo"], { type: "image/jpeg" }));
 
+/** Spies on the ornament store's close, so a test can wait until the app has finished with it. Reset per test, so a
+ * store still opening can't leave the last test's (already called) spy in place. */
+let closeOrnaments = vi.fn();
+beforeEach(() => {
+  closeOrnaments = vi.fn();
+});
+const openOrnaments = async () => {
+  const s = await openOrnamentStore(dbName);
+  closeOrnaments = vi.fn(s.close);
+  return { ...s, close: closeOrnaments };
+};
+
 function renderMessages(crop = cropStub()) {
   const utils = render(
     <AppClient
@@ -37,7 +49,7 @@ function renderMessages(crop = cropStub()) {
       now={() => NOW}
       openStore={() => openPhotoStore(`${dbName}-photos`)}
       openArchive={() => openArchiveStore(`${dbName}-archive`)}
-      openOrnaments={() => openOrnamentStore(dbName)}
+      openOrnaments={openOrnaments}
       decode={async () => new Blob(["jpeg"], { type: "image/jpeg" })}
       crop={crop}
       hasFace={async () => true}
@@ -173,6 +185,28 @@ describe("changing it (LOGO-4, GP-2)", () => {
     const first = renderMessages();
     await changeLogo();
     first.unmount();
+    renderMessages();
+    openProfile();
+    await waitFor(() => expect(imageIn(headerLogo())).toMatch(/^blob:/));
+  });
+
+  it("is kept when the app closes while the photo is still being cropped (LOGO-6)", async () => {
+    let release: (() => void) | null = null;
+    const held = vi.fn<(image: Blob, area: CropArea | undefined, max: number) => Promise<Blob>>(async () => {
+      await new Promise<void>((r) => (release = r));
+      return new Blob(["logo"], { type: "image/jpeg" });
+    });
+    const first = renderMessages(held);
+    openProfile();
+    fireEvent.click(changeButton());
+    choose();
+    await within(dialog()).findByRole("img", { name: "New photo" });
+    fireEvent.click(save());
+    await waitFor(() => expect(release).not.toBeNull());
+    first.unmount();
+    release!();
+    await waitFor(() => expect(closeOrnaments).toHaveBeenCalled());
+
     renderMessages();
     openProfile();
     await waitFor(() => expect(imageIn(headerLogo())).toMatch(/^blob:/));

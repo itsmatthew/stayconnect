@@ -25,8 +25,23 @@ afterEach(cleanup);
 const unset: AppData = { ...demoData, groups: demoData.groups.map((g) => ({ ...g, firstPhoto: undefined, lastPhoto: undefined })) };
 const pastGoal: Partial<AppData> = { goals: () => ({ "madrid-crew": { label: "lake weekend", date: "2026-10-20", setBy: "leo", in: ["leo"] } }) };
 
-function renderApp(data: AppData = demoData, readCapture: (f: File) => Promise<number | undefined> = async () => undefined) {
-  const decode = vi.fn(async () => new Blob(["jpeg"], { type: "image/jpeg" }));
+/** Spies on the ornament store's close, so a test can wait until the app has finished with it. Reset per test, so a
+ * store still opening can't leave the last test's (already called) spy in place. */
+let closeOrnaments = vi.fn();
+beforeEach(() => {
+  closeOrnaments = vi.fn();
+});
+const openOrnaments = async () => {
+  const s = await openOrnamentStore(dbName);
+  closeOrnaments = vi.fn(s.close);
+  return { ...s, close: closeOrnaments };
+};
+
+function renderApp(
+  data: AppData = demoData,
+  readCapture: (f: File) => Promise<number | undefined> = async () => undefined,
+  decode = vi.fn<(f: File) => Promise<Blob>>(async () => new Blob(["jpeg"], { type: "image/jpeg" })),
+) {
   const utils = render(
     <AppClient
       initialTab="Messages"
@@ -34,7 +49,7 @@ function renderApp(data: AppData = demoData, readCapture: (f: File) => Promise<n
       now={() => NOW}
       openStore={() => openPhotoStore(`${dbName}-photos`)}
       openArchive={() => openArchiveStore(`${dbName}-archive`)}
-      openOrnaments={() => openOrnamentStore(dbName)}
+      openOrnaments={openOrnaments}
       decode={decode}
       readCapture={readCapture}
       hasFace={async () => true}
@@ -126,6 +141,27 @@ describe("changing them from the profile (GP-12)", () => {
     renderApp();
     openThread();
     await waitFor(() => expect(first().textContent).toContain("since Jul 2012"));
+  });
+
+  it("is kept when the app closes while the photo is still being downscaled", async () => {
+    let release: (() => void) | null = null;
+    const held = vi.fn<(f: File) => Promise<Blob>>(async () => {
+      await new Promise<void>((r) => (release = r));
+      return new Blob(["jpeg"], { type: "image/jpeg" });
+    });
+    const one = renderApp(demoData, async () => new Date(2012, 6, 4).getTime(), held);
+    openThread();
+    toProfile();
+    pick("Change first photo together");
+    await waitFor(() => expect(release).not.toBeNull());
+    one.unmount();
+    release!();
+    await waitFor(() => expect(closeOrnaments).toHaveBeenCalled());
+
+    renderApp();
+    openThread();
+    await waitFor(() => expect(first().textContent).toContain("since Jul 2012"));
+    expect(imageIn(first())).toMatch(/^blob:/);
   });
 });
 

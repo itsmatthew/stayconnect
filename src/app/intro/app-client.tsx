@@ -39,16 +39,18 @@ type AppClientProps = {
 };
 
 /** Work on a store that must finish before it closes. */
-export type TrackStoreWork = (work: Promise<void>) => Promise<void>;
+export type TrackStoreWork = <T>(work: Promise<T>) => Promise<T>;
 
 /**
  * Opens a store once, closes it on unmount (or if it arrives after unmount). Work passed to `track` keeps it open
  * until that work settles, so a write started before unmount never hits a closed database.
+ * TODO(re-evaluate when a fourth IndexedDB store is added, or the stores move to the database): the photo, Archive and
+ * ornament stores are three databases, and `useOrnaments` repeats this open/track/close guard; consolidate them.
  */
 function useStore<T extends { close(): void }>(open: () => Promise<T>): [T | null, TrackStoreWork] {
   const [store, setStore] = useState<T | null>(null);
-  const [inFlight] = useState(() => new Set<Promise<void>>());
-  const [track] = useState(() => (work: Promise<void>) => {
+  const [inFlight] = useState(() => new Set<Promise<unknown>>());
+  const [track] = useState(() => <W,>(work: Promise<W>) => {
     inFlight.add(work);
     work.finally(() => inFlight.delete(work)).catch(() => {});
     return work;
@@ -89,7 +91,7 @@ export function AppClient({
   const [tab, setTab] = useState<NavLabel>(initialTab);
   const [store, trackStoreWork] = useStore(openStore);
   const [openArchiveNamed] = useState(() => () => openArchive(ARCHIVE_DB + data.storageSuffix));
-  const [archive] = useStore(openArchiveNamed);
+  const [archive, trackArchiveWork] = useStore(openArchiveNamed);
   const [openOrnamentsNamed] = useState(() => () => openOrnaments(ORNAMENT_DB + data.storageSuffix));
   const ornaments = useOrnaments(openOrnamentsNamed);
   const homeGroups = useMemo(() => withOrnaments(data.groups, ornaments.state, ornaments.urls), [data.groups, ornaments.state, ornaments.urls]);
@@ -155,7 +157,7 @@ export function AppClient({
     case "Daily 5":
       return <Daily5Client store={store} track={trackStoreWork} now={now} hasFace={hasFace} recipients={recipients} dispatch={dispatch} nav={nav} />;
     case "Archive":
-      return <ArchiveClient data={data} now={now} store={archive} readCapture={readCapture} decode={decode} nav={nav} />;
+      return <ArchiveClient data={data} now={now} store={archive} track={trackArchiveWork} readCapture={readCapture} decode={decode} nav={nav} />;
     case "Messages":
       return (
         <MessagesClient
@@ -174,7 +176,7 @@ export function AppClient({
               return v && changedLine(v, nameOf, now(), "the logo");
             },
             canUndo: (groupId) => canUndo(ornaments.state, groupId, LOGO),
-            onSave: (groupId, image) => void ornaments.change(groupId, LOGO, { image, caption: "" }, ME, now()),
+            onSave: (groupId, image) => void ornaments.change(groupId, LOGO, image.then((image) => ({ image, caption: "" })), ME, now()),
             onUndo: (groupId) => void ornaments.undo(groupId, LOGO),
             decode,
             crop,
@@ -185,11 +187,16 @@ export function AppClient({
             placements: circle.placements,
             upTo: data.upTo,
             ornaments: ornamentControls,
-            // Header photos are saved at once, downscaled, with their capture date (GP-12).
-            setHeaderPhoto: async (groupId, slot, file) => {
-              const [image, takenAt] = await Promise.all([decode(file), readCapture(file)]);
-              await ornaments.change(groupId, slot === "first" ? FIRST : LAST, { image, caption: "", takenAt }, ME, now());
-            },
+            // Header photos are saved at once, downscaled, with their capture date (GP-12). The change starts at the tap,
+            // so the store stays open while the photo is prepared.
+            setHeaderPhoto: (groupId, slot, file) =>
+              ornaments.change(
+                groupId,
+                slot === "first" ? FIRST : LAST,
+                Promise.all([decode(file), readCapture(file)]).then(([image, takenAt]) => ({ image, caption: "", takenAt })),
+                ME,
+                now(),
+              ),
           }}
         />
       );

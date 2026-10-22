@@ -12,7 +12,8 @@ import type { OrnamentEdit } from "./use-ornaments";
 export type OrnamentControls = {
   lineOf: (groupId: string, index: number) => string | undefined;
   canUndo: (groupId: string, index: number) => boolean;
-  onSave: (groupId: string, index: number, edit: OrnamentEdit) => void;
+  /** `edit` arrives once the photo is cropped, so the change is tracked from the tap even if the app closes first. */
+  onSave: (groupId: string, index: number, edit: Promise<OrnamentEdit>) => void;
   onUndo: (groupId: string, index: number) => void;
   /** Downscales a picked photo before it's previewed and cropped. */
   decode: (f: File) => Promise<Blob>;
@@ -63,11 +64,10 @@ export function OrnamentSheetClient({ group, index, controls, onClose }: { group
       captionMax={CAPTION_MAX}
       onSelect={select}
       onPickFile={choose}
-      onSave={async (caption, area) => {
+      onSave={(caption, area) => {
         const picked = pending?.image;
         close();
-        const image = picked && (await controls.crop(picked, area, ORNAMENT_MAX));
-        controls.onSave(group.id, selected, { image, caption });
+        controls.onSave(group.id, selected, (async () => ({ image: picked && (await controls.crop(picked, area, ORNAMENT_MAX)), caption }))());
       }}
       onUndo={() => {
         controls.onUndo(group.id, selected);

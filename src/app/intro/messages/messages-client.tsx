@@ -52,7 +52,8 @@ type MessagesClientProps = {
 export type LogoControls = {
   lineOf: (groupId: string) => string | undefined;
   canUndo: (groupId: string) => boolean;
-  onSave: (groupId: string, image: Blob) => void;
+  /** `image` arrives once it's cropped, so the save is tracked from the tap even if the app closes first. */
+  onSave: (groupId: string, image: Promise<Blob>) => void;
   onUndo: (groupId: string) => void;
   /** Downscales a picked photo before it's cropped. */
   decode: (f: File) => Promise<Blob>;
@@ -169,10 +170,10 @@ export function MessagesClient({ chat, dispatch, now, store, groups, friends, re
             canUndo={logos.canUndo(groupId)}
             preview={picked.pending?.url}
             onPickFile={picked.choose}
-            onSave={async (area) => {
+            onSave={(area) => {
               const image = picked.pending?.image;
               closeLogo();
-              if (image) logos.onSave(groupId, await logos.crop(image, area, LOGO_MAX));
+              if (image) logos.onSave(groupId, logos.crop(image, area, LOGO_MAX));
             }}
             onUndo={() => logos.onUndo(groupId)}
             onCancel={closeLogo}
