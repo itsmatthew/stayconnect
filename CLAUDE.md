@@ -14,3 +14,9 @@ This project runs [FFFlow](https://github.com/bryonjacob/ffflow-plugin). These a
 
 Level and stack are declared in `.ffflow/config.yaml`. Run `/fff:upgrade-ffflow` after updating the plugin.
 <!-- ffflow:beliefs end -->
+
+## Commands and scopes
+
+- Test: `npm test` (Vitest; server tests use an in-memory Postgres). Lint: `npm run lint`. Typecheck: `npx tsc --noEmit`. Migrate: `npm run db:migrate`.
+- Commit scopes: `adr`, `db`, `server`, `auth`, `intro` (Jackson's app screens).
+- Specs: `docs/specs/`. Decisions: `docs/adr/`. Server rules: `src/server/CLAUDE.md`.
