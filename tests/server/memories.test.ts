@@ -180,3 +180,111 @@ describe("membership change (BE-13)", () => {
     expect(await listSent(db, "alice")).toEqual([]);
   });
 });
+
+describe("who receives it (BE-4, cross-group isolation)", () => {
+  it("BE-4: a member who joins after it was sent does not receive it", async () => {
+    const { id } = await send();
+    await addMember(db, groupId, "late");
+    expect(await listInbox(db, "late")).toEqual([]);
+    await expect(getMemory(db, "late", id)).rejects.toBeInstanceOf(NotFoundError);
+    await expect(replyToMemory(db, "late", id)).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it("BE-3/BE-9: a memory sent to group A never reaches someone who is only in group B", async () => {
+    const other = await createGroup(db, "dan", "Study abroad");
+    await addMember(db, other.id, "bea"); // bea is in both groups
+    const { id } = await send(); // sent to the sorority group only
+    expect((await listInbox(db, "bea")).map((m) => m.groupId)).toEqual([groupId]);
+    expect(await listInbox(db, "dan")).toEqual([]);
+    await expect(getMemory(db, "dan", id)).rejects.toBeInstanceOf(NotFoundError);
+    await expect(replyToMemory(db, "dan", id)).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it("BE-3: membership in one group does not allow sending to another", async () => {
+    const other = await createGroup(db, "dan", "Study abroad");
+    await expect(sendMemory(db, "alice", { groupId: other.id, caption: "hi" })).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it("BE-7: a sender in two groups reaches each group's members only", async () => {
+    const other = await createGroup(db, "alice", "Study abroad");
+    await addMember(db, other.id, "bea");
+    await addMember(db, other.id, "eli");
+    await send("alice", "to sorority");
+    await sendMemory(db, "alice", { groupId: other.id, caption: "to study abroad" });
+    expect((await listInbox(db, "bea")).map((m) => m.caption).sort()).toEqual(["to sorority", "to study abroad"]);
+    expect((await listInbox(db, "cy")).map((m) => m.caption)).toEqual(["to sorority"]);
+    expect((await listInbox(db, "eli")).map((m) => m.caption)).toEqual(["to study abroad"]);
+  });
+
+  it("BE-9: a user who never signed up has an empty inbox and cannot send", async () => {
+    expect(await listInbox(db, "ghost")).toEqual([]);
+    await expect(sendMemory(db, "ghost", { groupId, caption: "hi" })).rejects.toBeInstanceOf(NotFoundError);
+  });
+});
+
+describe("dead memories (BE-6, BE-10, BE-12)", () => {
+  it("BE-12: a deleted memory cannot be replied to or deleted again", async () => {
+    const { id } = await send();
+    await deleteMemory(db, "alice", id);
+    await expect(replyToMemory(db, "bea", id)).rejects.toBeInstanceOf(NotFoundError);
+    await expect(deleteMemory(db, "alice", id)).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it("BE-6: an expired memory cannot be replied to or deleted", async () => {
+    const { id } = await send();
+    await db.query("update memories set expires_at = now() - interval '1 second' where id = $1", [id]);
+    await expect(replyToMemory(db, "bea", id)).rejects.toBeInstanceOf(NotFoundError);
+    await expect(deleteMemory(db, "alice", id)).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it("BE-10/BE-12: a malformed id on reply or delete is NotFound, not a database error", async () => {
+    await expect(replyToMemory(db, "bea", "nope")).rejects.toBeInstanceOf(NotFoundError);
+    await expect(deleteMemory(db, "alice", "nope")).rejects.toBeInstanceOf(NotFoundError);
+  });
+});
+
+describe("removed sender (BE-13)", () => {
+  it("BE-13: a sender who leaves loses their sent list and cannot get it, but recipients keep it", async () => {
+    const { id } = await send();
+    await replyToMemory(db, "bea", id);
+    await removeMember(db, groupId, "alice");
+    expect(await listSent(db, "alice")).toEqual([]);
+    await expect(getMemory(db, "alice", id)).rejects.toBeInstanceOf(NotFoundError);
+    expect(await getMemory(db, "cy", id)).toMatchObject({ id });
+    expect(await listInbox(db, "bea")).toHaveLength(1);
+  });
+
+  it("BE-13: a sender who leaves can still retract what they sent", async () => {
+    const { id } = await send();
+    await removeMember(db, groupId, "alice");
+    await deleteMemory(db, "alice", id);
+    expect(await listInbox(db, "bea")).toEqual([]);
+  });
+});
+
+describe("contents and ordering", () => {
+  it("BE-4: the photo key round-trips and defaults to null", async () => {
+    await sendMemory(db, "alice", { groupId, caption: "with photo", photoKey: "photos/abc.jpg" });
+    await send("alice", "no photo");
+    const inbox = await listInbox(db, "bea");
+    expect(inbox.find((m) => m.caption === "with photo")?.photoKey).toBe("photos/abc.jpg");
+    expect(inbox.find((m) => m.caption === "no photo")?.photoKey).toBeNull();
+  });
+
+  it("BE-8: replies are listed in the order they were made", async () => {
+    const { id } = await send();
+    await replyToMemory(db, "cy", id);
+    await replyToMemory(db, "bea", id);
+    const sent = await listSent(db, "alice");
+    expect(sent[0].replies.map((r) => r.userId)).toEqual(["cy", "bea"]);
+  });
+
+  it("BE-8: sent memories are newest first", async () => {
+    const first = await send("alice", "one");
+    const second = await send("alice", "two");
+    await replyToMemory(db, "bea", first.id);
+    await replyToMemory(db, "bea", second.id);
+    await db.query("update memories set created_at = now() - interval '1 hour' where id = $1", [first.id]);
+    expect((await listSent(db, "alice")).map((m) => m.caption)).toEqual(["two", "one"]);
+  });
+});

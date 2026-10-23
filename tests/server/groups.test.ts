@@ -29,6 +29,24 @@ describe("groups (BE-1, BE-2)", () => {
     await expect(createGroup(db, "alice", "   ")).rejects.toThrow();
   });
 
+  it("BE-1: trims the group name", async () => {
+    const group = await createGroup(db, "alice", "  Sorority  ");
+    expect(group.name).toBe("Sorority");
+  });
+
+  it("BE-1: creating groups for the same user twice keeps one user row", async () => {
+    await createGroup(db, "alice", "One");
+    await createGroup(db, "alice", "Two");
+    await ensureUser(db, "alice");
+    const rows = await db.query<{ count: string }>("select count(*)::text as count from users where id = 'alice'");
+    expect(rows[0].count).toBe("1");
+  });
+
+  it("BE-2: a user who never signed up is not a member of anything", async () => {
+    const group = await createGroup(db, "alice", "Sorority");
+    await expect(requireMember(db, "ghost", group.id)).rejects.toBeInstanceOf(NotFoundError);
+  });
+
   it("BE-15: rejects a group name over 80 characters", async () => {
     await expect(createGroup(db, "alice", "x".repeat(81))).rejects.toThrow();
     await expect(createGroup(db, "alice", "x".repeat(80))).resolves.toBeDefined();

@@ -31,7 +31,7 @@ Callers pass the acting `userId` (the verified Clerk user id). This layer never 
 
 ## Membership change
 
-- **BE-13** A user who leaves or is removed from a group immediately loses access to that group's memories (BE-7, BE-9, BE-10), including ones sent before. Memories they sent stay with the remaining recipients.
+- **BE-13** A user who leaves or is removed from a group immediately loses access to that group's memories (BE-7, BE-9, BE-10), including ones sent before. Memories they sent stay with the remaining recipients, and the sender can still delete them (BE-12) after leaving, so a person can retract what they sent.
 
 - **BE-15** A group name is 1 to 80 characters after trimming, and a caption is at most 500 characters. Longer or empty values are rejected and nothing is stored.
 

@@ -5,6 +5,8 @@ export interface Db {
   query<T = Record<string, unknown>>(text: string, params?: unknown[]): Promise<T[]>;
 }
 
+// TODO(re-evaluate when a throwaway Neon branch is approved, before the friends rollout): run `npm run db:migrate` twice
+// and the send/inbox/reply flow through getDb() against it. Until then only the in-memory Postgres has run this code.
 /** The real Neon database. Reads DATABASE_URL when called, so importing this file never needs it. */
 export function getDb(): Db {
   const sql = neon(process.env.DATABASE_URL!);
