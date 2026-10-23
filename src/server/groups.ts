@@ -32,3 +32,15 @@ export async function requireMember(db: Db, userId: string, groupId: string): Pr
   if (rows.length === 0) throw new NotFoundError();
   return rows[0].role;
 }
+
+/** The groups the user is in now, newest group first (BE-16). Only their own memberships are read. */
+export async function listGroups(db: Db, userId: string): Promise<{ id: string; name: string; role: GroupRole }[]> {
+  return db.query<{ id: string; name: string; role: GroupRole }>(
+    `select g.id, g.name, gm.role
+     from group_members gm
+     join groups g on g.id = gm.group_id
+     where gm.user_id = $1
+     order by g.created_at desc, g.id`,
+    [userId],
+  );
+}
