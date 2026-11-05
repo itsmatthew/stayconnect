@@ -25,7 +25,7 @@ describe("groups route wiring (API-1)", () => {
 describe("memory routes wiring (API-1)", () => {
   const signedOut = async (res: Response | Promise<Response>) => expect((await res).status).toBe(401);
 
-  it("API-1: POST /api/memories, GET inbox, and GET [id] with no session are 401", async () => {
+  it("API-1: every memory route with no session is 401", async () => {
     const { POST: send } = await import("../../../src/app/api/memories/route");
     const { GET: inbox } = await import("../../../src/app/api/memories/inbox/route");
     const { GET: one } = await import("../../../src/app/api/memories/[id]/route");
@@ -39,6 +39,13 @@ describe("memory routes wiring (API-1)", () => {
       ),
     );
     await signedOut(inbox(new Request("http://localhost/api/memories/inbox")));
+    const { GET: sent } = await import("../../../src/app/api/memories/sent/route");
+    const { DELETE: remove } = await import("../../../src/app/api/memories/[id]/route");
+    const { POST: reply } = await import("../../../src/app/api/memories/[id]/reply/route");
+    const ctx = { params: Promise.resolve({ id: "abc" }) };
+    await signedOut(sent(new Request("http://localhost/api/memories/sent")));
+    await signedOut(remove(new Request("http://localhost/api/memories/abc", { method: "DELETE" }), ctx));
+    await signedOut(reply(new Request("http://localhost/api/memories/abc/reply", { method: "POST" }), ctx));
     await signedOut(
       one(new Request("http://localhost/api/memories/abc"), { params: Promise.resolve({ id: "abc" }) }),
     );
