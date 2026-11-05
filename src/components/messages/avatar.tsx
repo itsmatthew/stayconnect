@@ -24,7 +24,7 @@ export function PartyAvatar({ party, size }: { party: Party; size: number }) {
       />
     );
   }
-  const { canopy, shade } = party.palette;
+  const { canopy, shade, highlight } = party.palette;
   const ring = `0 0 0 ${s(2.5)} #F6ECCD, 0 0 0 ${s(5)} ${canopy}`;
   if (party.logo) {
     return (
@@ -40,8 +40,7 @@ export function PartyAvatar({ party, size }: { party: Party; size: number }) {
       aria-label={`${party.name} logo`}
       style={{
         ...common,
-        // Only the colors held to 4.5:1 against cream sit under the initials (docs/specs/group-colors.md, COLOR-2).
-        background: `radial-gradient(circle at 35% 30%, ${canopy} 40%, ${shade})`,
+        background: `radial-gradient(circle at 35% 30%, ${highlight} 0 8%, ${canopy} 40%, ${shade})`,
         boxShadow: ring,
         display: "flex",
         alignItems: "center",

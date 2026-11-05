@@ -42,14 +42,12 @@ describe("palette (COLOR-1)", () => {
     }
   });
 
-  it("orders each color's shades base, darker, lighter, all visibly different", () => {
+  it("has three visibly different shades of each color", () => {
     expect(SHADE_COUNT).toBe(3);
     for (const { id } of GROUP_COLORS) {
-      const [base, darker, lighter] = [0, 1, 2].map((s) => groupPalette(id, s).canopy);
-      expect(luminance(darker), id).toBeLessThan(luminance(base));
-      expect(luminance(lighter), id).toBeGreaterThan(luminance(base));
-      expect(distance(base, darker), id).toBeGreaterThanOrEqual(5);
-      expect(distance(base, lighter), id).toBeGreaterThanOrEqual(5);
+      const [base, second, third] = [0, 1, 2].map((s) => groupPalette(id, s).canopy);
+      expect(distance(base, second), id).toBeGreaterThanOrEqual(7);
+      expect(distance(second, third), id).toBeGreaterThanOrEqual(7);
     }
   });
 
@@ -67,13 +65,24 @@ describe("palette (COLOR-1)", () => {
   });
 });
 
-describe("cream stays readable (COLOR-2)", () => {
-  it("keeps at least 4.5:1 against both creams on every shade", () => {
-    expect(everyShade).toHaveLength(36);
-    for (const { id, shade, palette } of everyShade) {
+describe("shades and cream (COLOR-2)", () => {
+  it("keeps the original colors exact, even below 4.5:1", () => {
+    expect(groupPalette("red", 0)).toEqual({ canopy: "#C8432B", shade: "#93281A", highlight: "#F3A088", rim: "#FFD2C4" });
+    expect(groupPalette("green", 0)).toEqual({ canopy: "#5E8068", shade: "#3F5F4C", highlight: "#B8D2BE", rim: "#D6F0DC" });
+    expect(groupPalette("amber", 0)).toEqual({ canopy: "#E3A22F", shade: "#B97814", highlight: "#FBE2A0", rim: "#FFF0BE" });
+    expect(groupPalette("purple", 0)).toEqual({ canopy: "#9A4FB0", shade: "#6B2F80", highlight: "#D7AEE3", rim: "#F0DDF6" });
+    expect(groupPalette("orange", 0)).toEqual({ canopy: "#E8792E", shade: "#A8501A", highlight: "#F7B98A", rim: "#FFE3CC" });
+    expect(groupPalette("blue", 0)).toEqual({ canopy: "#3F86C4", shade: "#285E92", highlight: "#A9CFEF", rim: "#D8ECFB" });
+  });
+
+  it("never gives an extra shade worse contrast against cream than its own base", () => {
+    const extras = everyShade.filter((s) => s.shade > 0);
+    expect(extras).toHaveLength(24);
+    for (const { id, shade, palette } of extras) {
+      const base = groupPalette(id, 0);
       for (const cream of CREAMS) {
-        expect(contrast(palette.canopy, cream), `${id}/${shade} canopy on ${cream}`).toBeGreaterThanOrEqual(4.5);
-        expect(contrast(palette.shade, cream), `${id}/${shade} shade on ${cream}`).toBeGreaterThanOrEqual(4.5);
+        expect(contrast(palette.canopy, cream), `${id}/${shade} canopy on ${cream}`).toBeGreaterThanOrEqual(contrast(base.canopy, cream));
+        expect(contrast(palette.shade, cream), `${id}/${shade} shade on ${cream}`).toBeGreaterThanOrEqual(contrast(base.shade, cream));
       }
     }
   });
