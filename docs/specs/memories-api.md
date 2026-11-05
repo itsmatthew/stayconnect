@@ -20,3 +20,11 @@ Checks run in this order, and the first to fail answers.
 
 - **API-8** `POST /api/groups` with `{ "name": string }` creates a group (BE-1, BE-15) and returns `201` with `{ id, name }`. The name is 1 to 80 characters after trimming. Extra fields are ignored.
 - **API-9** `GET /api/groups` returns `200` with `{ groups: [{ id, name, role }] }`: only the caller's groups, newest first (BE-16).
+
+## Sending and reading memories
+
+Data rules are in `docs/specs/memories-backend.md` (BE-3 to BE-9). Memory responses list their fields explicitly: the storage `photoKey` is never returned, and photos are not accepted over HTTP yet.
+
+- **API-10** `POST /api/memories` with `{ "groupId": uuid, "caption": string }` sends a memory and returns `201` with `{ id }`. The caption is 0 to 500 characters, counted as characters (an emoji counts as one, matching the database). A malformed `groupId` or an invalid caption is `400`. Unknown fields, including `photoKey`, are ignored and not stored. A group the caller is not in, or that does not exist, is `404` (BE-3). A group with no other member is `409` (BE-4). Nothing is stored in any failing case.
+- **API-11** `GET /api/memories/inbox` returns `200` with `{ memories: [{ id, groupId, senderId, caption, createdAt, replied }] }`: memories the caller received, newest first (BE-7), never the caller's own sends.
+- **API-12** `GET /api/memories/{id}` returns `200` with `{ id, groupId, senderId, caption, createdAt }` to a current recipient, or to the sender once a recipient has replied (BE-8, BE-9). A malformed id, an unknown id, someone else's memory, and the sender's own memory before any reply all return the same `404` with the same body.
