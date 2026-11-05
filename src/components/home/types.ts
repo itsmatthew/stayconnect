@@ -18,7 +18,12 @@ export type HeaderPhoto = { src?: string; art?: ArtKind; takenAt?: number };
 export type CircleGroup = {
   id: string;
   name: string;
+  /** The group's shared color (docs/specs/group-colors.md). */
+  colorId: string;
+  /** What this viewer sees: the shared color at their shade, or their own override (COLOR-5/7). */
   palette: Palette;
+  /** When the viewer joined; keeps their shades stable (COLOR-6). */
+  joinedAt: number;
   /** One of the user's 3–5 closest circles: pinned to the front of home and messages. */
   closest: boolean;
   /** Friend ids. */

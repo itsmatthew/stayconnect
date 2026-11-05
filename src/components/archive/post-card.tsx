@@ -14,11 +14,8 @@ export function circleLines(colors: readonly string[]): string {
     .join(", ");
 }
 
-/** Navy text on light canopies (amber), cream on the rest, as in the reference. */
-function inkOn(hex: string): string {
-  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-  return 0.299 * r + 0.587 * g + 0.114 * b > 150 ? NAVY : "#FFF6DA";
-}
+/** Text on a group's color is always cream (docs/specs/group-colors.md, COLOR-2). */
+const INK = "#FFF6DA";
 
 // Frames sit outside the circle lines (up to 8.5 design px out), so their padding must exceed that.
 const PHOTO_HEIGHT: Record<SlotKind, number> = { week: 280, bonus: 290, month: 340, year: 400 };
@@ -28,7 +25,6 @@ export function PostCard({ card }: { card: PostCardView }) {
   const { variant, palette } = card;
   const bonus = variant === "bonus";
   const bg = bonus ? "#2B3350" : palette.canopy;
-  const ink = bonus ? "#FFF6DA" : inkOn(palette.canopy);
   const frame: CSSProperties =
     variant === "month"
       ? { padding: s(13), borderRadius: s(30), background: GOLD, animation: "ar-glow 3.2s ease-in-out infinite" }
@@ -70,7 +66,7 @@ export function PostCard({ card }: { card: PostCardView }) {
           {card.ribbon}
         </div>
       )}
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: `${s(6)} ${s(9)}`, padding: `${s(8)} ${s(10)}`, color: ink }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: `${s(6)} ${s(9)}`, padding: `${s(8)} ${s(10)}`, color: INK }}>
           <PartyAvatar party={{ kind: "friend", id: card.id, name: card.author.name, closest: false, look: card.author.look }} size={34} />
           <span style={{ flex: "1 0 auto", display: "flex", flexDirection: "column", lineHeight: 1.15, whiteSpace: "nowrap" }}>
             <span style={{ fontWeight: 800, fontSize: s(14.5) }}>{card.author.name}</span>

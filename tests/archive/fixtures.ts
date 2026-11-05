@@ -1,16 +1,19 @@
 // Small, made-up circles for the Archive tests, independent of the app's placeholder data.
 import { emptyData, type AppData } from "@/app/intro/app-data";
 import { periodFromKey } from "@/app/intro/archive/periods";
+import { groupPalette } from "@/app/intro/colors/palette";
 import type { ArchivePost } from "@/app/intro/archive/posts";
 import { ME } from "@/app/intro/messages/conversations";
 import type { CircleGroup, Friend, Memory } from "@/components/home/types";
 
-const pal = (canopy: string) => ({ canopy, shade: canopy, highlight: canopy, rim: canopy });
 const mem: Memory = { id: "m", art: "sunset", caption: "a\nb" };
-const group = (id: string, name: string, canopy: string, closest: boolean, members: string[], viewers?: string[]): CircleGroup => ({
+let joined = 0;
+const group = (id: string, name: string, colorId: string, closest: boolean, members: string[], viewers?: string[]): CircleGroup => ({
   id,
   name,
-  palette: pal(canopy),
+  colorId,
+  palette: groupPalette(colorId, 0),
+  joinedAt: ++joined,
   closest,
   members,
   viewers,
@@ -19,17 +22,17 @@ const group = (id: string, name: string, canopy: string, closest: boolean, membe
   lastMemory: "last memory today",
 });
 
-export const RED = "#C8432B";
-export const GOLD = "#E3A22F";
-export const GREEN = "#5E8068";
-export const BLUE = "#3F86C4";
+export const RED = groupPalette("red", 0).canopy;
+export const GOLD = groupPalette("amber", 0).canopy;
+export const GREEN = groupPalette("green", 0).canopy;
+export const BLUE = groupPalette("blue", 0).canopy;
 
 // Deliberately not closest-first, to check the ordering.
 export const groups: CircleGroup[] = [
-  group("greens", "Greens", GREEN, false, ["leo"]),
-  group("reds", "Reds", RED, true, ["leo", "ana", "sam"]),
-  group("golds", "Golds", GOLD, true, ["leo", "sam"]),
-  group("blues", "Blues", BLUE, false, ["leo", "gran", "kim"], ["gran"]),
+  group("greens", "Greens", "green", false, ["leo"]),
+  group("reds", "Reds", "red", true, ["leo", "ana", "sam"]),
+  group("golds", "Golds", "amber", true, ["leo", "sam"]),
+  group("blues", "Blues", "blue", false, ["leo", "gran", "kim"], ["gran"]),
 ];
 
 const look = { skin: "#EDB98F", hair: "#6B3F23", shirt: "#2B3350", bg: "#CFE0F4", ring: "#3F9AD8" };

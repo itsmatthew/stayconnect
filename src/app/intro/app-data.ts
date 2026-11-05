@@ -6,12 +6,14 @@ import type { UpToRow } from "@/components/profile/types";
 import type { ArchivePost } from "./archive/posts";
 import type { ReceivedGift } from "./circle/gifts";
 import type { Placements } from "./circle/rings";
+import { fakeMemberColors, type MemberColorSource } from "./colors/member-colors";
 import { DEMO_DATA } from "./demo";
 import type { Conversation } from "./messages/conversations";
 import {
   friends,
   placeholderGoals,
   placeholderGroups,
+  placeholderMemberColors,
   placeholderPosts,
   placeholderGifts,
   placeholderReplies,
@@ -38,6 +40,8 @@ export type AppData = {
   goals: (now: number) => GoalState;
   /** Group id → "what everyone’s up to" rows (GP-10). */
   upTo: Readonly<Record<string, readonly UpToRow[]>>;
+  /** Colors a group's members already use (docs/specs/group-colors.md, COLOR-4). */
+  memberColors: MemberColorSource;
   /** Appended to storage names so demo and real data never mix (DEMO-3). */
   storageSuffix: string;
 };
@@ -53,6 +57,7 @@ export const emptyData: AppData = {
   viewerOf: [],
   goals: () => ({}),
   upTo: {},
+  memberColors: fakeMemberColors({}),
   storageSuffix: "",
 };
 
@@ -67,6 +72,7 @@ export const demoData: AppData = {
   viewerOf: [],
   goals: placeholderGoals,
   upTo: placeholderUpTo,
+  memberColors: fakeMemberColors(placeholderMemberColors),
   storageSuffix: ".demo",
 };
 

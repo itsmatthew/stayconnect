@@ -47,6 +47,8 @@ export type GroupProfileProps = {
   onDismissPrompt: () => void;
   onBack: () => void;
   onChangeLogo: () => void;
+  /** Opens the personal color dialog (docs/specs/group-colors.md, COLOR-10). */
+  onChangeColor: () => void;
   onViewOrnament: (index: number) => void;
   onSeeAll: () => void;
   onEditGoal: () => void;

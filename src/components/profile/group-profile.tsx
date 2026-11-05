@@ -34,7 +34,7 @@ const UP_TO_CHIPS = ["#C8432B", "#D99A12", "#4F8A3C"];
  * No superlatives and no ranking of members, on purpose.
  */
 export function GroupProfile(props: GroupProfileProps) {
-  const { party, members, ornaments, photos, hasMore, then, goal, upTo, header, onPickHeader, onPickPrompt, onDismissPrompt, onBack, onChangeLogo, onViewOrnament, onSeeAll, onEditGoal, onToggleIn } = props;
+  const { party, members, ornaments, photos, hasMore, then, goal, upTo, header, onPickHeader, onPickPrompt, onDismissPrompt, onBack, onChangeLogo, onChangeColor, onViewOrnament, onSeeAll, onEditGoal, onToggleIn } = props;
   const photosId = useId();
   return (
     <div
@@ -82,6 +82,16 @@ export function GroupProfile(props: GroupProfileProps) {
             </svg>
           </button>
           <h1 style={{ margin: `${s(46)} 0 0`, textAlign: "center", fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(22), letterSpacing: s(-0.3) }}>{party.name}</h1>
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <button
+              type="button"
+              onClick={onChangeColor}
+              style={{ minHeight: 44, padding: `0 ${s(12)}`, display: "flex", alignItems: "center", gap: s(8), border: 0, background: "none", color: NAVY, fontFamily: KARLA, fontSize: s(13), fontWeight: 700, cursor: "pointer" }}
+            >
+              <span aria-hidden="true" style={{ width: s(14), height: s(14), borderRadius: "50%", background: party.palette.canopy }} />
+              Color on my screen
+            </button>
+          </div>
         </div>
 
         <MembersString members={members} />

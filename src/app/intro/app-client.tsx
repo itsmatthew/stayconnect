@@ -6,6 +6,10 @@ import { defaultData, type AppData } from "./app-data";
 import { ArchiveClient } from "./archive/archive-client";
 import { ARCHIVE_DB, openArchiveStore, type ArchiveStore } from "./archive/archive-store";
 import { useCircle } from "./circle/use-circle";
+import type { ColorOverrideStore } from "./colors/color-overrides";
+import { withViewerColors } from "./colors/group-colors";
+import { localColorOverrideStore } from "./colors/local-color-overrides";
+import { useColorOverrides } from "./colors/use-color-overrides";
 import { Daily5Client } from "./daily5/daily5-client";
 import { detectFaces } from "./daily5/face-detector";
 import { openPhotoStore, type PhotoStore } from "./daily5/photo-store";
@@ -31,6 +35,8 @@ type AppClientProps = {
   openStore?: () => Promise<PhotoStore>;
   openArchive?: (name: string) => Promise<ArchiveStore>;
   openOrnaments?: (name: string) => Promise<OrnamentStore>;
+  /** Where this viewer's own group colors are kept (docs/specs/group-colors.md, COLOR-8). */
+  colorOverrides?: (storageSuffix: string) => ColorOverrideStore;
   hasFace?: (image: Blob) => Promise<boolean>;
   readCapture?: (f: File) => Promise<number | undefined>;
   decode?: (f: File) => Promise<Blob>;
@@ -83,6 +89,7 @@ export function AppClient({
   openStore = openPhotoStore,
   openArchive = openArchiveStore,
   openOrnaments = openOrnamentStore,
+  colorOverrides = localColorOverrideStore,
   hasFace = detectFaces,
   readCapture = captureDate,
   decode = downscale,
@@ -94,7 +101,10 @@ export function AppClient({
   const [archive, trackArchiveWork] = useStore(openArchiveNamed);
   const [openOrnamentsNamed] = useState(() => () => openOrnaments(ORNAMENT_DB + data.storageSuffix));
   const ornaments = useOrnaments(openOrnamentsNamed);
-  const homeGroups = useMemo(() => withOrnaments(data.groups, ornaments.state, ornaments.urls), [data.groups, ornaments.state, ornaments.urls]);
+  const [overrides, setColorOverride] = useColorOverrides(colorOverrides(data.storageSuffix));
+  // Colors are applied once, here, so every screen shows the same shade (COLOR-9).
+  const viewerData = useMemo(() => ({ ...data, groups: withViewerColors(data.groups, overrides) }), [data, overrides]);
+  const homeGroups = useMemo(() => withOrnaments(viewerData.groups, ornaments.state, ornaments.urls), [viewerData.groups, ornaments.state, ornaments.urls]);
   const [chat, dispatch] = useChat(now, data.seedConversations, data.storageSuffix);
   const recipients = useMemo(() => recipientSections(homeGroups, data.friends), [homeGroups, data.friends]);
   const nameOf = (id: string) => data.friends.find((f) => f.id === id)?.name;
@@ -157,7 +167,7 @@ export function AppClient({
     case "Daily 5":
       return <Daily5Client store={store} track={trackStoreWork} now={now} hasFace={hasFace} recipients={recipients} dispatch={dispatch} nav={nav} />;
     case "Archive":
-      return <ArchiveClient data={data} now={now} store={archive} track={trackArchiveWork} readCapture={readCapture} decode={decode} nav={nav} />;
+      return <ArchiveClient data={viewerData} now={now} store={archive} track={trackArchiveWork} readCapture={readCapture} decode={decode} nav={nav} />;
     case "Messages":
       return (
         <MessagesClient
@@ -187,6 +197,7 @@ export function AppClient({
             placements: circle.placements,
             upTo: data.upTo,
             ornaments: ornamentControls,
+            colors: { overrides, onChange: setColorOverride },
             // Header photos are saved at once, downscaled, with their capture date (GP-12). The change starts at the tap,
             // so the store stays open while the photo is prepared.
             setHeaderPhoto: (groupId, slot, file) =>
@@ -201,6 +212,6 @@ export function AppClient({
         />
       );
     case "Me":
-      return <MeClient data={data} now={now} store={archive} nav={nav} />;
+      return <MeClient data={viewerData} now={now} store={archive} nav={nav} />;
   }
 }

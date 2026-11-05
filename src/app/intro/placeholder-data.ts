@@ -3,22 +3,28 @@
 // their rings and gifts in Your circle (docs/specs/circle.md), seed conversations, the replies "simulate reply" uses (docs/specs/messages.md), Archive posts
 // (docs/specs/archive.md), and next-time-together goals and up-to rows (docs/specs/group-profile.md). Only app-data.ts imports it, behind the demo switch (docs/specs/demo.md).
 
-import type { ArtKind, CircleGroup, Friend, Palette } from "@/components/home/types";
+import type { ArtKind, CircleGroup, Friend } from "@/components/home/types";
 import type { UpToRow } from "@/components/profile/types";
 import type { ReceivedGift } from "./circle/gifts";
 import type { Placements } from "./circle/rings";
 import { isOpen, isoWeek, periodsOfYear } from "./archive/periods";
 import type { ArchivePost } from "./archive/posts";
+import { groupPalette } from "./colors/palette";
 import { ME, type ChatMessage, type Conversation } from "./messages/conversations";
 import { localDay, type GoalState } from "./profile/goals";
 
-const red: Palette = { canopy: "#C8432B", shade: "#93281A", highlight: "#F3A088", rim: "#FFD2C4" };
-const green: Palette = { canopy: "#5E8068", shade: "#3F5F4C", highlight: "#B8D2BE", rim: "#D6F0DC" };
-const amber: Palette = { canopy: "#E3A22F", shade: "#B97814", highlight: "#FBE2A0", rim: "#FFF0BE" };
-const purple: Palette = { canopy: "#9A4FB0", shade: "#6B2F80", highlight: "#D7AEE3", rim: "#F0DDF6" };
-const orange: Palette = { canopy: "#E8792E", shade: "#A8501A", highlight: "#F7B98A", rim: "#FFE3CC" };
-const blue: Palette = { canopy: "#3F86C4", shade: "#285E92", highlight: "#A9CFEF", rim: "#D8ECFB" };
-const rust: Palette = { canopy: "#B85A2E", shade: "#82391A", highlight: "#EBA684", rim: "#FADACB" };
+/** A demo group's shared color, and when the user joined it. Two groups share red, to show the shade shift (COLOR-5). */
+const colored = (colorId: string, year: number) => ({ colorId, palette: groupPalette(colorId, 0), joinedAt: new Date(year, 0, 1).getTime() });
+
+/** What each friend's other groups use, for `suggestGroupColor` (COLOR-4). */
+export const placeholderMemberColors: Readonly<Record<string, readonly string[]>> = {
+  leo: ["red", "green"],
+  ana: ["red", "blue"],
+  nico: ["amber"],
+  sam: ["amber", "purple"],
+  jordan: ["green", "orange"],
+  priya: ["teal"],
+};
 
 export const friends: readonly Friend[] = [
   { id: "leo", name: "Leo", closest: true, look: { skin: "#EDB98F", hair: "#6B3F23", shirt: "#2B3350", bg: "#CFE0F4", ring: "#3F9AD8" } },
@@ -51,7 +57,7 @@ export const placeholderGroups: readonly CircleGroup[] = [
   {
     id: "madrid-crew",
     name: "Madrid Crew",
-    palette: red,
+    ...colored("red", 2019),
     closest: true,
     members: ["leo", "ana", "nico"],
     friendCount: 6,
@@ -68,7 +74,7 @@ export const placeholderGroups: readonly CircleGroup[] = [
   {
     id: "hoops-since-14",
     name: "Hoops Since ’14",
-    palette: amber,
+    ...colored("amber", 2014),
     closest: true,
     members: ["sam", "jordan", "leo"],
     friendCount: 5,
@@ -85,7 +91,7 @@ export const placeholderGroups: readonly CircleGroup[] = [
   {
     id: "apt-4b",
     name: "Apt 4B",
-    palette: green,
+    ...colored("green", 2021),
     closest: true,
     members: ["priya", "ana"],
     friendCount: 3,
@@ -102,7 +108,7 @@ export const placeholderGroups: readonly CircleGroup[] = [
   {
     id: "family",
     name: "Family",
-    palette: blue,
+    ...colored("blue", 2012),
     closest: true,
     members: ["mom", "dad", "grandma"],
     // Grandma sees everyone's Archive posts without posting (ARC-5).
@@ -121,7 +127,7 @@ export const placeholderGroups: readonly CircleGroup[] = [
   {
     id: "uni-mates",
     name: "Uni Mates",
-    palette: purple,
+    ...colored("purple", 2020),
     closest: false,
     members: ["priya", "jordan"],
     friendCount: 2,
@@ -138,7 +144,7 @@ export const placeholderGroups: readonly CircleGroup[] = [
   {
     id: "work-mates",
     name: "Work Mates",
-    palette: orange,
+    ...colored("orange", 2023),
     closest: false,
     members: ["sam", "nico"],
     friendCount: 5,
@@ -155,7 +161,7 @@ export const placeholderGroups: readonly CircleGroup[] = [
   {
     id: "fall-24",
     name: "Fall 24",
-    palette: rust,
+    ...colored("red", 2024),
     closest: false,
     members: ["jordan", "ana", "nico"],
     friendCount: 3,
