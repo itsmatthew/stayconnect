@@ -18,5 +18,5 @@ Level and stack are declared in `.ffflow/config.yaml`. Run `/fff:upgrade-ffflow`
 ## Commands and scopes
 
 - Test: `npm test` (Vitest; server tests use an in-memory Postgres). Lint: `npm run lint`. Typecheck: `npx tsc --noEmit`. Migrate: `npm run db:migrate`.
-- Commit scopes: `adr`, `db`, `server`, `auth`, `intro` (Jackson's app screens).
+- Commit scopes: `adr`, `db`, `server`, `api`, `auth`, `intro` (Jackson's app screens).
 - Specs: `docs/specs/`. Decisions: `docs/adr/`. Server rules: `src/server/CLAUDE.md`.
