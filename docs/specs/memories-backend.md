@@ -9,6 +9,7 @@ Callers pass the acting `userId` (the verified Clerk user id). This layer never 
 
 - **BE-1** A user can create a group and becomes its `owner`. Each group has one or more `members`; the role is `owner` or `member`.
 - **BE-2** `requireMember(userId, groupId)` succeeds only for a current member. For a non-member and for a group that does not exist it throws the same `NotFoundError`, so a caller cannot probe which groups exist.
+- **BE-16** `listGroups(userId)` returns the groups the user currently belongs to, each with its id, name, and the user's role, newest group first. It returns nothing for groups the user left or never joined, and an empty list for a user with no groups.
 
 ## Sending
 

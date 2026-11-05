@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { createGroup, ensureUser, requireMember } from "../../src/server/groups";
+import { createGroup, ensureUser, listGroups, requireMember } from "../../src/server/groups";
 import { NotFoundError } from "../../src/server/errors";
 import type { Db } from "../../src/server/db";
 import { applyMigrations, newTestDb } from "./helpers";
-import { addMember } from "./helpers";
+import { addMember, removeMember } from "./helpers";
 import type { PGlite } from "@electric-sql/pglite";
 
 let db: Db;
@@ -73,5 +73,38 @@ describe("migrations (BE-14)", () => {
     await applyMigrations(pg);
     const rows = await db.query<{ count: string }>("select count(*)::text as count from groups");
     expect(rows[0].count).toBe("1");
+  });
+});
+
+describe("listing groups (BE-16)", () => {
+  it("BE-16: lists the user's groups with their role, newest first", async () => {
+    const older = await createGroup(db, "alice", "Sorority");
+    const newer = await createGroup(db, "bea", "Study abroad");
+    await addMember(db, newer.id, "alice");
+    expect(await listGroups(db, "alice")).toEqual([
+      { id: newer.id, name: "Study abroad", role: "member" },
+      { id: older.id, name: "Sorority", role: "owner" },
+    ]);
+  });
+
+  it("BE-16: leaves out groups the user is not in", async () => {
+    await createGroup(db, "alice", "Sorority");
+    const theirs = await createGroup(db, "bea", "Study abroad");
+    const mine = await listGroups(db, "alice");
+    expect(mine.map((g) => g.id)).not.toContain(theirs.id);
+  });
+
+  it("BE-16: a group the user left disappears from their list but not from the others'", async () => {
+    const group = await createGroup(db, "alice", "Sorority");
+    await addMember(db, group.id, "bea");
+    await removeMember(db, group.id, "bea");
+    expect(await listGroups(db, "bea")).toEqual([]);
+    expect(await listGroups(db, "alice")).toHaveLength(1);
+  });
+
+  it("BE-16: a user with no groups, or who never signed up, gets an empty list", async () => {
+    await ensureUser(db, "alice");
+    expect(await listGroups(db, "alice")).toEqual([]);
+    expect(await listGroups(db, "ghost")).toEqual([]);
   });
 });
