@@ -2,7 +2,7 @@ import { useId } from "react";
 import { MemoryPicture } from "./memory-art";
 import type { Memory } from "./types";
 
-export type OrnamentDefs = { ornShade: string; ornCap: string };
+export type OrnamentDefs = { ornCap: string };
 
 type OrnamentProps = {
   cx: number;
@@ -11,14 +11,18 @@ type OrnamentProps = {
   R: number;
   /** Length of the hanging string. */
   L: number;
-  memory: Pick<Memory, "art" | "src">;
+  memory: Pick<Memory, "src">;
   rim: string;
+  /** The group's color, for a blank's outline and plus (HOME-20). */
+  color: string;
   defs: OrnamentDefs;
 };
 
-/** A glass bauble holding a memory's art, hung on a string (proportions from the reference). */
-export function Ornament({ cx, cy, R, L, memory, rim, defs }: OrnamentProps) {
-  const clip = `orn${useId().replace(/[^\w-]/g, "")}`;
+/** A glass bauble holding a memory's photo, hung on a string (proportions from the reference). A blank has no glass over it yet (HOME-20). */
+export function Ornament({ cx, cy, R, L, memory, rim, color, defs }: OrnamentProps) {
+  const id = useId().replace(/[^\w-]/g, "");
+  const clip = `orn${id}`;
+  const gloss = `gloss${id}`;
   return (
     <g data-ornament="">
       <ellipse cx={cx + 0.14 * R} cy={cy + 0.3 * R} rx={1.04 * R} ry={R} fill="#2A0E06" opacity=".2" />
@@ -43,28 +47,40 @@ export function Ornament({ cx, cy, R, L, memory, rim, defs }: OrnamentProps) {
         <circle cx={cx} cy={cy} r={R} />
       </clipPath>
       <g clipPath={`url(#${clip})`}>
-        <MemoryPicture memory={memory} cx={cx} cy={cy} R={R} />
+        <MemoryPicture memory={memory} color={color} cx={cx} cy={cy} R={R} />
       </g>
-      <circle cx={cx} cy={cy} r={R} fill={`url(#${defs.ornShade})`} />
-      <circle cx={cx} cy={cy} r={R - 0.8} fill="none" stroke={rim} strokeWidth="1.8" opacity=".95" />
-      <path
-        d={`M${cx - 0.72 * R} ${cy + 0.5 * R}A${0.88 * R} ${0.88 * R} 0 0 0 ${cx + 0.72 * R} ${cy + 0.5 * R}`}
-        fill="none"
-        stroke={rim}
-        strokeWidth={0.16 * R}
-        strokeLinecap="round"
-        opacity=".4"
-      />
-      <ellipse
-        cx={cx - 0.36 * R}
-        cy={cy - 0.5 * R}
-        rx={0.36 * R}
-        ry={0.16 * R}
-        fill="#fff"
-        opacity=".9"
-        transform={`rotate(-30 ${cx - 0.36 * R} ${cy - 0.5 * R})`}
-      />
-      <circle cx={cx - 0.66 * R} cy={cy - 0.12 * R} r={0.07 * R} fill="#fff" opacity=".8" />
+      {memory.src && (
+        <>
+          {/* The dark edge makes it round; the white is faint so the photo shows through (HOME-21). */}
+          <radialGradient id={gloss} cx=".34" cy=".28" r=".8">
+            <stop offset="0" stopColor="#fff" stopOpacity=".25" />
+            <stop offset=".38" stopColor="#fff" stopOpacity=".04" />
+            <stop offset=".72" stopColor="#3A1408" stopOpacity=".06" />
+            <stop offset="1" stopColor="#3A1408" stopOpacity=".42" />
+          </radialGradient>
+          <circle data-ornament-gloss="" cx={cx} cy={cy} r={R} fill={`url(#${gloss})`} />
+          <circle cx={cx} cy={cy} r={R - 0.8} fill="none" stroke={rim} strokeWidth="1.8" opacity=".95" />
+          <path
+            d={`M${cx - 0.72 * R} ${cy + 0.5 * R}A${0.88 * R} ${0.88 * R} 0 0 0 ${cx + 0.72 * R} ${cy + 0.5 * R}`}
+            fill="none"
+            stroke={rim}
+            strokeWidth={0.16 * R}
+            strokeLinecap="round"
+            opacity=".4"
+          />
+          <ellipse
+            data-ornament-highlight=""
+            cx={cx - 0.36 * R}
+            cy={cy - 0.5 * R}
+            rx={0.36 * R}
+            ry={0.16 * R}
+            fill="#fff"
+            opacity=".35"
+            transform={`rotate(-30 ${cx - 0.36 * R} ${cy - 0.5 * R})`}
+          />
+          <circle data-ornament-highlight="" cx={cx - 0.66 * R} cy={cy - 0.12 * R} r={0.07 * R} fill="#fff" opacity=".35" />
+        </>
+      )}
     </g>
   );
 }

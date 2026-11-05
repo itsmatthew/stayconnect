@@ -46,7 +46,7 @@ const abs = (left: number, top: number, extra: CSSProperties = {}): CSSPropertie
   ...extra,
 });
 
-const treeDefs = (ids: SceneIds) => ({ ornShade: ids.ornShade, ornCap: ids.ornCap });
+const treeDefs = (ids: SceneIds) => ({ ornCap: ids.ornCap });
 
 
 /**
@@ -61,7 +61,7 @@ function OrnamentButtons({ group, slot, cx, cy, r, onOrnament }: { group: Circle
         key={`${group.id}-${i}`}
         type="button"
         className="hm-orn"
-        aria-label={`Change ornament ${i + 1} of ${group.name}`}
+        aria-label={`${group.memories[i].src ? "Change" : "Add photo to"} ornament ${i + 1} of ${group.name}`}
         onClick={() => onOrnament?.(group.id, i)}
         style={abs(o.cx - R, o.cy - R, { width: s(2 * R), height: s(2 * R) })}
       />
@@ -255,7 +255,7 @@ function PhoneLayout({ phone, view, onViewChange, onPrevious, onNext, nav, onOrn
 
         {/* Card and nav hold to the bottom of the screen, as in the reference. */}
         <div className="absolute left-1/2 -translate-x-1/2" style={{ bottom: s(86), width: s(362) }}>
-          <GroupCard group={phone[1]} onSwapPhotos={() => onOrnament?.(phone[1].id, 0)} />
+          <GroupCard group={phone[1]} onSwapPhotos={(index) => onOrnament?.(phone[1].id, index)} />
         </div>
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2" style={{ width: s(390), height: s(78) }}>
           <BottomNav {...nav} />
@@ -370,7 +370,7 @@ function WideLayout({ wide, view, onViewChange, onPrevious, onNext, nav, onOrnam
             className="absolute left-1/2 -translate-x-1/2"
             style={{ bottom: s(16), "--s": "calc(1.32 * var(--d))" } as CSSProperties}
           >
-            <GroupCard group={wide[WIDE_CENTER_SLOT]} onSwapPhotos={() => onOrnament?.(wide[WIDE_CENTER_SLOT].id, 0)} />
+            <GroupCard group={wide[WIDE_CENTER_SLOT]} onSwapPhotos={(index) => onOrnament?.(wide[WIDE_CENTER_SLOT].id, index)} />
           </div>
         </div>
 

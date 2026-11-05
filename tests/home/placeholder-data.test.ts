@@ -37,7 +37,6 @@ describe("placeholder data (HOME-1)", () => {
       for (const m of g.members) expect(friendIds.has(m)).toBe(true);
       expect(g.memories).toHaveLength(3);
       for (const m of g.memories) {
-        expect(m.art).toBeTruthy();
         expect(m.caption.trim()).not.toBe("");
       }
       expect(g.lastMemory).toMatch(/^last memory /);

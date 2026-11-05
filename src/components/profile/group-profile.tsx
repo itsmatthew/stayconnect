@@ -34,7 +34,7 @@ const UP_TO_CHIPS = ["#C8432B", "#D99A12", "#4F8A3C"];
  * No superlatives and no ranking of members, on purpose.
  */
 export function GroupProfile(props: GroupProfileProps) {
-  const { party, members, ornaments, photos, hasMore, then, goal, upTo, header, onPickHeader, onPickPrompt, onDismissPrompt, onBack, onChangeLogo, onChangeColor, onViewOrnament, onSeeAll, onEditGoal, onToggleIn } = props;
+  const { party, members, ornaments, photos, hasMore, then, goal, upTo, header, onPickHeader, onPickPrompt, onDismissPrompt, onBack, onChangeLogo, onChangeColor, onViewOrnament, onAddOrnament, onSeeAll, onEditGoal, onToggleIn } = props;
   const photosId = useId();
   return (
     <div
@@ -98,7 +98,13 @@ export function GroupProfile(props: GroupProfileProps) {
 
         <section aria-label="Defining memories" style={{ margin: `0 ${s(14)}`, display: "flex", justifyContent: "space-around" }}>
           {ornaments.map((m, i) => (
-            <OrnamentButton key={m.id} memory={m} rim={party.palette.rim} label={`View ornament ${i + 1} of ${party.name}`} onClick={() => onViewOrnament(i)} />
+            <OrnamentButton
+              key={m.id}
+              memory={m}
+              rim={party.palette.rim}
+              color={party.palette.canopy}
+              label={`${m.src ? "View" : "Add photo to"} ornament ${i + 1} of ${party.name}`}
+              onClick={() => (m.src ? onViewOrnament(i) : onAddOrnament(i))} />
           ))}
         </section>
 
@@ -167,7 +173,7 @@ function Prompt({ text, onPick, onDismiss }: { text: string; onPick: (file: File
   );
 }
 
-function OrnamentButton({ memory, rim, label, onClick }: { memory: Memory; rim: string; label: string; onClick: () => void }) {
+function OrnamentButton({ memory, rim, color, label, onClick }: { memory: Memory; rim: string; color: string; label: string; onClick: () => void }) {
   const clip = `orn${useId().replace(/[^\w-]/g, "")}`;
   return (
     <button type="button" aria-label={label} onClick={onClick} style={{ width: s(108), padding: 0, border: 0, background: "none", color: NAVY, display: "flex", flexDirection: "column", alignItems: "center", gap: s(6), cursor: "pointer" }}>
@@ -176,7 +182,7 @@ function OrnamentButton({ memory, rim, label, onClick }: { memory: Memory; rim: 
           <circle cx="20" cy="20" r="18" />
         </clipPath>
         <g clipPath={`url(#${clip})`}>
-          <MemoryPicture memory={memory} cx={20} cy={20} R={18} />
+          <MemoryPicture memory={memory} color={color} cx={20} cy={20} R={18} />
         </g>
         <circle cx="20" cy="20" r="18" fill="none" stroke={rim} strokeWidth="1.6" />
         <circle cx="20" cy="20" r="19.2" fill="none" stroke={NAVY} strokeWidth=".8" />

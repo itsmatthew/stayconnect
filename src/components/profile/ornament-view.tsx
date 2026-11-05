@@ -16,7 +16,8 @@ export function OrnamentView({ groupName, index, memory, rim, onEdit, onClose }:
           <circle cx="50" cy="50" r="46" />
         </clipPath>
         <g clipPath={`url(#${clip})`}>
-          <MemoryPicture memory={memory} cx={50} cy={50} R={46} />
+          {/* Only filled ornaments open here (HOME-20), so `color` is never drawn. */}
+          <MemoryPicture memory={memory} color={rim} cx={50} cy={50} R={46} />
         </g>
         <circle cx="50" cy="50" r="46" fill="none" stroke={rim} strokeWidth="3" />
         <circle cx="50" cy="50" r="48" fill="none" stroke={NAVY} strokeWidth="1.5" />

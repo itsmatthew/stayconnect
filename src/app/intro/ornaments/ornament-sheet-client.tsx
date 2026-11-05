@@ -52,6 +52,7 @@ export function OrnamentSheetClient({ group, index, controls, onClose }: { group
     <OrnamentSheet
       groupName={group.name}
       rim={group.palette.rim}
+      color={group.palette.canopy}
       ornaments={
         group.memories.map((memory, i) => ({
           memory,

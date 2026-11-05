@@ -187,8 +187,13 @@ describe("members (GP-3)", () => {
 });
 
 describe("ornaments (GP-4)", () => {
+  const withPhotos: AppData = {
+    ...demoData,
+    groups: demoData.groups.map((g) => ({ ...g, memories: g.memories.map((m) => ({ ...m, src: `blob:${m.id}` })) as unknown as typeof g.memories })),
+  };
+
   it("three buttons; one opens full size with its caption, and Edit opens the ornament sheet", async () => {
-    openProfile();
+    openProfile(withPhotos);
     const buttons = within(profile()).getAllByRole("button", { name: /^View ornament \d of Madrid Crew$/ });
     expect(buttons.map((b) => b.getAttribute("aria-label"))).toEqual([1, 2, 3].map((i) => `View ornament ${i} of Madrid Crew`));
 
@@ -201,7 +206,7 @@ describe("ornaments (GP-4)", () => {
   });
 
   it("Close shuts the view", () => {
-    openProfile();
+    openProfile(withPhotos);
     fireEvent.click(within(profile()).getByRole("button", { name: "View ornament 1 of Madrid Crew" }));
     tap("Close");
     expect(screen.queryByRole("dialog")).toBeNull();

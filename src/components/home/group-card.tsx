@@ -28,7 +28,7 @@ function Garland() {
   );
 }
 
-function MemoryThumb({ memory }: { memory: Memory }) {
+function MemoryThumb({ memory, color }: { memory: Memory; color: string }) {
   const clip = `thumb${useId().replace(/[^\w-]/g, "")}`;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: s(6) }}>
@@ -37,7 +37,7 @@ function MemoryThumb({ memory }: { memory: Memory }) {
           <circle cx="19" cy="19" r="17" />
         </clipPath>
         <g clipPath={`url(#${clip})`}>
-          <MemoryPicture memory={memory} cx={19} cy={19} R={17} />
+          <MemoryPicture memory={memory} color={color} cx={19} cy={19} R={17} />
         </g>
         <circle cx="19" cy="19" r="17" fill="none" stroke="#2A2030" strokeWidth="2" />
       </svg>
@@ -57,8 +57,9 @@ function MemoryThumb({ memory }: { memory: Memory }) {
   );
 }
 
-/** The selected circle's card (362 design px wide), with its garland. "swap photos" opens the ornament sheet (HOME-4). */
-export function GroupCard({ group, onSwapPhotos }: { group: CircleGroup; onSwapPhotos?: () => void }) {
+/** The selected circle's card (362 design px wide), with its garland. Its button opens the ornament sheet on the first blank, or the first ornament (HOME-4). */
+export function GroupCard({ group, onSwapPhotos }: { group: CircleGroup; onSwapPhotos?: (index: number) => void }) {
+  const firstBlank = group.memories.findIndex((m) => !m.src);
   return (
     <section aria-label="Selected circle" aria-live="polite" style={{ position: "relative", width: s(362) }}>
       <Garland />
@@ -86,10 +87,10 @@ export function GroupCard({ group, onSwapPhotos }: { group: CircleGroup; onSwapP
             <h2 style={{ margin: 0, fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(19) }}>{group.name}</h2>
             <button
               type="button"
-              onClick={onSwapPhotos}
+              onClick={() => onSwapPhotos?.(Math.max(firstBlank, 0))}
               style={{ border: 0, padding: 0, background: "none", font: "inherit", fontSize: s(12), fontWeight: 800, textDecoration: "underline", color: "#FFF6DA", cursor: "pointer" }}
             >
-              swap photos
+              {firstBlank === -1 ? "swap photos" : "add photos"}
             </button>
           </div>
           <div
@@ -111,7 +112,7 @@ export function GroupCard({ group, onSwapPhotos }: { group: CircleGroup; onSwapP
         <div style={{ padding: `${s(9)} ${s(12)} ${s(8)}`, display: "flex", flexDirection: "column", gap: s(5) }}>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             {group.memories.map((m) => (
-              <MemoryThumb key={m.id} memory={m} />
+              <MemoryThumb key={m.id} memory={m} color={group.palette.canopy} />
             ))}
           </div>
           <div style={{ fontSize: s(10.5), lineHeight: s(12), fontWeight: 700, color: "#3F4664" }}>{group.lastMemory}</div>

@@ -16,7 +16,7 @@ export const LAST = "last";
 /** An ornament's index, the group's logo, or a header photo. */
 export type Slot = number | typeof LOGO | typeof FIRST | typeof LAST;
 
-/** No `photoId`: the ornament's original art. `by` is a friend id, or ME. `takenAt`: a header photo's capture date. */
+/** No `photoId`: a blank ornament (HOME-20). `by` is a friend id, or ME. `takenAt`: a header photo's capture date. */
 export type OrnamentVersion = { photoId?: string; caption: string; takenAt?: number; by: string; at: number };
 /** `previous` is what undo restores: an earlier version, or "original" (no change at all). */
 export type OrnamentEntry = { current: OrnamentVersion; previous?: OrnamentVersion | "original" };

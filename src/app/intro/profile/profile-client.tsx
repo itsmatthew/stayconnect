@@ -125,6 +125,7 @@ export function ProfileClient({ group, party, chat, friends, store, now, control
         onChangeLogo={onChangeLogo}
         onChangeColor={() => setColorOpen(true)}
         onViewOrnament={setViewing}
+        onAddOrnament={setEditing}
         onSeeAll={() => setAllShown(PAGE)}
         onEditGoal={() => setGoalOpen(true)}
         onToggleIn={() => controls.dispatchGoal({ type: next?.mineIn ? "leave" : "join", groupId: group.id, who: ME })}

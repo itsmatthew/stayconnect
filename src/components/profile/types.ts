@@ -50,6 +50,8 @@ export type GroupProfileProps = {
   /** Opens the personal color dialog (docs/specs/group-colors.md, COLOR-10). */
   onChangeColor: () => void;
   onViewOrnament: (index: number) => void;
+  /** A blank ornament goes straight to the add flow (docs/specs/home.md, HOME-20). */
+  onAddOrnament: (index: number) => void;
   onSeeAll: () => void;
   onEditGoal: () => void;
   onToggleIn: () => void;

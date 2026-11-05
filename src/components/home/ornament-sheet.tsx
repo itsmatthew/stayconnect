@@ -15,6 +15,8 @@ export type OrnamentChoice = {
 type OrnamentSheetProps = {
   groupName: string;
   rim: string;
+  /** The group's color, for blanks (HOME-20). */
+  color: string;
   ornaments: readonly [OrnamentChoice, OrnamentChoice, OrnamentChoice];
   selected: number;
   /** The picked photo, before saving. */
@@ -30,7 +32,7 @@ type OrnamentSheetProps = {
 
 const oneLine = (caption: string) => caption.replace(/\s+/g, " ").trim();
 
-function Bauble({ memory, size, rim }: { memory: Memory; size: number; rim: string }) {
+function Bauble({ memory, size, rim, color }: { memory: Memory; size: number; rim: string; color: string }) {
   const clip = `sheet${useId().replace(/[^\w-]/g, "")}`;
   return (
     <svg viewBox="0 0 40 40" aria-hidden="true" style={{ display: "block", width: s(size), height: s(size) }}>
@@ -38,7 +40,7 @@ function Bauble({ memory, size, rim }: { memory: Memory; size: number; rim: stri
         <circle cx="20" cy="20" r="18" />
       </clipPath>
       <g clipPath={`url(#${clip})`}>
-        <MemoryPicture memory={memory} cx={20} cy={20} R={18} />
+        <MemoryPicture memory={memory} color={color} cx={20} cy={20} R={18} />
       </g>
       <circle cx="20" cy="20" r="18" fill="none" stroke={rim} strokeWidth="2.4" />
     </svg>
@@ -46,7 +48,7 @@ function Bauble({ memory, size, rim }: { memory: Memory; size: number; rim: stri
 }
 
 /** Change one of a group's ornaments, its defining memories: a photo from the camera roll and an optional caption (docs/specs/home.md, HOME-14–17). */
-export function OrnamentSheet({ groupName, rim, ornaments, selected, preview, captionMax, onSelect, onPickFile, onSave, onUndo, onCancel }: OrnamentSheetProps) {
+export function OrnamentSheet({ groupName, rim, color, ornaments, selected, preview, captionMax, onSelect, onPickFile, onSave, onUndo, onCancel }: OrnamentSheetProps) {
   const current = ornaments[selected];
   return (
     <Sheet title={`${groupName}’s defining memories`} onCancel={onCancel}>
@@ -62,7 +64,7 @@ export function OrnamentSheet({ groupName, rim, ornaments, selected, preview, ca
               onClick={() => onSelect(i)}
               style={{ padding: s(4), border: 0, borderRadius: "50%", background: on ? "#FBE3D8" : "transparent", boxShadow: on ? `0 0 0 ${s(3)} #FF7A1A` : "none", cursor: "pointer" }}
             >
-              <Bauble memory={o.memory} size={48} rim={rim} />
+              <Bauble memory={o.memory} size={48} rim={rim} color={color} />
             </button>
           );
         })}
@@ -73,6 +75,7 @@ export function OrnamentSheet({ groupName, rim, ornaments, selected, preview, ca
         key={`${selected}|${current.memory.caption}|${current.memory.src ?? ""}`}
         current={current}
         rim={rim}
+        color={color}
         preview={preview}
         captionMax={captionMax}
         onPickFile={onPickFile}
@@ -84,15 +87,16 @@ export function OrnamentSheet({ groupName, rim, ornaments, selected, preview, ca
   );
 }
 
-type OrnamentEditProps = Pick<OrnamentSheetProps, "rim" | "preview" | "captionMax" | "onPickFile" | "onSave" | "onUndo" | "onCancel"> & {
+type OrnamentEditProps = Pick<OrnamentSheetProps, "rim" | "color" | "preview" | "captionMax" | "onPickFile" | "onSave" | "onUndo" | "onCancel"> & {
   current: OrnamentChoice;
 };
 
-function OrnamentEdit({ current, rim, preview, captionMax, onPickFile, onSave, onUndo, onCancel }: OrnamentEditProps) {
+function OrnamentEdit({ current, rim, color, preview, captionMax, onPickFile, onSave, onUndo, onCancel }: OrnamentEditProps) {
   const initial = oneLine(current.memory.caption);
   const [caption, setCaption] = useState(initial);
   const [area, setArea] = useState<CropArea>();
-  const changed = !!preview || oneLine(caption) !== initial;
+  // A blank needs its photo: a caption alone would leave it empty (HOME-20).
+  const changed = !!preview || (!!current.memory.src && oneLine(caption) !== initial);
   return (
     <form
       onSubmit={(e) => {
@@ -105,8 +109,8 @@ function OrnamentEdit({ current, rim, preview, captionMax, onPickFile, onSave, o
         <PhotoCropper src={preview} alt="New photo" ring={rim} onAreaChange={setArea} />
       ) : (
         <div style={{ width: s(150), height: s(150), borderRadius: "50%", overflow: "hidden", border: `${s(3)} solid ${rim}`, boxSizing: "border-box", background: CREAM }}>
-          <svg viewBox="0 0 40 40" role="img" aria-label="Current photo" style={{ display: "block", width: "100%", height: "100%" }}>
-            <MemoryPicture memory={current.memory} cx={20} cy={20} R={20} />
+          <svg viewBox="0 0 40 40" role="img" aria-label={current.memory.src ? "Current photo" : "No photo yet"} style={{ display: "block", width: "100%", height: "100%" }}>
+            <MemoryPicture memory={current.memory} color={color} cx={20} cy={20} R={20} />
           </svg>
         </div>
       )}

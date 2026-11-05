@@ -134,13 +134,13 @@ describe("demo and real ornaments never mix (DEMO-3, HOME-18)", () => {
   it("with the switch on, ornaments are stored under a .demo name", async () => {
     const open = renderWith(demoData);
     await waitFor(() => expect(open).toHaveBeenCalledWith(`${ORNAMENT_DB}.demo`));
-    expect(screen.getAllByRole("button", { name: /^Change ornament / }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /^(Change|Add photo to) ornament / }).length).toBeGreaterThan(0);
   });
 
   it("with it off, there's nothing to change and the name has no suffix", async () => {
     const open = renderWith(emptyData);
     await waitFor(() => expect(open).toHaveBeenCalledWith(ORNAMENT_DB));
-    expect(screen.queryAllByRole("button", { name: /^Change ornament / })).toEqual([]);
+    expect(screen.queryAllByRole("button", { name: /^(Change|Add photo to) ornament / })).toEqual([]);
   });
 });
 

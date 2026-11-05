@@ -1,9 +1,17 @@
 import type { ArtKind, Memory } from "./types";
 
-/** A memory's photo, or its art when it has none, in the 2R square centered on (cx, cy). The caller clips it. */
-export function MemoryPicture({ memory, cx, cy, R }: { memory: Pick<Memory, "art" | "src">; cx: number; cy: number; R: number }) {
+/** A memory's photo, or a blank waiting for one (HOME-20), in the 2R square centered on (cx, cy). The caller clips it. `color`: the group's. */
+export function MemoryPicture({ memory, color, cx, cy, R }: { memory: Pick<Memory, "src">; color: string; cx: number; cy: number; R: number }) {
   if (memory.src) return <image href={memory.src} x={cx - R} y={cy - R} width={2 * R} height={2 * R} preserveAspectRatio="xMidYMid slice" />;
-  return <MemoryArt kind={memory.art} cx={cx} cy={cy} R={R} />;
+  const arm = 0.26 * R;
+  return (
+    <g data-blank-ornament="">
+      {/* Pale behind the outline: on a tree, the group's color would vanish against its own canopy. */}
+      <circle cx={cx} cy={cy} r={R} fill="#FFF8EC" opacity=".6" />
+      <circle data-blank-outline="" cx={cx} cy={cy} r={0.93 * R} fill="none" stroke={color} strokeWidth={0.08 * R} opacity=".5" />
+      <path data-blank-plus="" d={`M${cx - arm} ${cy}H${cx + arm}M${cx} ${cy - arm}V${cy + arm}`} fill="none" stroke={color} strokeWidth={0.11 * R} strokeLinecap="round" />
+    </g>
+  );
 }
 
 /**

@@ -6,7 +6,7 @@ import type { ArchivePost } from "@/app/intro/archive/posts";
 import { ME } from "@/app/intro/messages/conversations";
 import type { CircleGroup, Friend, Memory } from "@/components/home/types";
 
-const mem: Memory = { id: "m", art: "sunset", caption: "a\nb" };
+const mem: Memory = { id: "m", caption: "a\nb" };
 let joined = 0;
 const group = (id: string, name: string, colorId: string, closest: boolean, members: string[], viewers?: string[]): CircleGroup => ({
   id,
