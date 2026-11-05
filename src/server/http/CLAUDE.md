@@ -8,3 +8,5 @@ HTTP adapter for the API (`docs/specs/memories-api.md`). Pure handlers `(req, de
 - Throw `NotFoundError`/`NoRecipientsError` (mapped to 404/409) or `HttpError`. Don't build error responses by hand, and never put `err.message` in a response.
 - Responses go through `json()` so `Cache-Control: private, no-store` is always set.
 - Tests: `tests/server/http/`, with a fake `getUserId` and the in-memory database. Tag each test with its API id.
+- Return explicit fields, never a data-layer object as is: `photoKey` and other storage details stay server-side (`memories.ts` `view`).
+- Dynamic ids come from the route's awaited `params` and are passed to the handler as an argument. A malformed id is a 404, not a 400, so it answers like an unknown id.

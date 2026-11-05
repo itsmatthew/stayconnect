@@ -21,3 +21,26 @@ describe("groups route wiring (API-1)", () => {
     expect((await GET(new Request("http://localhost/api/groups"))).status).toBe(401);
   });
 });
+
+describe("memory routes wiring (API-1)", () => {
+  const signedOut = async (res: Response | Promise<Response>) => expect((await res).status).toBe(401);
+
+  it("API-1: POST /api/memories, GET inbox, and GET [id] with no session are 401", async () => {
+    const { POST: send } = await import("../../../src/app/api/memories/route");
+    const { GET: inbox } = await import("../../../src/app/api/memories/inbox/route");
+    const { GET: one } = await import("../../../src/app/api/memories/[id]/route");
+    await signedOut(
+      send(
+        new Request("http://localhost/api/memories", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ groupId: "00000000-0000-4000-8000-000000000000", caption: "hi" }),
+        }),
+      ),
+    );
+    await signedOut(inbox(new Request("http://localhost/api/memories/inbox")));
+    await signedOut(
+      one(new Request("http://localhost/api/memories/abc"), { params: Promise.resolve({ id: "abc" }) }),
+    );
+  });
+});
