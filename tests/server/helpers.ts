@@ -25,7 +25,7 @@ export async function newTestDb(): Promise<{ db: Db; pg: PGlite }> {
   return { db, pg };
 }
 
-/** Stand-in for the invites slice (not built yet): adds a member directly. */
+/** Test shortcut: adds a member directly. Invite management exists (invites.ts); joining through an invite arrives with INV-6..11. */
 export async function addMember(db: Db, groupId: string, userId: string): Promise<void> {
   await db.query("insert into users (id) values ($1) on conflict do nothing", [userId]);
   await db.query("insert into group_members (group_id, user_id, role) values ($1, $2, 'member')", [groupId, userId]);

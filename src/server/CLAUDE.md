@@ -8,3 +8,4 @@ Data-access layer for groups and memories (`docs/specs/memories-backend.md`, ADR
 - A write that touches several tables is one SQL statement (CTE). Neon's HTTP driver can't hold a transaction across separate queries.
 - Only this folder talks to the database. Pages, components, and route handlers call these functions.
 - Migrations live in `db/migrations`, must be idempotent, and run in numeric order (`npm run db:migrate`).
+- Invites (`invites.ts`, `docs/specs/group-invites-backend.md`): owner-only via `requireOwner`; a plain member and a non-member both get `NotFoundError`. The token's plaintext exists only in `createInvite`'s return value, and only `hashToken(token)` is stored. Never select, log, or return `token_hash`.
