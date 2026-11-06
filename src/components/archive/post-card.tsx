@@ -73,8 +73,8 @@ export function PostCard({ card }: { card: PostCardView }) {
             <span style={{ fontSize: s(11.5), fontWeight: 700, opacity: 0.9 }}>{card.time}</span>
           </span>
           <span style={{ marginLeft: "auto", display: "flex", gap: s(4), flexWrap: "wrap", justifyContent: "flex-end" }}>
-            {card.tags.map((t) => (
-              <Tag key={t.name} color={t.color}>
+            {card.tags.map((t, i) => (
+              <Tag key={i} color={t.color}>
                 {t.name}
               </Tag>
             ))}

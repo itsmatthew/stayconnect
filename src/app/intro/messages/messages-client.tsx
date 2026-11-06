@@ -12,6 +12,7 @@ import type { PhotoStore } from "../daily5/photo-store";
 import { formatPhotoDate } from "../daily5/format";
 import { friendParty, groupParty } from "../parties";
 import type { CropArea } from "../photo-file";
+import { renameNote } from "../group-names/group-names";
 import { headerSlots } from "../profile/header-photos";
 import { ProfileClient, type ProfileControls } from "../profile/profile-client";
 import { usePickedPhoto } from "../use-picked-photo";
@@ -73,9 +74,11 @@ export function MessagesClient({ chat, dispatch, now, store, groups, friends, re
   const parties = useMemo(() => new Map<string, Party>([...groups.map(groupParty), ...friends.map(friendParty)].map((p) => [p.id, p])), [groups, friends]);
   const friendById = useMemo(() => new Map(friends.map((f) => [f.id, f])), [friends]);
   const groupById = useMemo(() => new Map(groups.map((g) => [g.id, g])), [groups]);
+  const nameOf = (id: string) => friendById.get(id)?.name;
 
   const preview = (m: ChatMessage | undefined, party: Party) => {
     if (!m) return undefined;
+    if (m.kind === "note") return renameNote(m.from, m.name, nameOf);
     const body = m.kind === "text" ? m.text : "sent a memory";
     if (m.from === ME) return `You: ${body}`;
     return party.kind === "group" ? `${friendById.get(m.from)?.name ?? "Someone"}: ${body}` : body;
@@ -148,6 +151,7 @@ export function MessagesClient({ chat, dispatch, now, store, groups, friends, re
           party={party}
           panes={headerPanes(party, groupById)}
           messages={visibleMessages(chat, openId)}
+          noteText={(by, name) => renameNote(by, name, nameOf)}
           delivered={showsDelivered(chat, openId)}
           store={store}
           senderOf={(from) => {
@@ -217,6 +221,8 @@ type ThreadProps = {
   party: Party;
   panes: readonly [ThreadPane, ThreadPane];
   messages: readonly ChatMessage[];
+  /** A rename note's words (RENAME-5). */
+  noteText: (by: string, name: string) => string;
   delivered: boolean;
   store: PhotoStore | null;
   senderOf: (from: string) => ThreadMessage["sender"];
@@ -226,10 +232,11 @@ type ThreadProps = {
   onPickHeader?: (slot: HeaderSlotName, file: File) => void;
 };
 
-function Thread({ messages, store, senderOf, ...rest }: ThreadProps) {
+function Thread({ messages, store, senderOf, noteText, ...rest }: ThreadProps) {
   const urls = usePhotoUrls(store, messages.flatMap((m) => (m.kind === "memory" ? [m.photoId] : [])));
   const view: ThreadMessage[] = messages.map((m, i) => {
     const mine = m.from === ME;
+    if (m.kind === "note") return { id: m.id, mine, kind: "note", text: noteText(m.from, m.name) };
     const sender = !mine && messages[i - 1]?.from !== m.from ? senderOf(m.from) : undefined;
     return m.kind === "text"
       ? { id: m.id, mine, sender, kind: "text", text: m.text }

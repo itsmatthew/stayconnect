@@ -13,6 +13,9 @@ import { useColorOverrides } from "./colors/use-color-overrides";
 import { Daily5Client } from "./daily5/daily5-client";
 import { detectFaces } from "./daily5/face-detector";
 import { openPhotoStore, type PhotoStore } from "./daily5/photo-store";
+import { validateGroupName, withGroupNames, type GroupNameStore } from "./group-names/group-names";
+import { localGroupNameStore } from "./group-names/local-group-names";
+import { useGroupNames } from "./group-names/use-group-names";
 import { HomeClient } from "./home-client";
 import { MeClient } from "./me/me-client";
 import { conversationId, ME } from "./messages/conversations";
@@ -37,6 +40,8 @@ type AppClientProps = {
   openOrnaments?: (name: string) => Promise<OrnamentStore>;
   /** Where this viewer's own group colors are kept (docs/specs/group-colors.md, COLOR-8). */
   colorOverrides?: (storageSuffix: string) => ColorOverrideStore;
+  /** Where renamed groups are saved (docs/specs/group-rename.md, RENAME-4). */
+  groupNames?: (storageSuffix: string) => GroupNameStore;
   hasFace?: (image: Blob) => Promise<boolean>;
   readCapture?: (f: File) => Promise<number | undefined>;
   decode?: (f: File) => Promise<Blob>;
@@ -90,6 +95,7 @@ export function AppClient({
   openArchive = openArchiveStore,
   openOrnaments = openOrnamentStore,
   colorOverrides = localColorOverrideStore,
+  groupNames = localGroupNameStore,
   hasFace = detectFaces,
   readCapture = captureDate,
   decode = downscale,
@@ -102,8 +108,9 @@ export function AppClient({
   const [openOrnamentsNamed] = useState(() => () => openOrnaments(ORNAMENT_DB + data.storageSuffix));
   const ornaments = useOrnaments(openOrnamentsNamed);
   const [overrides, setColorOverride] = useColorOverrides(colorOverrides(data.storageSuffix));
-  // Colors are applied once, here, so every screen shows the same shade (COLOR-9).
-  const viewerData = useMemo(() => ({ ...data, groups: withViewerColors(data.groups, overrides) }), [data, overrides]);
+  const [names, saveGroupName] = useGroupNames(groupNames(data.storageSuffix));
+  // Names and colors are applied once, here, so every screen shows the same ones (COLOR-9, RENAME-7).
+  const viewerData = useMemo(() => ({ ...data, groups: withViewerColors(withGroupNames(data.groups, names), overrides) }), [data, names, overrides]);
   const homeGroups = useMemo(() => withOrnaments(viewerData.groups, ornaments.state, ornaments.urls), [viewerData.groups, ornaments.state, ornaments.urls]);
   const [chat, dispatch] = useChat(now, data.seedConversations, data.storageSuffix);
   const recipients = useMemo(() => recipientSections(homeGroups, data.friends), [homeGroups, data.friends]);
@@ -198,6 +205,12 @@ export function AppClient({
             upTo: data.upTo,
             ornaments: ornamentControls,
             colors: { overrides, onChange: setColorOverride },
+            rename: async (groupId, raw) => {
+              const check = validateGroupName(raw);
+              if (!check.ok) return;
+              await saveGroupName(groupId, check.name);
+              dispatch({ type: "rename", id: crypto.randomUUID(), conversationId: conversationId("group", groupId), by: ME, name: check.name, at: now() });
+            },
             // Header photos are saved at once, downscaled, with their capture date (GP-12). The change starts at the tap,
             // so the store stays open while the photo is prepared.
             setHeaderPhoto: (groupId, slot, file) =>

@@ -59,6 +59,7 @@ export function Sheet({ title, onCancel, children }: { title: string; onCancel: 
 /** The sheets' rounded buttons and the photo picker label. */
 export const pill: CSSProperties = {
   height: s(44),
+  minHeight: 44,
   boxSizing: "border-box",
   padding: `0 ${s(18)}`,
   borderRadius: s(22),
