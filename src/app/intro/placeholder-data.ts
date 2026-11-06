@@ -62,9 +62,9 @@ export const placeholderGroups: readonly CircleGroup[] = [
     members: ["leo", "ana", "nico"],
     friendCount: 6,
     memories: [
-      { id: "madrid-1", caption: "rooftop,\nlast night" },
-      { id: "madrid-2", caption: "the 4am\nchurro run" },
-      { id: "madrid-3", caption: "wrong line,\ntwice" },
+      { id: "madrid-1", caption: "" },
+      { id: "madrid-2", caption: "" },
+      { id: "madrid-3", caption: "" },
     ],
     lastMemory: "last memory 2 days ago",
     // Header photos (GP-12), drawn as art with their capture dates.
@@ -79,9 +79,9 @@ export const placeholderGroups: readonly CircleGroup[] = [
     members: ["sam", "jordan", "leo"],
     friendCount: 5,
     memories: [
-      { id: "hoops-1", caption: "buzzer\nbeater" },
-      { id: "hoops-2", caption: "the 6am\nrun" },
-      { id: "hoops-3", caption: "post-game\ntacos" },
+      { id: "hoops-1", caption: "" },
+      { id: "hoops-2", caption: "" },
+      { id: "hoops-3", caption: "" },
     ],
     lastMemory: "last memory yesterday",
     // Header photos (GP-12), drawn as art with their capture dates.
@@ -96,9 +96,9 @@ export const placeholderGroups: readonly CircleGroup[] = [
     members: ["priya", "ana"],
     friendCount: 3,
     memories: [
-      { id: "apt-1", caption: "the couch\nmove" },
-      { id: "apt-2", caption: "burnt\npancakes" },
-      { id: "apt-3", caption: "move-in\nday" },
+      { id: "apt-1", caption: "" },
+      { id: "apt-2", caption: "" },
+      { id: "apt-3", caption: "" },
     ],
     lastMemory: "last memory 5 days ago",
     // Header photos (GP-12), drawn as art with their capture dates.
@@ -115,9 +115,9 @@ export const placeholderGroups: readonly CircleGroup[] = [
     viewers: ["grandma"],
     friendCount: 4,
     memories: [
-      { id: "family-1", caption: "lake house,\nevery july" },
-      { id: "family-2", caption: "grandma’s\nrecipe" },
-      { id: "family-3", caption: "the ski\ntrip" },
+      { id: "family-1", caption: "" },
+      { id: "family-2", caption: "" },
+      { id: "family-3", caption: "" },
     ],
     lastMemory: "last memory 4 days ago",
     // Header photos (GP-12), drawn as art with their capture dates.
@@ -132,9 +132,9 @@ export const placeholderGroups: readonly CircleGroup[] = [
     members: ["priya", "jordan"],
     friendCount: 2,
     memories: [
-      { id: "uni-1", caption: "library,\n2am" },
-      { id: "uni-2", caption: "finals week\nfuel" },
-      { id: "uni-3", caption: "grad day,\nfinally" },
+      { id: "uni-1", caption: "" },
+      { id: "uni-2", caption: "" },
+      { id: "uni-3", caption: "" },
     ],
     lastMemory: "last memory 3 weeks ago",
     // Header photos (GP-12), drawn as art with their capture dates.
@@ -149,9 +149,9 @@ export const placeholderGroups: readonly CircleGroup[] = [
     members: ["sam", "nico"],
     friendCount: 5,
     memories: [
-      { id: "work-1", caption: "offsite\nkaraoke" },
-      { id: "work-2", caption: "bake-off,\nlost" },
-      { id: "work-3", caption: "the great\ndesk swap" },
+      { id: "work-1", caption: "" },
+      { id: "work-2", caption: "" },
+      { id: "work-3", caption: "" },
     ],
     lastMemory: "last memory 1 week ago",
     // Header photos (GP-12), drawn as art with their capture dates.
@@ -166,9 +166,9 @@ export const placeholderGroups: readonly CircleGroup[] = [
     members: ["jordan", "ana", "nico"],
     friendCount: 3,
     memories: [
-      { id: "fall-1", caption: "first\ntailgate" },
-      { id: "fall-2", caption: "orientation\nweek" },
-      { id: "fall-3", caption: "dorm\nmove-in" },
+      { id: "fall-1", caption: "" },
+      { id: "fall-2", caption: "" },
+      { id: "fall-3", caption: "" },
     ],
     lastMemory: "last memory 2 weeks ago",
     // No header photos (GP-12), so the empty state shows in development.

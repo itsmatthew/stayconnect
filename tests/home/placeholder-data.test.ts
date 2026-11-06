@@ -28,7 +28,7 @@ describe("placeholder data (HOME-1)", () => {
     expect(placeholderGroups[openingCenter(placeholderGroups)].name).toBe("Hoops Since ’14");
   });
 
-  it("gives every group unique ids, members, a friend count, three captioned memories and a last-memory line", () => {
+  it("gives every group unique ids, members, a friend count, three empty memories and a last-memory line", () => {
     expect(new Set(placeholderGroups.map((g) => g.id)).size).toBe(placeholderGroups.length);
     const friendIds = new Set(friends.map((f) => f.id));
     for (const g of placeholderGroups) {
@@ -37,7 +37,7 @@ describe("placeholder data (HOME-1)", () => {
       for (const m of g.members) expect(friendIds.has(m)).toBe(true);
       expect(g.memories).toHaveLength(3);
       for (const m of g.memories) {
-        expect(m.caption.trim()).not.toBe("");
+        expect(m.src).toBeUndefined();
       }
       expect(g.lastMemory).toMatch(/^last memory /);
     }

@@ -189,7 +189,7 @@ describe("members (GP-3)", () => {
 describe("ornaments (GP-4)", () => {
   const withPhotos: AppData = {
     ...demoData,
-    groups: demoData.groups.map((g) => ({ ...g, memories: g.memories.map((m) => ({ ...m, src: `blob:${m.id}` })) as unknown as typeof g.memories })),
+    groups: demoData.groups.map((g) => ({ ...g, memories: g.memories.map((m) => ({ ...m, src: `blob:${m.id}`, caption: "the 4am\nchurro run" })) as unknown as typeof g.memories })),
   };
 
   it("three buttons; one opens full size with its caption, and Edit opens the ornament sheet", async () => {

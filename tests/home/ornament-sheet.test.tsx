@@ -94,9 +94,9 @@ describe("ornaments are buttons (HOME-13)", () => {
     tapOrnament(wide, 2);
     const choices = within(dialog()).getAllByRole("button", { name: /^Ornament \d$/ });
     expect(choices.map((c) => c.getAttribute("aria-pressed"))).toEqual(["false", "true", "false"]);
-    expect(caption().value).toBe("the 6am run");
     fireEvent.click(choices[2]);
-    expect(caption().value).toBe("post-game tacos");
+    const after = within(dialog()).getAllByRole("button", { name: /^Ornament \d$/ });
+    expect(after.map((c) => c.getAttribute("aria-pressed"))).toEqual(["false", "false", "true"]);
   });
 
   it("a side tree's ornament opens that group", () => {
@@ -110,7 +110,6 @@ describe("ornaments are buttons (HOME-13)", () => {
     fireEvent.click(within(card(phone)).getByRole("button", { name: "add photos" }));
     const choices = within(dialog()).getAllByRole("button", { name: /^Ornament \d$/ });
     expect(choices[0].getAttribute("aria-pressed")).toBe("true");
-    expect(caption().value).toBe("buzzer beater");
   });
 });
 
@@ -126,7 +125,7 @@ describe("the sheet (HOME-14)", () => {
     expect(caption().placeholder).toBe("what makes this one ours");
     expect(dialog().textContent).toContain("Pick a photo that defines this group — the inside joke, the trip, the night everyone still talks about.");
     expect(save().disabled).toBe(true);
-    fireEvent.change(caption(), { target: { value: "buzzer beater " } });
+    fireEvent.change(caption(), { target: { value: "a caption" } });
     expect(save().disabled).toBe(true);
     fireEvent.change(caption(), { target: { value: "" } });
     expect(save().disabled).toBe(true);
@@ -160,9 +159,9 @@ describe("the sheet (HOME-14)", () => {
     fireEvent.click(within(dialog()).getByRole("button", { name: "Cancel" }));
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(hoopsOrnaments(phone)[0].querySelector("image")).toBeNull();
-    expect(flat(card(phone).textContent)).toContain("buzzer beater");
+    expect(flat(card(phone).textContent)).not.toContain("nope");
     tapOrnament(phone, 1);
-    expect(caption().value).toBe("buzzer beater");
+    expect(caption().value).toBe("");
     expect(within(dialog()).queryByRole("img", { name: "New photo" })).toBeNull();
   });
 });
@@ -179,7 +178,6 @@ describe("saving (HOME-15)", () => {
     for (const layout of [phone, wide]) {
       expect(card(layout).querySelector("image[href^='blob:']")).toBeTruthy();
       expect(flat(card(layout).textContent)).toContain("new rim");
-      expect(flat(card(layout).textContent)).not.toContain("buzzer beater");
     }
   });
 
@@ -239,10 +237,10 @@ describe("undo (HOME-17)", () => {
     await changeFirst(phone);
     tapOrnament(phone, 1);
     fireEvent.click(within(dialog()).getByRole("button", { name: "undo" }));
-    await waitFor(() => expect(caption().value).toBe("buzzer beater"));
+    await waitFor(() => expect(caption().value).toBe(""));
     expect(within(dialog()).queryByRole("button", { name: "undo" })).toBeNull();
     expect(dialog().textContent).not.toContain("changed this");
     expect(hoopsOrnaments(phone)[0].querySelector("image")).toBeNull();
-    expect(flat(card(phone).textContent)).toContain("buzzer beater");
+    expect(flat(card(phone).textContent)).not.toContain("new rim");
   });
 });

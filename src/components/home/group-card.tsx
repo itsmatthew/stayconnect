@@ -28,19 +28,35 @@ function Garland() {
   );
 }
 
-function MemoryThumb({ memory, color }: { memory: Memory; color: string }) {
+function MemoryThumb({ memory, color, addLabel, onAdd }: { memory: Memory; color: string; /** An empty slot's button (HOME-22). */ addLabel: string; onAdd?: () => void }) {
   const clip = `thumb${useId().replace(/[^\w-]/g, "")}`;
+  const picture = (
+    <svg viewBox="0 0 38 38" aria-hidden="true" style={{ flex: "none", display: "block", width: s(38), height: s(38) }}>
+      <clipPath id={clip}>
+        <circle cx="19" cy="19" r="17" />
+      </clipPath>
+      <g clipPath={`url(#${clip})`}>
+        <MemoryPicture memory={memory} color={color} cx={19} cy={19} R={17} />
+      </g>
+      <circle cx="19" cy="19" r="17" fill="none" stroke="#2A2030" strokeWidth="2" />
+    </svg>
+  );
+  if (!memory.src) {
+    return (
+      // 44px to tap, in the 38 design px the slot takes up, so the card keeps its height.
+      <button
+        type="button"
+        aria-label={addLabel}
+        onClick={onAdd}
+        style={{ minWidth: 44, minHeight: 44, margin: `calc((${s(38)} - 44px) / 2)`, padding: 0, border: 0, background: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+      >
+        {picture}
+      </button>
+    );
+  }
   return (
     <div style={{ display: "flex", alignItems: "center", gap: s(6) }}>
-      <svg viewBox="0 0 38 38" aria-hidden="true" style={{ flex: "none", display: "block", width: s(38), height: s(38) }}>
-        <clipPath id={clip}>
-          <circle cx="19" cy="19" r="17" />
-        </clipPath>
-        <g clipPath={`url(#${clip})`}>
-          <MemoryPicture memory={memory} color={color} cx={19} cy={19} R={17} />
-        </g>
-        <circle cx="19" cy="19" r="17" fill="none" stroke="#2A2030" strokeWidth="2" />
-      </svg>
+      {picture}
       <span
         style={{
           fontFamily: FRAUNCES,
@@ -111,8 +127,8 @@ export function GroupCard({ group, onSwapPhotos }: { group: CircleGroup; onSwapP
         </div>
         <div style={{ padding: `${s(9)} ${s(12)} ${s(8)}`, display: "flex", flexDirection: "column", gap: s(5) }}>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            {group.memories.map((m) => (
-              <MemoryThumb key={m.id} memory={m} color={group.palette.canopy} />
+            {group.memories.map((m, i) => (
+              <MemoryThumb key={m.id} memory={m} color={group.palette.canopy} addLabel={`Add photo ${i + 1} to ${group.name}`} onAdd={() => onSwapPhotos?.(i)} />
             ))}
           </div>
           <div style={{ fontSize: s(10.5), lineHeight: s(12), fontWeight: 700, color: "#3F4664" }}>{group.lastMemory}</div>

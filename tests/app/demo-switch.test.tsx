@@ -148,7 +148,6 @@ describe("no placeholder data anywhere (DEMO-4)", () => {
   const words = [
     ...friends.map((f) => f.name),
     ...placeholderGroups.map((g) => g.name),
-    ...placeholderGroups.flatMap((g) => g.memories.map((m) => m.caption.replace("\n", " "))),
     ...placeholderReplies,
     ...seedConversations(NOW).flatMap((c) => c.messages.flatMap((m) => (m.kind === "text" ? [m.text] : []))),
     ...placeholderPosts(NOW).flatMap((p) => (p.caption ? [p.caption] : [])),

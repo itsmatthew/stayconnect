@@ -88,19 +88,27 @@ function withHeaderPhotos(g: CircleGroup, state: OrnamentState, urls: Readonly<R
   return { ...g, ...(firstPhoto ? { firstPhoto } : {}), ...(lastPhoto ? { lastPhoto } : {}) };
 }
 
+/** An empty slot has no caption, whatever the data says: a caption shows only with its photo (HOME-23). */
+const withoutEmptyCaptions = (memories: CircleGroup["memories"]) =>
+  (memories.some((m) => !m.src && m.caption) ? memories.map((m) => (m.src ? m : { ...m, caption: "" })) : memories) as CircleGroup["memories"];
+
 /** Changed ornaments carry their caption and photo URL, a changed logo its image URL. */
 function withOrnamentsAndLogo(g: CircleGroup, state: OrnamentState, urls: Readonly<Record<string, string>>): CircleGroup {
   const versions = g.memories.map((_, i) => state[ornamentKey(g.id, i)]?.current);
   const logoId = state[ornamentKey(g.id, LOGO)]?.current.photoId;
   const logo = logoId ? urls[logoId] : undefined;
-  if (!versions.some(Boolean)) return logo ? { ...g, logo } : g;
+  if (!versions.some(Boolean)) {
+    const clean = withoutEmptyCaptions(g.memories);
+    if (clean === g.memories && !logo) return g;
+    return { ...g, memories: clean, ...(logo ? { logo } : {}) };
+  }
   const memories = g.memories.map((m, i) => {
     const v = versions[i];
     if (!v) return m;
     const src = v.photoId ? urls[v.photoId] : undefined;
     return { ...m, caption: v.caption, ...(src ? { src } : {}) };
   }) as unknown as CircleGroup["memories"];
-  return { ...g, memories, ...(logo ? { logo } : {}) };
+  return { ...g, memories: withoutEmptyCaptions(memories), ...(logo ? { logo } : {}) };
 }
 
 /** "Leo changed this · Oct 21", "You changed the logo · Oct 21", with the year when it isn't the current one. */
