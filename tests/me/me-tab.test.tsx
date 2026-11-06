@@ -33,13 +33,13 @@ const grid = (year: number) => screen.findByRole("list", { name: `Your 65 for ${
 const tiles = (list: HTMLElement) => within(list).getAllByRole("listitem");
 
 describe("Me (ME-1)", () => {
-  it("has posts, a year dropdown and a disabled gifts pill", async () => {
+  it("has posts, a year dropdown and a gifts pill", async () => {
     renderMe();
     await grid(2026);
     expect(screen.getByRole("button", { name: "posts" }).getAttribute("aria-current")).toBe("page");
     const year = screen.getByRole("button", { name: "Year, 2026" });
     expect(year.getAttribute("aria-haspopup")).toBe("listbox");
-    expect((screen.getByRole("button", { name: /gifts/ }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: /gifts/ }) as HTMLButtonElement).disabled).toBe(false);
   });
 
   it("the dropdown lists this year and every year you've posted in, newest first, and switches the grid", async () => {

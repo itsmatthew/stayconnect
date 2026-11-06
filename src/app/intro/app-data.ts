@@ -18,6 +18,7 @@ import {
   placeholderGifts,
   placeholderReplies,
   placeholderRings,
+  placeholderSenderName,
   placeholderUpTo,
   seedConversations,
 } from "./placeholder-data";
@@ -42,6 +43,8 @@ export type AppData = {
   upTo: Readonly<Record<string, readonly UpToRow[]>>;
   /** Colors a group's members already use (docs/specs/group-colors.md, COLOR-4). */
   memberColors: MemberColorSource;
+  /** How the user signs a gift's postcard. TODO(server): the user's real name. */
+  senderName: string;
   /** Appended to storage names so demo and real data never mix (DEMO-3). */
   storageSuffix: string;
 };
@@ -58,6 +61,7 @@ export const emptyData: AppData = {
   goals: () => ({}),
   upTo: {},
   memberColors: fakeMemberColors({}),
+  senderName: "",
   storageSuffix: "",
 };
 
@@ -73,6 +77,7 @@ export const demoData: AppData = {
   goals: placeholderGoals,
   upTo: placeholderUpTo,
   memberColors: fakeMemberColors(placeholderMemberColors),
+  senderName: placeholderSenderName,
   storageSuffix: ".demo",
 };
 

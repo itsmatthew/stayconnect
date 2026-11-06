@@ -275,6 +275,9 @@ export function placeholderGifts(now: number): ReceivedGift[] {
   ];
 }
 
+/** How the demo user signs a gift's postcard (docs/specs/gifts.md, GIFT-7). */
+export const placeholderSenderName = "Jackson";
+
 /** What a recipient says when the dev-only "simulate reply" fires (docs/specs/messages.md, MSG-6). */
 export const placeholderReplies: readonly string[] = [
   "omg I forgot about this day",

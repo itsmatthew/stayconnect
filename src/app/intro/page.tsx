@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Caveat, Fraunces, Karla } from "next/font/google";
+import { Caveat, Fraunces, Homemade_Apple, Karla, Shadows_Into_Light } from "next/font/google";
 import { AppClient } from "./app-client";
 import { IntroClient } from "./intro-client";
 
@@ -18,10 +18,13 @@ const fraunces = Fraunces({
 const karla = Karla({ subsets: ["latin"], weight: ["500", "700", "800"], variable: "--font-karla" });
 // Daily 5's handwritten polaroid dates.
 const caveat = Caveat({ subsets: ["latin"], weight: "700", variable: "--font-caveat" });
+// The gift postcard's other handwriting (docs/specs/gifts.md, GIFT-7).
+const giftShadows = Shadows_Into_Light({ subsets: ["latin"], weight: "400", variable: "--font-gift-shadows" });
+const giftHomemade = Homemade_Apple({ subsets: ["latin"], weight: "400", variable: "--font-gift-homemade" });
 
 export default function IntroPage() {
   return (
-    <div className={`${fraunces.variable} ${karla.variable} ${caveat.variable}`}>
+    <div className={`${fraunces.variable} ${karla.variable} ${caveat.variable} ${giftShadows.variable} ${giftHomemade.variable}`}>
       <IntroClient home={<AppClient />} />
     </div>
   );

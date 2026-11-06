@@ -13,6 +13,10 @@ import { useColorOverrides } from "./colors/use-color-overrides";
 import { Daily5Client } from "./daily5/daily5-client";
 import { detectFaces } from "./daily5/face-detector";
 import { openPhotoStore, type PhotoStore } from "./daily5/photo-store";
+import type { GiftEvents } from "./gifts/gift-events";
+import type { GiftStore } from "./gifts/gift-store";
+import { localGiftEvents } from "./gifts/local-gift-events";
+import { localGiftStore } from "./gifts/local-gift-store";
 import { validateGroupName, withGroupNames, type GroupNameStore } from "./group-names/group-names";
 import { localGroupNameStore } from "./group-names/local-group-names";
 import { useGroupNames } from "./group-names/use-group-names";
@@ -42,6 +46,9 @@ type AppClientProps = {
   colorOverrides?: (storageSuffix: string) => ColorOverrideStore;
   /** Where renamed groups are saved (docs/specs/group-rename.md, RENAME-4). */
   groupNames?: (storageSuffix: string) => GroupNameStore;
+  /** Where gifts are saved, and what's recorded about them (docs/specs/gifts.md, GIFT-9/11). */
+  giftStore?: (storageSuffix: string) => GiftStore;
+  giftEvents?: (storageSuffix: string) => GiftEvents;
   hasFace?: (image: Blob) => Promise<boolean>;
   readCapture?: (f: File) => Promise<number | undefined>;
   decode?: (f: File) => Promise<Blob>;
@@ -96,6 +103,8 @@ export function AppClient({
   openOrnaments = openOrnamentStore,
   colorOverrides = localColorOverrideStore,
   groupNames = localGroupNameStore,
+  giftStore = localGiftStore,
+  giftEvents = localGiftEvents,
   hasFace = detectFaces,
   readCapture = captureDate,
   decode = downscale,
@@ -228,6 +237,6 @@ export function AppClient({
         />
       );
     case "Me":
-      return <MeClient data={viewerData} now={now} store={archive} nav={nav} />;
+      return <MeClient data={viewerData} now={now} store={archive} nav={nav} gifts={{ store: giftStore(data.storageSuffix), events: giftEvents(data.storageSuffix), photos: store, placements: circle.placements }} />;
   }
 }

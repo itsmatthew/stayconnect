@@ -8,12 +8,26 @@ import type { AppData } from "../app-data";
 import type { ArchiveStore } from "../archive/archive-store";
 import { periodFromKey, periodsOfYear, periodTitle } from "../archive/periods";
 import { photoView, useMyPosts } from "../archive/use-my-posts";
+import type { Placements } from "../circle/rings";
+import type { PhotoStore } from "../daily5/photo-store";
+import { GiftMakerClient } from "../gifts/gift-maker-client";
+import type { GiftEvents } from "../gifts/gift-events";
+import type { GiftStore } from "../gifts/gift-store";
+import { useGiftDraft } from "../gifts/use-gift-draft";
 import { ME } from "../messages/conversations";
 
-type MeClientProps = { data: AppData; now: () => number; store: ArchiveStore | null; nav: NavProps };
+type MeClientProps = {
+  data: AppData;
+  now: () => number;
+  store: ArchiveStore | null;
+  nav: NavProps;
+  /** What the gift maker needs (docs/specs/gifts.md). */
+  gifts: { store: GiftStore; events: GiftEvents; photos: PhotoStore | null; placements: Placements };
+};
 
 /** Your own 65 for the chosen year (docs/specs/me.md). Other people's posts never fill your slots. */
-export function MeClient({ data, now, store, nav }: MeClientProps) {
+export function MeClient({ data, now, store, nav, gifts }: MeClientProps) {
+  const draft = useGiftDraft({ store: gifts.store, events: gifts.events, now, makeId: () => crypto.randomUUID(), from: ME });
   const [seeded] = useState(() => data.posts(now()).filter((p) => p.author === ME));
   const { mine, urls } = useMyPosts(store, seeded);
   const thisYear = new Date(now()).getFullYear();
@@ -27,5 +41,25 @@ export function MeClient({ data, now, store, nav }: MeClientProps) {
     return { key: p.key, size: p.kind, title, photo: post && photoView(post, urls, `Your photo of ${title}`), caption: post?.caption };
   });
 
-  return <MeScreen year={year} years={years} onYearChange={setYear} tiles={tiles} nav={nav} />;
+  return (
+    <>
+      <MeScreen year={year} years={years} onYearChange={setYear} tiles={tiles} nav={nav} onSendGift={() => void draft.open()} />
+      {draft.gift && (
+        <GiftMakerClient
+          gift={draft.gift}
+          dispatch={draft.dispatch}
+          onClose={draft.close}
+          friends={data.friends}
+          placements={gifts.placements}
+          photos={gifts.photos}
+          senderName={data.senderName}
+          now={now}
+          onDaily5={() => {
+            draft.close();
+            nav.onNavigate?.("Daily 5");
+          }}
+        />
+      )}
+    </>
+  );
 }
