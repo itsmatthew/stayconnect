@@ -25,6 +25,8 @@ type HomeScreenProps = {
   nav: NavProps;
   /** A tap on one of a group's ornaments (0–2), or on the card's "swap photos" (HOME-13). */
   onOrnament?: (groupId: string, index: number) => void;
+  /** A tap on the card's "rename" (docs/specs/group-rename.md, RENAME-2). */
+  onRename?: (groupId: string) => void;
   /** Group id → "46 days · lake weekend": the next time together (HOME-19). */
   countdowns?: Readonly<Record<string, string>>;
 };
@@ -166,7 +168,7 @@ const PHONE_BADGES: Record<TreeSlot, { left: number; top: number; size: number; 
 };
 const SLOTS: readonly TreeSlot[] = ["left", "center", "right"];
 
-function PhoneLayout({ phone, view, onViewChange, onPrevious, onNext, nav, onOrnament, countdowns = {} }: HomeScreenProps) {
+function PhoneLayout({ phone, view, onViewChange, onPrevious, onNext, nav, onOrnament, onRename, countdowns = {} }: HomeScreenProps) {
   const ids = useSceneIds();
   const bySlot = { left: phone[0], center: phone[1], right: phone[2] };
   const tree = (slot: TreeSlot) => (
@@ -255,7 +257,7 @@ function PhoneLayout({ phone, view, onViewChange, onPrevious, onNext, nav, onOrn
 
         {/* Card and nav hold to the bottom of the screen, as in the reference. */}
         <div className="absolute left-1/2 -translate-x-1/2" style={{ bottom: s(86), width: s(362) }}>
-          <GroupCard group={phone[1]} onSwapPhotos={(index) => onOrnament?.(phone[1].id, index)} />
+          <GroupCard group={phone[1]} onSwapPhotos={(index) => onOrnament?.(phone[1].id, index)} onRename={() => onRename?.(phone[1].id)} />
         </div>
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2" style={{ width: s(390), height: s(78) }}>
           <BottomNav {...nav} />
@@ -278,7 +280,7 @@ const CENTER = WIDE_SLOTS[WIDE_CENTER_SLOT];
 /** Small trees stay off the labels (HOME-8). There is no river on wide screens (HOME-11). */
 const WIDE_CLEAR_ZONES = wideLabelZones();
 
-function WideLayout({ wide, view, onViewChange, onPrevious, onNext, nav, onOrnament, countdowns = {} }: HomeScreenProps) {
+function WideLayout({ wide, view, onViewChange, onPrevious, onNext, nav, onOrnament, onRename, countdowns = {} }: HomeScreenProps) {
   const ids = useSceneIds();
   return (
     <div
@@ -370,7 +372,7 @@ function WideLayout({ wide, view, onViewChange, onPrevious, onNext, nav, onOrnam
             className="absolute left-1/2 -translate-x-1/2"
             style={{ bottom: s(16), "--s": "calc(1.32 * var(--d))" } as CSSProperties}
           >
-            <GroupCard group={wide[WIDE_CENTER_SLOT]} onSwapPhotos={(index) => onOrnament?.(wide[WIDE_CENTER_SLOT].id, index)} />
+            <GroupCard group={wide[WIDE_CENTER_SLOT]} onSwapPhotos={(index) => onOrnament?.(wide[WIDE_CENTER_SLOT].id, index)} onRename={() => onRename?.(wide[WIDE_CENTER_SLOT].id)} />
           </div>
         </div>
 

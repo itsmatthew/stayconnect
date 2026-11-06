@@ -51,11 +51,26 @@ const rename = (from: string, to: string) => {
 const seedNames = (names: Record<string, string>) => localStorage.setItem(groupNamesKey(".demo"), JSON.stringify(names));
 const log = () => screen.getByRole("log", { name: "Conversation" });
 
-describe("rename button (RENAME-2)", () => {
-  it("is on the profile, at least 44px tall", () => {
+describe("tap the name on the profile (RENAME-2)", () => {
+  it("is the heading itself, with a pencil, at least 44px tall, and no separate Rename text", () => {
     renderApp("Messages");
     openProfile("Madrid Crew");
-    expect(screen.getByRole("button", { name: "Rename Madrid Crew" }).style.minHeight).toBe("44px");
+    const heading = screen.getByRole("heading", { level: 1, name: /Madrid Crew/ });
+    const button = within(heading).getByRole("button", { name: "Rename Madrid Crew" });
+    expect(button.style.minHeight).toBe("44px");
+    expect(button.querySelector("[data-pencil]")).toBeTruthy();
+    expect(heading.textContent).toBe("Madrid Crew");
+    expect(screen.queryByText("Rename")).toBeNull();
+  });
+
+  it("opens the sheet from the name and from the pencil", () => {
+    renderApp("Messages");
+    openProfile("Madrid Crew");
+    const button = screen.getByRole("button", { name: "Rename Madrid Crew" });
+    for (const target of [within(button).getByText("Madrid Crew"), button.querySelector("[data-pencil]")!]) {
+      fireEvent.click(target);
+      fireEvent.click(within(screen.getByRole("dialog", { name: "Rename group" })).getByRole("button", { name: "Cancel" }));
+    }
   });
 });
 

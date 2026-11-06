@@ -3,6 +3,7 @@ import { MemoryPicture } from "../home/memory-art";
 import type { Memory } from "../home/types";
 import { FRAUNCES, KARLA, NAVY, PAPER, s } from "../home/units";
 import { PartyAvatar } from "../messages/avatar";
+import { EditableName } from "../shared/editable-name";
 import { HeaderPicture, PickArea } from "../shared/header-photo";
 import { MembersString } from "./members-string";
 import { NextCard } from "./next-card";
@@ -81,7 +82,9 @@ export function GroupProfile(props: GroupProfileProps) {
               <path d="M13.5 6.5l4 4" />
             </svg>
           </button>
-          <h1 style={{ margin: `${s(46)} 0 0`, textAlign: "center", fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(22), letterSpacing: s(-0.3) }}>{party.name}</h1>
+          <h1 style={{ margin: `${s(46)} ${s(14)} 0`, textAlign: "center", fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(22), letterSpacing: s(-0.3) }}>
+            <EditableName name={party.name} onEdit={onRename} />
+          </h1>
           <div style={{ display: "flex", justifyContent: "center" }}>
             <button
               type="button"
@@ -90,14 +93,6 @@ export function GroupProfile(props: GroupProfileProps) {
             >
               <span aria-hidden="true" style={{ width: s(14), height: s(14), borderRadius: "50%", background: party.palette.canopy }} />
               Color on my screen
-            </button>
-            <button
-              type="button"
-              aria-label={`Rename ${party.name}`}
-              onClick={onRename}
-              style={{ minHeight: 44, padding: `0 ${s(12)}`, border: 0, background: "none", color: NAVY, fontFamily: KARLA, fontSize: s(13), fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}
-            >
-              Rename
             </button>
           </div>
         </div>

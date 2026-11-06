@@ -146,6 +146,13 @@ export function AppClient({
     decode,
     crop,
   };
+  /** Shared by Home's card and the group profile (RENAME-2). The note follows only a successful save (RENAME-4). */
+  const renameGroup = async (groupId: string, raw: string) => {
+    const check = validateGroupName(raw);
+    if (!check.ok) return;
+    await saveGroupName(groupId, check.name);
+    dispatch({ type: "rename", id: crypto.randomUUID(), conversationId: conversationId("group", groupId), by: ME, name: check.name, at: now() });
+  };
   /** The next time together on Home's trees (HOME-19). */
   const countdowns = Object.fromEntries(
     homeGroups.flatMap((g) => {
@@ -168,6 +175,7 @@ export function AppClient({
           onOpenChat={openChat}
           nav={nav}
           ornaments={ornamentControls}
+          onRename={renameGroup}
           countdowns={countdowns}
         />
       );
@@ -205,12 +213,7 @@ export function AppClient({
             upTo: data.upTo,
             ornaments: ornamentControls,
             colors: { overrides, onChange: setColorOverride },
-            rename: async (groupId, raw) => {
-              const check = validateGroupName(raw);
-              if (!check.ok) return;
-              await saveGroupName(groupId, check.name);
-              dispatch({ type: "rename", id: crypto.randomUUID(), conversationId: conversationId("group", groupId), by: ME, name: check.name, at: now() });
-            },
+            rename: renameGroup,
             // Header photos are saved at once, downscaled, with their capture date (GP-12). The change starts at the tap,
             // so the store stays open while the photo is prepared.
             setHeaderPhoto: (groupId, slot, file) =>

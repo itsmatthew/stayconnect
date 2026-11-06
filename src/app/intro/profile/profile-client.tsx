@@ -4,7 +4,6 @@ import { useState } from "react";
 import type { CircleGroup, Friend, Party } from "@/components/home/types";
 import { ColorSheet } from "@/components/profile/color-sheet";
 import { GoalSheet } from "@/components/profile/goal-sheet";
-import { RenameSheet } from "@/components/profile/rename-sheet";
 import { GroupProfile } from "@/components/profile/group-profile";
 import { OrnamentView } from "@/components/profile/ornament-view";
 import { AllPhotos } from "@/components/profile/photo-grid";
@@ -13,7 +12,7 @@ import type { Placements } from "../circle/rings";
 import type { ColorOverrides } from "../colors/color-overrides";
 import { GROUP_COLORS, groupPalette } from "../colors/palette";
 import type { PhotoStore } from "../daily5/photo-store";
-import { canRename, renameError } from "../group-names/group-names";
+import { RenameSheetClient } from "../group-names/rename-sheet-client";
 import { formatPhotoDate } from "../daily5/format";
 import { ME, visibleMessages, type ChatState } from "../messages/conversations";
 import { usePhotoUrls } from "../messages/use-photo-urls";
@@ -136,15 +135,7 @@ export function ProfileClient({ group, party, chat, friends, store, now, control
         onEditGoal={() => setGoalOpen(true)}
         onToggleIn={() => controls.dispatchGoal({ type: next?.mineIn ? "leave" : "join", groupId: group.id, who: ME })}
       />
-      {renameOpen && (
-        <RenameSheet
-          current={group.name}
-          canSave={(raw) => canRename(raw, group.name)}
-          errorFor={renameError}
-          onSave={(raw) => controls.rename(group.id, raw).then(() => setRenameOpen(false))}
-          onCancel={() => setRenameOpen(false)}
-        />
-      )}
+      {renameOpen && <RenameSheetClient group={group} onRename={controls.rename} onClose={() => setRenameOpen(false)} />}
       {colorOpen && (
         <ColorSheet
           groupName={group.name}

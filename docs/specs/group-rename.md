@@ -7,7 +7,7 @@ Tests: `tests/group-rename/`.
 | ID | Behaviour |
 |----|-----------|
 | RENAME-1 | **Valid names.** Spaces are trimmed from both ends. An empty name, or one of only spaces, is rejected. A name is at most 40 characters after trimming, and an emoji counts as one. |
-| RENAME-2 | **Rename button.** The group profile has a "Rename" button (labelled "Rename ‹Group›"), at least 44px tall, next to "Color on my screen". Any member can use it. |
+| RENAME-2 | **Tap the name.** On the Home group card and the group profile, the group's name is the way in: a small pencil sits right after it, and tapping either one opens the rename sheet. They're one button, labelled "Rename ‹Group›", at least 44px tall, shared by both places, with one sheet and one save. The tap stays on the button, so nothing around it fires. Any member can use it. |
 | RENAME-3 | **Rename sheet.** A dialog titled "Rename group" with a "Group name" field holding the current name, Cancel and Save. Save is off until the name is valid and different from the current one. A name that's too long shows "Keep it to 40 characters." The field doesn't cut off typing or pasting, so a pasted name is judged after trimming. |
 | RENAME-4 | **Saving.** The name goes through `GroupNameStore`, whose methods are async so a server can replace it. The new name and the note appear only once the save succeeds. If it fails the sheet stays open with "Couldn't save. Try again." and nothing changes. |
 | RENAME-5 | **Note.** After a rename the group's thread shows a small centered note in order with its messages: "‹Name› renamed the group to ‹new name›.", or "You renamed the group to ‹new name›." for the user. It's not a bubble, and it isn't a memory. |

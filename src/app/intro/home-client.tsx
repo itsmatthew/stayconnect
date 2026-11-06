@@ -12,6 +12,7 @@ import { initialCircleState, members, overGuide, type CircleAction, type CircleS
 import { newestFirst, type ReceivedGift } from "./circle/gifts";
 import { activity, isLit, suggestion } from "./circle/suggestions";
 import { openingCenter, rotate, visibleAround } from "./circle-carousel";
+import { RenameSheetClient } from "./group-names/rename-sheet-client";
 import { initialChatState, type ChatState } from "./messages/conversations";
 import { OrnamentSheetClient, noOrnaments, type OrnamentControls } from "./ornaments/ornament-sheet-client";
 
@@ -29,6 +30,8 @@ type HomeClientProps = {
   onOpenChat?: (friendId: string) => void;
   nav?: NavProps;
   ornaments?: OrnamentControls;
+  /** Renames a group; rejects if it couldn't be saved (docs/specs/group-rename.md, RENAME-4). */
+  onRename?: (groupId: string, raw: string) => Promise<void>;
   /** Group id → "46 days · lake weekend" (docs/specs/home.md, HOME-19). */
   countdowns?: Readonly<Record<string, string>>;
 };
@@ -49,10 +52,12 @@ export function HomeClient({
   onOpenChat = () => {},
   nav = { current: "Circles" },
   ornaments = noOrnaments,
+  onRename = async () => {},
   countdowns = {},
 }: HomeClientProps) {
   const [center, setCenter] = useState(() => openingCenter(groups));
   const [sheet, setSheet] = useState<OpenSheet | null>(null);
+  const [renaming, setRenaming] = useState<string | null>(null);
   const [view, setView] = useState<CirclesView>("circles");
   const turn = (delta: number) => setCenter((c) => rotate(c, delta, groups.length));
 
@@ -92,6 +97,7 @@ export function HomeClient({
   if (!groups.length) return <HomeEmpty nav={nav} onDaily5={() => nav.onNavigate?.("Daily 5")} view={view} onViewChange={setView} />;
 
   const open = sheet && groups.find((g) => g.id === sheet.groupId);
+  const renamingGroup = groups.find((g) => g.id === renaming);
   return (
     <>
       <HomeScreen
@@ -103,9 +109,11 @@ export function HomeClient({
         onNext={() => turn(+1)}
         nav={nav}
         onOrnament={(groupId, index) => setSheet({ groupId, index })}
+        onRename={setRenaming}
         countdowns={countdowns}
       />
       {open && sheet && <OrnamentSheetClient key={`${sheet.groupId}/${sheet.index}`} group={open} index={sheet.index} controls={ornaments} onClose={() => setSheet(null)} />}
+      {renamingGroup && <RenameSheetClient group={renamingGroup} onRename={onRename} onClose={() => setRenaming(null)} />}
     </>
   );
 }

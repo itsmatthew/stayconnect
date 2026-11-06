@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { EditableName } from "../shared/editable-name";
 import { MemoryPicture } from "./memory-art";
 import type { CircleGroup, Memory } from "./types";
 import { CREAM, FRAUNCES, INK, s } from "./units";
@@ -73,8 +74,8 @@ function MemoryThumb({ memory, color, addLabel, onAdd }: { memory: Memory; color
   );
 }
 
-/** The selected circle's card (362 design px wide), with its garland. Its button opens the ornament sheet on the first blank, or the first ornament (HOME-4). */
-export function GroupCard({ group, onSwapPhotos }: { group: CircleGroup; onSwapPhotos?: (index: number) => void }) {
+/** The selected circle's card (362 design px wide), with its garland. Its button opens the ornament sheet, on the first blank or the first ornament, and its name the rename sheet (HOME-4). */
+export function GroupCard({ group, onSwapPhotos, onRename }: { group: CircleGroup; onSwapPhotos?: (index: number) => void; onRename?: () => void }) {
   const firstBlank = group.memories.findIndex((m) => !m.src);
   return (
     <section aria-label="Selected circle" aria-live="polite" style={{ position: "relative", width: s(362) }}>
@@ -88,23 +89,27 @@ export function GroupCard({ group, onSwapPhotos }: { group: CircleGroup; onSwapP
           color: "#2B3350",
         }}
       >
-        <div style={{ display: "flex", height: s(46) }}>
+        <div style={{ display: "flex", height: s(46), minHeight: 44 }}>
           <div
             style={{
               flex: 1,
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
+              gap: s(8),
+              minWidth: 0,
               padding: `0 ${s(12)} 0 ${s(14)}`,
               background: group.palette.canopy,
               color: CREAM,
             }}
           >
-            <h2 style={{ margin: 0, fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(19) }}>{group.name}</h2>
+            <h2 style={{ minWidth: 0, margin: 0, fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(19), lineHeight: 1.1 }}>
+              <EditableName name={group.name} onEdit={onRename} clamp />
+            </h2>
             <button
               type="button"
               onClick={() => onSwapPhotos?.(Math.max(firstBlank, 0))}
-              style={{ border: 0, padding: 0, background: "none", font: "inherit", fontSize: s(12), fontWeight: 800, textDecoration: "underline", color: "#FFF6DA", cursor: "pointer" }}
+              style={{ flex: "none", minWidth: 44, minHeight: 44, border: 0, padding: 0, background: "none", font: "inherit", fontSize: s(12), fontWeight: 800, textDecoration: "underline", color: "#FFF6DA", cursor: "pointer" }}
             >
               {firstBlank === -1 ? "swap photos" : "add photos"}
             </button>
