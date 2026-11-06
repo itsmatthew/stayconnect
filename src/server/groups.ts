@@ -44,3 +44,9 @@ export async function listGroups(db: Db, userId: string): Promise<{ id: string; 
     [userId],
   );
 }
+
+// TODO(re-evaluate when per-group settings exist): let the owner allow members to manage invites, then check that setting here.
+/** Owner-only actions (INV-1). A member who isn't the owner looks the same as a non-member: no way to probe roles. */
+export async function requireOwner(db: Db, userId: string, groupId: string): Promise<void> {
+  if ((await requireMember(db, userId, groupId)) !== "owner") throw new NotFoundError();
+}
