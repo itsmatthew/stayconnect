@@ -5,10 +5,11 @@ import type { Placements } from "../circle/rings";
 import { formatPhotoDate } from "../daily5/format";
 import type { PhotoStore, StoredPhoto } from "../daily5/photo-store";
 import { usePhotoUrls } from "../messages/use-photo-urls";
+import { friendParty, groupParty } from "../parties";
 import { GiftMaker, type GiftChip } from "@/components/gifts/gift-maker";
 import { FrameStep, NoteStep, PhotoStep, ToStep, WrapStep } from "@/components/gifts/gift-steps";
 import type { GiftCardLook } from "@/components/gifts/gift-card";
-import type { Friend } from "@/components/home/types";
+import type { CircleGroup, Friend, Party } from "@/components/home/types";
 import { STEPS, canContinue, canOpenStep, dateStampAllowed, dayAfter, dayKey, defaultSide, newestPhotos, nextStep, noteLength, NOTE_MAX, postmark, previousStep, shortDay, shortYear, writtenDate, type Gift, type GiftAction, type GiftStep } from "./gift";
 import { FRAMES, HANDS, INKS, RIBBONS, STAMPS, WRAPS, colorOf, isAvailable } from "./gift-catalog";
 import { giftRecipients } from "./gift-recipients";
@@ -21,6 +22,8 @@ type GiftMakerClientProps = {
   dispatch: (a: GiftAction) => void;
   onClose: () => void;
   friends: readonly Friend[];
+  /** As this viewer sees them: their color, name and logo. */
+  groups: readonly CircleGroup[];
   placements: Placements;
   photos: PhotoStore | null;
   /** How the postcard is signed. */
@@ -28,6 +31,16 @@ type GiftMakerClientProps = {
   now: () => number;
   onDaily5: () => void;
 };
+
+/** The person or group a gift is for, as a party the views can draw. */
+function recipientParty({ to }: Gift, friends: readonly Friend[], groups: readonly CircleGroup[]): Party | undefined {
+  if (to?.kind === "person") {
+    const f = friends.find((x) => x.id === to.id);
+    return f && friendParty(f);
+  }
+  const g = groups.find((x) => x.id === to?.id);
+  return g && groupParty(g);
+}
 
 /** Reads the photo pools once the store is open. */
 function usePhotoList(store: PhotoStore | null) {
@@ -45,7 +58,7 @@ function usePhotoList(store: PhotoStore | null) {
 }
 
 /** The gift maker, wired (docs/specs/gifts.md). Rules are in `gift.ts`; this only connects them to the views. */
-export function GiftMakerClient({ gift, dispatch, onClose, friends, placements, photos, senderName, now, onDaily5 }: GiftMakerClientProps) {
+export function GiftMakerClient({ gift, dispatch, onClose, friends, groups, placements, photos, senderName, now, onDaily5 }: GiftMakerClientProps) {
   const [query, setQuery] = useState("");
   const [limit, setLimit] = useState(PAGE);
   /** The step the card was turned over on; the turn lasts until the step changes. */
@@ -56,7 +69,8 @@ export function GiftMakerClient({ gift, dispatch, onClose, friends, placements, 
   const urls = usePhotoUrls(photos, [...new Set([...shown.map((p) => p.id), ...(pickedId ? [pickedId] : [])])]);
 
   const today = dayKey(now());
-  const recipient = friends.find((f) => f.id === gift.to);
+  const recipient = recipientParty(gift, friends, groups);
+  const sections = giftRecipients({ friends, groups, placements }, query);
   const stamp = gift.frame.dateStamp && gift.takenAt !== undefined ? { year: shortYear(gift.takenAt), written: writtenDate(gift.takenAt) } : undefined;
   const look: GiftCardLook = {
     to: recipient?.name ?? "",
@@ -101,7 +115,15 @@ export function GiftMakerClient({ gift, dispatch, onClose, friends, placements, 
       onBack={back ? () => go(back) : undefined}
       onClose={onClose}
     >
-      {gift.step === "to" && <ToStep sections={giftRecipients(friends, placements, query)} query={query} onQuery={setQuery} picked={gift.to} onPick={(friendId) => dispatch({ type: "to", friendId })} />}
+      {gift.step === "to" && (
+        <ToStep
+          sections={{ ...sections, groups: sections.groups.map(groupParty), nest: sections.nest.map(friendParty), branches: sections.branches.map(friendParty), everyone: sections.everyone.map(friendParty) }}
+          query={query}
+          onQuery={setQuery}
+          picked={recipient?.id}
+          onPick={(p) => dispatch({ type: "to", to: { kind: p.kind === "group" ? "group" : "person", id: p.id.slice(p.id.indexOf(":") + 1) } })}
+        />
+      )}
       {gift.step === "photo" && (
         <PhotoStep
           photos={shown.map((p) => ({ id: p.id, label: `Photo from ${formatPhotoDate(p.takenAt)}`, src: urls[p.id] }))}
@@ -128,7 +150,7 @@ export function GiftMakerClient({ gift, dispatch, onClose, friends, placements, 
           stamps={STAMPS.filter(isAvailable)}
           stamp={gift.note.stamp}
           onStamp={(id) => dispatch({ type: "stamp", id })}
-          sample={recipient?.name ?? "there"}
+          sample={recipient?.kind === "group" ? "Hey all" : `Hey ${recipient?.name ?? "there"}`}
         />
       )}
       {gift.step === "wrap" && (

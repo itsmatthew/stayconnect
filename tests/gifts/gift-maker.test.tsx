@@ -4,10 +4,13 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { AppClient } from "@/app/intro/app-client";
 import { demoData, emptyData, type AppData } from "@/app/intro/app-data";
 import { openArchiveStore } from "@/app/intro/archive/archive-store";
+import { colorOverridesKey } from "@/app/intro/colors/local-color-overrides";
+import { groupPalette } from "@/app/intro/colors/palette";
 import { openPhotoStore } from "@/app/intro/daily5/photo-store";
 import type { Gift } from "@/app/intro/gifts/gift";
 import { giftEventsKey } from "@/app/intro/gifts/local-gift-events";
 import { giftsKey } from "@/app/intro/gifts/local-gift-store";
+import { groupNamesKey } from "@/app/intro/group-names/local-group-names";
 import { openOrnamentStore } from "@/app/intro/ornaments/ornament-store";
 
 const NOW = new Date(2026, 10, 6, 12).getTime();
@@ -150,6 +153,75 @@ describe("To (GIFT-4)", () => {
     renderMe(emptyData);
     await openMaker();
     expect(screen.getByText("People show up here once they're in your circle.")).toBeTruthy();
+  });
+});
+
+describe("groups (GIFT-4, GIFT-13)", () => {
+  const HOOPS = "Hoops Since ’14";
+  const labels = () => [...document.querySelectorAll("[data-recipient-section]")].map((s) => s.getAttribute("data-recipient-section"));
+
+  it("shows groups first, then people", async () => {
+    renderMe();
+    await openMaker();
+    expect(screen.getByText("your groups")).toBeTruthy();
+    expect(labels()).toEqual(["groups", "nest", "branches"]);
+    expect(screen.getByRole("button", { name: HOOPS })).toBeTruthy();
+  });
+
+  it("draws a group in its own color, with its name and logo as this viewer sees them", async () => {
+    localStorage.setItem(colorOverridesKey(".demo"), JSON.stringify({ "hoops-since-14": "teal" }));
+    localStorage.setItem(groupNamesKey(".demo"), JSON.stringify({ "hoops-since-14": "Court Rats" }));
+    renderMe();
+    tap("gifts");
+    tap("send a gift");
+    const logo = await screen.findByRole("img", { name: "Court Rats logo" });
+    expect(logo.getAttribute("style")).toContain(groupPalette("teal", 0).canopy);
+  });
+
+  it("searches groups", async () => {
+    renderMe();
+    await openMaker();
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search people" }), { target: { value: "hoops" } });
+    expect(screen.getByRole("button", { name: HOOPS })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Madrid Crew" })).toBeNull();
+  });
+
+  it("names the gift, the tag and the postcard for the group", async () => {
+    await seedPhotos();
+    renderMe();
+    await openMaker();
+    tap(HOOPS);
+    expect(screen.getByRole("heading", { name: `A gift for ${HOOPS}` })).toBeTruthy();
+    expect(saved()[0].to).toEqual({ kind: "group", id: "hoops-since-14" });
+    expect(screen.getByTestId("gift-postcard").textContent).toContain(HOOPS);
+    next("photo");
+    fireEvent.click((await screen.findAllByRole("button", { name: /^Photo from / }))[0]);
+    next("frame");
+    next("note");
+    expect(screen.getByRole("button", { name: "Handwriting 1" }).textContent).toBe("Hey all");
+    next("wrap");
+    expect(document.querySelector("[data-pattern]")!.textContent).toContain(`to ${HOOPS}`);
+  });
+
+  it("keeps Next in reach however long the list gets, and a long title to two lines", async () => {
+    renderMe();
+    await openMaker();
+    tap(HOOPS);
+    const footer = screen.getByRole("button", { name: /^Next: photo/ }).parentElement!;
+    expect(footer.style.position).toBe("sticky");
+    expect(footer.style.bottom).toBe("0px");
+    expect(screen.getByRole("heading", { name: `A gift for ${HOOPS}` }).className).toBe("gf-two-lines");
+  });
+
+  it("switches between a group and a person", async () => {
+    renderMe();
+    await openMaker();
+    tap(HOOPS);
+    tap("Leo");
+    expect(screen.getByRole("heading", { name: "A gift for Leo" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Leo" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: HOOPS }).getAttribute("aria-pressed")).toBe("false");
+    expect(screen.getByRole("button", { name: "Leo" }).querySelector("[data-picked]")).toBeTruthy();
   });
 });
 

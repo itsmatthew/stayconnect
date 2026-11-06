@@ -237,6 +237,6 @@ export function AppClient({
         />
       );
     case "Me":
-      return <MeClient data={viewerData} now={now} store={archive} nav={nav} gifts={{ store: giftStore(data.storageSuffix), events: giftEvents(data.storageSuffix), photos: store, placements: circle.placements }} />;
+      return <MeClient data={viewerData} now={now} store={archive} nav={nav} gifts={{ store: giftStore(data.storageSuffix), events: giftEvents(data.storageSuffix), photos: store, placements: circle.placements, groups: homeGroups }} />;
   }
 }

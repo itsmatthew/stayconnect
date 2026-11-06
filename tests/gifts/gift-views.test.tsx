@@ -78,6 +78,14 @@ describe("wrapped gift (GIFT-8)", () => {
     expect(container.textContent).toContain("open Nov 12");
   });
 
+  it("reads to the group, and keeps a long name on the tag", () => {
+    const name = "Long Name For A Friend Group We Have Now";
+    const { container } = render(<WrappedGift to={name} pattern="candy" ribbon="#E8B93A" />);
+    const lines = [...container.querySelectorAll("[data-tag-line]")].map((l) => l.textContent);
+    expect(lines.length).toBeGreaterThan(1);
+    expect(lines.join(" ")).toBe(`to ${name}`);
+  });
+
   it("uses the ribbon color", () => {
     const { container } = render(<WrappedGift to="Maya" pattern="candy" ribbon="#C8432B" />);
     expect(container.querySelector("[data-ribbon]")!.getAttribute("fill")).toBe("#C8432B");

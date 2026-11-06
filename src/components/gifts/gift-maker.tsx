@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import type { FriendLook } from "../home/types";
+import type { Party } from "../home/types";
 import { CREAM, FRAUNCES, KARLA, NAVY, s } from "../home/units";
 import { PartyAvatar } from "../messages/avatar";
 import { GiftCard, type GiftCardLook } from "./gift-card";
@@ -9,7 +9,8 @@ export type GiftChip = { id: string; label: string; state: "current" | "done" | 
 type GiftMakerProps = {
   /** "A gift for Maya", or "A gift" before anyone is picked. */
   title: string;
-  recipient?: { id: string; name: string; look: FriendLook };
+  /** The person or group it's for, once picked. */
+  recipient?: Party;
   chips: readonly GiftChip[];
   onChip: (id: string) => void;
   look: GiftCardLook;
@@ -52,8 +53,8 @@ export function GiftMaker({ title, recipient, chips, onChip, look, side, onFlip,
               <path d="M6 6l12 12M18 6L6 18" />
             </svg>
           </button>
-          {recipient && <PartyAvatar party={{ kind: "friend", closest: false, ...recipient }} size={30} />}
-          <h1 style={{ margin: 0, fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(21), letterSpacing: s(-0.3) }}>{title}</h1>
+          {recipient && <PartyAvatar party={recipient} size={30} />}
+          <h1 className="gf-two-lines" style={{ minWidth: 0, margin: 0, lineHeight: 1.15, fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(21), letterSpacing: s(-0.3) }}>{title}</h1>
         </header>
 
         <nav aria-label="Gift steps" style={{ display: "flex", gap: s(4) }}>
@@ -78,7 +79,8 @@ export function GiftMaker({ title, recipient, chips, onChip, look, side, onFlip,
 
         <section style={{ flex: 1, minHeight: s(250), boxSizing: "border-box", padding: `${s(12)} ${s(14)}`, borderRadius: s(18), border: `${s(2)} solid ${NAVY}`, background: "#FBF3DE", display: "flex", flexDirection: "column", gap: s(10) }}>{children}</section>
 
-        <footer style={{ display: "flex", gap: s(10), paddingTop: s(6) }}>
+        {/* Pinned, so Next stays in reach however long the step gets. */}
+        <footer style={{ position: "sticky", bottom: 0, display: "flex", gap: s(10), margin: `0 ${s(-14)} ${s(-14)}`, padding: `${s(8)} ${s(14)} ${s(14)}`, background: "#F1E2B8" }}>
           {onBack && (
             <button type="button" onClick={onBack} style={{ ...footerButton, flex: "0 0 30%", background: CREAM, color: NAVY }}>
               Back

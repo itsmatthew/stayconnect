@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { canContinue, canOpenStep, clampNote, dateStampAllowed, dayKey, dayLabel, giftReducer, newGift, noteLength, NOTE_MAX, previousStep, nextStep, shortYear, STEPS, writtenDate, type Gift } from "@/app/intro/gifts/gift";
+import { canContinue, canOpenStep, giftCharge, giftCopies, clampNote, dateStampAllowed, dayKey, dayLabel, giftReducer, newGift, noteLength, NOTE_MAX, previousStep, nextStep, shortYear, STEPS, writtenDate, type Gift } from "@/app/intro/gifts/gift";
 import { FRAMES, HANDS, INKS, RIBBONS, STAMPS, WRAPS, isAvailable } from "@/app/intro/gifts/gift-catalog";
 import { giftRecipients } from "@/app/intro/gifts/gift-recipients";
 
@@ -9,7 +9,7 @@ const NOW = new Date(2026, 10, 6, 12).getTime();
 const TODAY = dayKey(NOW);
 const start = () => newGift({ id: "g1", from: "me", now: NOW });
 const photo = { kind: "stored", photoId: "p1" } as const;
-const complete = (): Gift => giftReducer(giftReducer(start(), { type: "to", friendId: "leo" }), { type: "photo", photo, takenAt: new Date(2019, 4, 2).getTime() });
+const complete = (): Gift => giftReducer(giftReducer(start(), { type: "to", to: { kind: "person", id: "leo" } }), { type: "photo", photo, takenAt: new Date(2019, 4, 2).getTime() });
 
 describe("steps (GIFT-2)", () => {
   it("runs To, Photo, Frame, Note, Wrap", () => {
@@ -22,7 +22,7 @@ describe("steps (GIFT-2)", () => {
 
   it("needs a person, then a photo, and nothing else", () => {
     expect(canContinue(start(), TODAY)).toBe(false);
-    const withPerson = giftReducer(start(), { type: "to", friendId: "leo" });
+    const withPerson = giftReducer(start(), { type: "to", to: { kind: "person", id: "leo" } });
     expect(canContinue(withPerson, TODAY)).toBe(true);
     const onPhoto = giftReducer(withPerson, { type: "step", step: "photo" });
     expect(canContinue(onPhoto, TODAY)).toBe(false);
@@ -33,7 +33,7 @@ describe("steps (GIFT-2)", () => {
   it("opens any step up to the first unfinished one", () => {
     expect(canOpenStep(start(), "to", TODAY)).toBe(true);
     expect(canOpenStep(start(), "photo", TODAY)).toBe(false);
-    const withPerson = giftReducer(start(), { type: "to", friendId: "leo" });
+    const withPerson = giftReducer(start(), { type: "to", to: { kind: "person", id: "leo" } });
     expect(canOpenStep(withPerson, "photo", TODAY)).toBe(true);
     expect(canOpenStep(withPerson, "frame", TODAY)).toBe(false);
     expect(canOpenStep(complete(), "wrap", TODAY)).toBe(true);
@@ -53,7 +53,7 @@ describe("date stamp (GIFT-6)", () => {
   });
 
   it("is off and can't be turned on for a photo dated only by its file, or with no date", () => {
-    const start2 = giftReducer(start(), { type: "to", friendId: "leo" });
+    const start2 = giftReducer(start(), { type: "to", to: { kind: "person", id: "leo" } });
     for (const g of [giftReducer(start2, { type: "photo", photo, takenAt: NOW, fileDated: true }), giftReducer(start2, { type: "photo", photo })]) {
       expect(dateStampAllowed(g)).toBe(false);
       expect(g.frame.dateStamp).toBe(false);
@@ -141,18 +141,65 @@ describe("recipients (GIFT-4)", () => {
     { id: "c", name: "Cal" },
     { id: "d", name: "Dev" },
   ];
+  const groups = [
+    { id: "hoops", name: "Hoops", members: ["a", "b"] },
+    { id: "devs", name: "Devs", members: ["d"] },
+    { id: "alone", name: "Just me", members: [] },
+  ];
   const placements = { b: "branches", a: "nest", c: "bloom" } as const;
+  const people = { friends, groups, placements };
 
   it("sorts people by ring, with bloom and unplaced people in everyone", () => {
-    const r = giftRecipients(friends, placements, "");
+    const r = giftRecipients(people, "");
     expect(r.nest.map((f) => f.id)).toEqual(["a"]);
     expect(r.branches.map((f) => f.id)).toEqual(["b"]);
     expect(r.everyone.map((f) => f.id)).toEqual(["c", "d"]);
   });
 
-  it("searches everyone, ignoring case", () => {
-    const r = giftRecipients(friends, placements, " DE ");
+  it("offers groups in their own order, leaving out one with nobody to receive it", () => {
+    expect(giftRecipients(people, "").groups.map((g) => g.id)).toEqual(["hoops", "devs"]);
+  });
+
+  it("searches groups and everyone, ignoring case", () => {
+    const r = giftRecipients(people, " DE ");
     expect([...r.nest, ...r.branches, ...r.everyone].map((f) => f.id)).toEqual(["d"]);
+    expect(r.groups.map((g) => g.id)).toEqual(["devs"]);
+  });
+});
+
+describe("group gifts (GIFT-13)", () => {
+  const toGroup = giftReducer(start(), { type: "to", to: { kind: "group", id: "hoops" } });
+  const toPerson = giftReducer(start(), { type: "to", to: { kind: "person", id: "leo" } });
+  const membersOf = (id: string) => ({ hoops: ["sam", "jordan", "leo"] })[id] ?? [];
+
+  it("can go to a group or a person, and either finishes the To step", () => {
+    expect(toGroup.to).toEqual({ kind: "group", id: "hoops" });
+    expect(canContinue(toGroup, TODAY)).toBe(true);
+    expect(canContinue(toPerson, TODAY)).toBe(true);
+  });
+
+  it("costs one price in total, the same as a gift to one person", () => {
+    expect(giftCharge(toGroup)).toEqual({ idempotencyKey: "g1", sku: "gift.single", quantity: 1 });
+    expect(giftCharge(toGroup)).toEqual(giftCharge(toPerson));
+  });
+
+  it("gives each member their own copy, to unwrap and keep separately", () => {
+    const copies = giftCopies(toGroup, membersOf);
+    expect(copies.map((c) => c.to)).toEqual(["sam", "jordan", "leo"]);
+    expect(new Set(copies.map((c) => c.id)).size).toBe(3);
+    for (const c of copies) expect(c.giftId).toBe("g1");
+  });
+
+  it("gives a person one copy", () => {
+    expect(giftCopies(toPerson, membersOf).map((c) => c.to)).toEqual(["leo"]);
+  });
+
+  it("never gives the sender a copy, or a member two", () => {
+    expect(giftCopies(toGroup, () => ["me", "sam", "sam"]).map((c) => c.to)).toEqual(["sam"]);
+  });
+
+  it("has no copies before anyone is picked", () => {
+    expect(giftCopies(start(), membersOf)).toEqual([]);
   });
 });
 

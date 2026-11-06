@@ -9,7 +9,7 @@ import { giftsKey, localGiftStore } from "@/app/intro/gifts/local-gift-store";
 import { useGiftDraft } from "@/app/intro/gifts/use-gift-draft";
 
 const NOW = new Date(2026, 10, 6, 12).getTime();
-const gift = (id = "g1") => giftReducer(newGift({ id, from: "me", now: NOW }), { type: "to", friendId: "leo" });
+const gift = (id = "g1") => giftReducer(newGift({ id, from: "me", now: NOW }), { type: "to", to: { kind: "person", id: "leo" } });
 
 beforeEach(() => localStorage.clear());
 afterEach(() => vi.restoreAllMocks());
@@ -36,6 +36,12 @@ describe("local store (GIFT-9)", () => {
     expect(await localGiftStore("").load()).toEqual([]);
     expect(parseGifts([{ id: 3 }, null, gift()]).map((g) => g.id)).toEqual(["g1"]);
     expect(parseGifts("x")).toEqual([]);
+  });
+
+  it("upgrades a draft saved before gifts could go to groups", () => {
+    expect(parseGifts([{ ...gift(), to: "leo" }])[0].to).toEqual({ kind: "person", id: "leo" });
+    expect(parseGifts([{ ...gift(), to: "" }])[0].to).toBeUndefined();
+    expect(parseGifts([gift()])[0].to).toEqual({ kind: "person", id: "leo" });
   });
 });
 
@@ -80,7 +86,7 @@ describe("useGiftDraft (GIFT-9, GIFT-11)", () => {
     const f = fakes();
     const { result } = setup(f);
     await act(() => result.current.open());
-    act(() => result.current.dispatch({ type: "to", friendId: "leo" }));
+    act(() => result.current.dispatch({ type: "to", to: { kind: "person", id: "leo" } }));
     act(() => result.current.dispatch({ type: "note", text: "hi" }));
     expect(f.saves.map((g) => g.note.text)).toEqual(["", "hi"]);
     expect(f.recorded).toEqual([{ type: "made", giftId: "new", at: NOW }]);
@@ -110,7 +116,7 @@ describe("useGiftDraft (GIFT-9, GIFT-11)", () => {
     act(() => result.current.close());
     expect(f.recorded).toEqual([]);
     await act(() => result.current.open());
-    act(() => result.current.dispatch({ type: "to", friendId: "leo" }));
+    act(() => result.current.dispatch({ type: "to", to: { kind: "person", id: "leo" } }));
     act(() => result.current.close());
     expect(result.current.gift).toBeNull();
     expect(f.recorded.at(-1)).toEqual({ type: "abandoned", giftId: "new", step: "to", at: NOW });

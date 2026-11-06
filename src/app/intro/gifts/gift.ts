@@ -5,6 +5,8 @@ export type GiftStep = (typeof STEPS)[number];
 
 export const NOTE_MAX = 140;
 
+/** A gift goes to one person, or to a group: one gift, one price, a copy for each member (GIFT-13). */
+export type GiftRecipient = { kind: "person"; id: string } | { kind: "group"; id: string };
 export type GiftPhoto = { kind: "stored"; photoId: string } | { kind: "art"; art: string };
 export type GiftOpens = { kind: "now" } | { kind: "on"; /** Local "YYYY-MM-DD". */ day: string };
 export type GiftStatus = "draft" | "paying" | "paid" | "sent";
@@ -13,8 +15,8 @@ export type GiftStatus = "draft" | "paying" | "paid" | "sent";
 export type Gift = {
   /** Also the payment's idempotency key. */
   id: string;
-  /** Friend id; "" until someone is picked. */
-  to: string;
+  /** Absent until someone is picked. */
+  to?: GiftRecipient;
   from: string;
   photo?: GiftPhoto;
   takenAt?: number;
@@ -31,7 +33,7 @@ export type Gift = {
 };
 
 export type GiftAction =
-  | { type: "to"; friendId: string }
+  | { type: "to"; to: GiftRecipient }
   | { type: "photo"; photo: GiftPhoto; takenAt?: number; fileDated?: true }
   | { type: "frame"; id: string }
   | { type: "dateStamp"; on: boolean }
@@ -47,7 +49,6 @@ export type GiftAction =
 export function newGift({ id, from, now }: { id: string; from: string; now: number }): Gift {
   return {
     id,
-    to: "",
     from,
     frame: { id: "classic", dateStamp: false },
     note: { text: "", hand: "caveat", ink: "navy", stamp: "tree" },
@@ -69,7 +70,7 @@ export const dateStampAllowed = (g: Pick<Gift, "takenAt" | "fileDated">) => g.ta
 export function giftReducer(gift: Gift, action: GiftAction): Gift {
   switch (action.type) {
     case "to":
-      return { ...gift, to: action.friendId };
+      return { ...gift, to: action.to };
     case "photo": {
       // The date belongs to the photo, so a new photo replaces it, even with nothing.
       const { photo, takenAt, fileDated } = action;
@@ -118,6 +119,19 @@ export const canOpenStep = (gift: Gift, step: GiftStep, today: string) => STEPS.
 
 export const nextStep = (step: GiftStep): GiftStep | undefined => STEPS[STEPS.indexOf(step) + 1];
 export const previousStep = (step: GiftStep): GiftStep | undefined => STEPS[STEPS.indexOf(step) - 1];
+
+/** What one recipient receives. Each has their own id, so each is unwrapped and kept on its own. */
+export type GiftCopy = { id: string; giftId: string; to: string };
+
+/** Everyone who gets a copy: the person, or each member of the group but the sender. Call it when sending, so later joiners get none (GIFT-13). */
+export function giftCopies(gift: Gift, membersOf: (groupId: string) => readonly string[]): GiftCopy[] {
+  if (!gift.to) return [];
+  const people = gift.to.kind === "person" ? [gift.to.id] : membersOf(gift.to.id);
+  return [...new Set(people)].filter((id) => id !== gift.from).map((to) => ({ id: `${gift.id}/${to}`, giftId: gift.id, to }));
+}
+
+/** One charge per gift, whoever it's for: a group gift costs the same as a gift to one person (GIFT-13). */
+export const giftCharge = (gift: Pick<Gift, "id">) => ({ idempotencyKey: gift.id, sku: "gift.single", quantity: 1 });
 
 export type GiftSide = "photo" | "postcard" | "wrapped";
 

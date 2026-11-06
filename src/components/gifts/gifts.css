@@ -8,3 +8,12 @@
     transition: none;
   }
 }
+
+/* Two lines, then an ellipsis, for long group names. numberOfLines={2} in React Native. */
+.gf-two-lines {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}

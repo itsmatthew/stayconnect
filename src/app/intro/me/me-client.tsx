@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { NavProps } from "@/components/home/main-nav";
+import type { CircleGroup } from "@/components/home/types";
 import { MeScreen } from "@/components/me/me-screen";
 import type { MeTile } from "@/components/me/types";
 import type { AppData } from "../app-data";
@@ -22,7 +23,7 @@ type MeClientProps = {
   store: ArchiveStore | null;
   nav: NavProps;
   /** What the gift maker needs (docs/specs/gifts.md). */
-  gifts: { store: GiftStore; events: GiftEvents; photos: PhotoStore | null; placements: Placements };
+  gifts: { store: GiftStore; events: GiftEvents; photos: PhotoStore | null; placements: Placements; groups: readonly CircleGroup[] };
 };
 
 /** Your own 65 for the chosen year (docs/specs/me.md). Other people's posts never fill your slots. */
@@ -50,6 +51,7 @@ export function MeClient({ data, now, store, nav, gifts }: MeClientProps) {
           dispatch={draft.dispatch}
           onClose={draft.close}
           friends={data.friends}
+          groups={gifts.groups}
           placements={gifts.placements}
           photos={gifts.photos}
           senderName={data.senderName}

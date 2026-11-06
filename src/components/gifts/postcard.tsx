@@ -28,7 +28,7 @@ export function Postcard({ to, signature, note }: { to: string; signature: strin
         </text>
       </svg>
       <div style={{ position: "absolute", left: s(198), right: s(13), bottom: s(26) }}>
-        <div style={{ minHeight: s(22), fontSize: size(18), borderBottom: `${s(1)} solid #CDBF9C`, ...written }}>{to}</div>
+        <div className="gf-two-lines" style={{ minHeight: s(22), fontSize: size(to.length > 14 ? 13 : 18), lineHeight: 1.15, borderBottom: `${s(1)} solid #CDBF9C`, ...written }}>{to}</div>
         <div style={{ paddingTop: s(4), fontSize: s(9), fontWeight: 700, borderBottom: `${s(1)} solid #CDBF9C`, paddingBottom: s(3) }}>under their tree</div>
       </div>
       <span style={{ position: "absolute", left: s(16), bottom: s(9), fontSize: s(8), fontWeight: 800, letterSpacing: s(1.1) }}>NOW &amp; THEN · POST CARD</span>

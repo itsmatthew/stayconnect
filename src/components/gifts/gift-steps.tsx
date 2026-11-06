@@ -1,5 +1,5 @@
 import { useId, useState, type CSSProperties, type ReactNode } from "react";
-import type { FriendLook } from "../home/types";
+import type { Party } from "../home/types";
 import { CREAM, FRAUNCES, NAVY, s } from "../home/units";
 import { PartyAvatar } from "../messages/avatar";
 import { FramedPhoto } from "./framed-photo";
@@ -32,60 +32,73 @@ function Choice({ label, on, onClick, children, style }: { label: string; on: bo
 
 const ring = (on: boolean): CSSProperties => ({ boxShadow: on ? `0 0 0 ${s(2)} #FBF3DE, 0 0 0 ${s(4)} ${NAVY}` : "none" });
 
-type Person = { id: string; name: string; look: FriendLook };
-
-function People({ people, onPick, picked }: { people: readonly Person[]; onPick: (id: string) => void; picked: string }) {
+function Parties({ parties, onPick, picked }: { parties: readonly Party[]; onPick: (party: Party) => void; picked?: string }) {
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: `${s(8)} ${s(10)}` }}>
-      {people.map((p) => (
-        <button key={p.id} type="button" aria-label={p.name} aria-pressed={p.id === picked} onClick={() => onPick(p.id)} style={{ minWidth: 56, minHeight: 44, padding: 0, border: 0, background: "none", color: NAVY, display: "flex", flexDirection: "column", alignItems: "center", gap: s(4), cursor: "pointer" }}>
-          <span style={{ borderRadius: "50%", ...ring(p.id === picked) }}>
-            <PartyAvatar party={{ kind: "friend", closest: false, ...p }} size={42} />
+    <div style={{ display: "flex", flexWrap: "wrap", gap: `${s(8)} ${s(6)}` }}>
+      {parties.map((p) => (
+        <button key={p.id} type="button" aria-label={p.name} aria-pressed={p.id === picked} onClick={() => onPick(p)} style={{ width: s(62), minWidth: 56, minHeight: 44, padding: 0, border: 0, background: "none", color: NAVY, display: "flex", flexDirection: "column", alignItems: "center", gap: s(9), cursor: "pointer" }}>
+          {/* Wider than `ring`: the avatar already has a ring of its own, which would cover it. */}
+          <span data-picked={p.id === picked || undefined} style={{ borderRadius: "50%", boxShadow: p.id === picked ? `0 0 0 ${s(8)} ${NAVY}` : "none" }}>
+            <PartyAvatar party={p} size={42} />
           </span>
-          <span style={{ fontFamily: FRAUNCES, fontWeight: 700, fontSize: s(11.5) }}>{p.name}</span>
+          <span className="gf-two-lines" style={{ fontFamily: FRAUNCES, fontWeight: 700, fontSize: s(11.5), lineHeight: 1.1, textAlign: "center" }}>
+            {p.name}
+          </span>
         </button>
       ))}
     </div>
   );
 }
 
+function Section({ id, label, children }: { id: string; label: string; children: ReactNode }) {
+  return (
+    <div data-recipient-section={id}>
+      <div style={sectionLabel}>{label}</div>
+      {children}
+    </div>
+  );
+}
+
 type ToStepProps = {
-  sections: { nest: readonly Person[]; branches: readonly Person[]; everyone: readonly Person[] };
+  sections: { groups: readonly Party[]; nest: readonly Party[]; branches: readonly Party[]; everyone: readonly Party[] };
   query: string;
   onQuery: (q: string) => void;
-  picked: string;
-  onPick: (id: string) => void;
+  /** The chosen party's id. */
+  picked?: string;
+  onPick: (party: Party) => void;
 };
 
 /** Who's it for? (GIFT-4) */
 export function ToStep({ sections, query, onQuery, picked, onPick }: ToStepProps) {
   const [showAll, setShowAll] = useState(false);
-  const { nest, branches, everyone } = sections;
-  const nobody = !nest.length && !branches.length && !everyone.length;
+  const { groups, nest, branches, everyone } = sections;
+  const nobody = !groups.length && !nest.length && !branches.length && !everyone.length;
   const searching = !!query.trim();
   return (
     <>
       <Top title="Who's it for?" />
       <input type="search" aria-label="Search people" placeholder="search" value={query} onChange={(e) => onQuery(e.target.value)} style={{ minHeight: 44, boxSizing: "border-box", padding: `0 ${s(14)}`, borderRadius: s(22), border: `${s(2)} solid ${NAVY}`, background: CREAM, font: "inherit", fontSize: s(14), color: NAVY, outline: 0 }} />
       {nobody && <p style={plain}>{searching ? "Nobody by that name." : "People show up here once they're in your circle."}</p>}
+      {groups.length > 0 && (
+        <Section id="groups" label="your groups">
+          <Parties parties={groups} onPick={onPick} picked={picked} />
+        </Section>
+      )}
       {nest.length > 0 && (
-        <div>
-          <div style={sectionLabel}>your nest</div>
-          <People people={nest} onPick={onPick} picked={picked} />
-        </div>
+        <Section id="nest" label="your nest">
+          <Parties parties={nest} onPick={onPick} picked={picked} />
+        </Section>
       )}
       {branches.length > 0 && (
-        <div>
-          <div style={sectionLabel}>branches</div>
-          <People people={branches} onPick={onPick} picked={picked} />
-        </div>
+        <Section id="branches" label="branches">
+          <Parties parties={branches} onPick={onPick} picked={picked} />
+        </Section>
       )}
       {everyone.length > 0 &&
         (searching || showAll ? (
-          <div>
-            <div style={sectionLabel}>everyone</div>
-            <People people={everyone} onPick={onPick} picked={picked} />
-          </div>
+          <Section id="everyone" label="everyone">
+            <Parties parties={everyone} onPick={onPick} picked={picked} />
+          </Section>
         ) : (
           <button type="button" aria-expanded={false} onClick={() => setShowAll(true)} style={{ alignSelf: "flex-start", minHeight: 44, padding: `0 ${s(14)}`, borderRadius: s(22), border: `${s(1.5)} dashed ${NAVY}`, background: "none", color: NAVY, font: "inherit", fontSize: s(13), fontWeight: 800, cursor: "pointer" }}>
             +{everyone.length} everyone
@@ -191,7 +204,7 @@ type NoteStepProps = {
   stamps: readonly Option[];
   stamp: string;
   onStamp: (id: string) => void;
-  /** Who the handwriting samples are addressed to. */
+  /** What the handwriting samples say. */
   sample: string;
 };
 
@@ -206,7 +219,7 @@ export function NoteStep({ text, count, onText, hands, hand, onHand, inks, ink, 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: s(6) }}>
         {hands.map((h) => (
           <Choice key={h.id} label={h.label} on={h.id === hand} onClick={() => onHand(h.id)} style={{ borderRadius: s(10), background: "#F1E5C6", border: `${s(2)} solid ${h.id === hand ? NAVY : "transparent"}` }}>
-            <span style={{ fontFamily: HAND_FONTS[h.id], fontSize: s(17 * (HAND_SCALE[h.id] ?? 1)), color: inkColor, whiteSpace: "nowrap", overflow: "hidden" }}>Hey {sample}</span>
+            <span style={{ fontFamily: HAND_FONTS[h.id], fontSize: s(17 * (HAND_SCALE[h.id] ?? 1)), color: inkColor, whiteSpace: "nowrap", paddingRight: s(5) }}>{sample}</span>
           </Choice>
         ))}
       </div>
