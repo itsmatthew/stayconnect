@@ -13,7 +13,9 @@ import type { Placements } from "../circle/rings";
 import type { PhotoStore } from "../daily5/photo-store";
 import { GiftMakerClient } from "../gifts/gift-maker-client";
 import type { GiftEvents } from "../gifts/gift-events";
+import type { GiftDelivery } from "../gifts/gift-delivery";
 import type { GiftStore } from "../gifts/gift-store";
+import type { PaymentService } from "../gifts/payment";
 import { useGiftDraft } from "../gifts/use-gift-draft";
 import { ME } from "../messages/conversations";
 
@@ -23,12 +25,23 @@ type MeClientProps = {
   store: ArchiveStore | null;
   nav: NavProps;
   /** What the gift maker needs (docs/specs/gifts.md). */
-  gifts: { store: GiftStore; events: GiftEvents; photos: PhotoStore | null; placements: Placements; groups: readonly CircleGroup[] };
+  gifts: { store: GiftStore; events: GiftEvents; photos: PhotoStore | null; placements: Placements; groups: readonly CircleGroup[]; payment: PaymentService; delivery: GiftDelivery };
 };
 
 /** Your own 65 for the chosen year (docs/specs/me.md). Other people's posts never fill your slots. */
 export function MeClient({ data, now, store, nav, gifts }: MeClientProps) {
-  const draft = useGiftDraft({ store: gifts.store, events: gifts.events, now, makeId: () => crypto.randomUUID(), from: ME });
+  const draft = useGiftDraft({
+    store: gifts.store,
+    events: gifts.events,
+    now,
+    makeId: () => crypto.randomUUID(),
+    from: ME,
+    payment: gifts.payment,
+    delivery: gifts.delivery,
+    // Who's in a group when it's sent decides who gets a copy (GIFT-13).
+    membersOf: (groupId) => gifts.groups.find((g) => g.id === groupId)?.members ?? [],
+  });
+  const failNext = (gifts.payment as { failNext?: () => void }).failNext;
   const [seeded] = useState(() => data.posts(now()).filter((p) => p.author === ME));
   const { mine, urls } = useMyPosts(store, seeded);
   const thisYear = new Date(now()).getFullYear();
@@ -56,6 +69,10 @@ export function MeClient({ data, now, store, nav, gifts }: MeClientProps) {
           photos={gifts.photos}
           senderName={data.senderName}
           now={now}
+          onSend={draft.send}
+          priceOf={(sku) => gifts.payment.product(sku)}
+          // Dev only (Next inlines NODE_ENV, so production drops it).
+          onDevFail={process.env.NODE_ENV !== "production" && failNext ? failNext : undefined}
           onDaily5={() => {
             draft.close();
             nav.onNavigate?.("Daily 5");

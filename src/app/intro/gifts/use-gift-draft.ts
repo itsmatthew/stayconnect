@@ -2,14 +2,28 @@
 
 import { useCallback, useRef, useState } from "react";
 import { giftReducer, newGift, newestDraft, type Gift, type GiftAction } from "./gift";
+import type { GiftDelivery } from "./gift-delivery";
 import type { GiftEvents } from "./gift-events";
+import { sendGift, settlePaying, type SendResult } from "./gift-flow";
 import type { GiftStore } from "./gift-store";
+import { betaPayment, type PaymentService } from "./payment";
 
-type GiftDraftOptions = { store: GiftStore; events: GiftEvents; now: () => number; makeId: () => string; from: string };
+type GiftDraftOptions = {
+  store: GiftStore;
+  events: GiftEvents;
+  now: () => number;
+  makeId: () => string;
+  from: string;
+  payment?: PaymentService;
+  delivery?: GiftDelivery;
+  membersOf?: (groupId: string) => readonly string[];
+};
 
-/** The gift in the maker. It's saved from the first pick of a person, after every change (GIFT-9). */
+const nowhere: GiftDelivery = { deliver: async () => {} };
+
+/** The gift in the maker. It's saved from the first pick of a person, after every change (GIFT-9), and sent safely (GIFT-15). */
 export function useGiftDraft(options: GiftDraftOptions) {
-  const [{ store, events, now, makeId, from }] = useState(options);
+  const [{ store, events, now, makeId, from, payment = betaPayment(), delivery = nowhere, membersOf = () => [] }] = useState(options);
   const [gift, setGift] = useState<Gift | null>(null);
   const current = useRef<Gift | null>(null);
   const made = useRef(false);
@@ -20,10 +34,14 @@ export function useGiftDraft(options: GiftDraftOptions) {
   }, []);
 
   const open = useCallback(async () => {
-    const draft = newestDraft(await store.load());
+    const loaded = await store.load();
+    // Settle anything the app closed on mid-payment before picking up (GIFT-15).
+    const settled = await settlePaying(loaded, payment);
+    await Promise.all(settled.filter((g, i) => g !== loaded[i]).map((g) => store.save(g).catch(() => {})));
+    const draft = newestDraft(settled);
     made.current = !!draft;
     show(draft ?? newGift({ id: makeId(), from, now: now() }));
-  }, [store, makeId, from, now, show]);
+  }, [store, payment, makeId, from, now, show]);
 
   const dispatch = useCallback(
     (action: GiftAction) => {
@@ -41,11 +59,18 @@ export function useGiftDraft(options: GiftDraftOptions) {
     [store, events, now, show],
   );
 
+  const send = useCallback(async (): Promise<SendResult | undefined> => {
+    if (!current.current) return undefined;
+    const result = await sendGift(current.current, { store, payment, delivery, events, membersOf, now });
+    if (current.current) show(result.gift);
+    return result;
+  }, [store, payment, delivery, events, membersOf, now, show]);
+
   const close = useCallback(() => {
     const g = current.current;
-    if (g?.to) void events.record({ type: "abandoned", giftId: g.id, step: g.step, at: now() });
+    if (g?.to && g.status !== "sent") void events.record({ type: "abandoned", giftId: g.id, step: g.step, at: now() });
     show(null);
   }, [events, now, show]);
 
-  return { gift, open, dispatch, close };
+  return { gift, open, dispatch, send, close };
 }

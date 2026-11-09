@@ -52,3 +52,43 @@
   .gf-flip { transition: none; }
   .gf-float, .gf-paper-l, .gf-paper-r, .gf-ribbon-v, .gf-ribbon-h, .gf-bow, .gf-tag, .gf-sheet, .gf-sheet-out, .gf-pull { animation: none; }
 }
+
+/* Checkout sheet rises from the bottom. */
+@keyframes gf-up { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes gf-fade { from { opacity: 0; } to { opacity: 1; } }
+.gf-up { animation: gf-up 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+.gf-fade { animation: gf-fade 0.3s ease both; }
+@keyframes gf-spin { to { transform: rotate(360deg); } }
+.gf-spin { animation: gf-spin 0.9s linear infinite; transform-origin: 50% 50%; }
+
+/* The sent screen (GiftCompose.dc.html): the gift flies into their tree, then shakes under it. Each class rests at its
+   final pose, so with motion off everything is simply in place. */
+@keyframes gf-send {
+  0% { transform: none; }
+  20% { transform: translateY(calc(-24 * var(--s))) scale(1.05) rotate(-2deg); }
+  100% { transform: translate(calc(37 * var(--s)), calc(433 * var(--s))) scale(0.17) rotate(5deg); }
+}
+.gf-send { transform: translate(calc(37 * var(--s)), calc(433 * var(--s))) scale(0.17) rotate(5deg); transform-origin: 50% 50%; animation: gf-send 1.1s cubic-bezier(0.55, 0, 0.35, 1) 0.35s both; }
+@keyframes gf-shake {
+  0%, 52%, 100% { transform: rotate(0) translateY(0); }
+  56% { transform: rotate(-9deg) translateY(-2px); }
+  62% { transform: rotate(8deg) translateY(-3px); }
+  68% { transform: rotate(-7deg) translateY(-1px); }
+  74% { transform: rotate(6deg) translateY(-2px); }
+  80% { transform: rotate(-4deg); }
+  86% { transform: rotate(3deg); }
+  92% { transform: rotate(0); }
+}
+.gf-shake { transform-origin: 50% 100%; animation: gf-shake 2.4s ease-in-out 1.6s infinite; }
+@keyframes gf-twinkle { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+.gf-twinkle { animation: gf-twinkle 2.5s ease-in-out infinite; }
+@keyframes gf-glow { 0%, 100% { opacity: 0.55; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.08); } }
+.gf-glow { transform-box: fill-box; transform-origin: 50% 50%; animation: gf-fade 0.4s ease 1.4s both, gf-glow 2.4s ease-in-out 1.8s infinite; }
+@keyframes gf-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.gf-rise { animation: gf-rise 0.5s cubic-bezier(0.2, 1.3, 0.4, 1) 1.7s both; }
+.gf-done { animation: gf-fade 0.4s ease 2.2s both; }
+.gf-tree { animation: gf-fade 0.6s ease 0.6s both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .gf-up, .gf-fade, .gf-spin, .gf-send, .gf-shake, .gf-twinkle, .gf-glow, .gf-rise, .gf-done, .gf-tree { animation: none; }
+}

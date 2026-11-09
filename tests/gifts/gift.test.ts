@@ -205,7 +205,7 @@ describe("group gifts (GIFT-13)", () => {
 
 describe("portable (GIFT-12)", () => {
   const DIR = path.join(__dirname, "../../src/app/intro/gifts");
-  const PLATFORM = ["local-gift-store.ts", "local-gift-events.ts", "use-gift-draft.ts"];
+  const PLATFORM = ["local-gift-store.ts", "local-gift-events.ts", "local-gift-delivery.ts", "local-payment.ts", "use-gift-draft.ts"];
   const logic = readdirSync(DIR).filter((f) => f.endsWith(".ts") && !PLATFORM.includes(f));
 
   it("has the logic files, with server TODOs on the interfaces", () => {

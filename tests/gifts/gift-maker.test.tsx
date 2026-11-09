@@ -313,12 +313,12 @@ describe("Wrap (GIFT-8)", () => {
     next("wrap");
   };
 
-  it("chooses a paper and ribbon; Send waits for checkout", async () => {
+  it("chooses a paper and ribbon, then Send opens checkout", async () => {
     await toWrap();
     tap("Gingham paper");
     tap("Red ribbon");
     expect(saved()[0].wrap).toEqual({ pattern: "gingham", ribbon: "red" });
-    expect((screen.getByRole("button", { name: /^Send to Leo/ }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: /^Send to Leo/ }) as HTMLButtonElement).disabled).toBe(false);
   });
 
   it("opens on a chosen day after today, and tags it", async () => {

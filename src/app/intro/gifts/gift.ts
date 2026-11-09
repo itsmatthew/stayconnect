@@ -27,6 +27,10 @@ export type Gift = {
   wrap: { pattern: string; ribbon: string };
   opens: GiftOpens;
   status: GiftStatus;
+  /** Once paid. */
+  receiptId?: string;
+  /** Once delivered. */
+  sentAt?: number;
   /** Where the maker was, to pick up from. */
   step: GiftStep;
   createdAt: number;
@@ -141,9 +145,9 @@ export function defaultSide(step: GiftStep): GiftSide {
   return step === "photo" || step === "frame" ? "photo" : "postcard";
 }
 
-/** The draft to pick up: the newest one not yet paid for. */
+/** The gift to pick up: the newest one not yet sent, paid for or not (GIFT-9, GIFT-15). */
 export const newestDraft = (gifts: readonly Gift[]): Gift | undefined =>
-  gifts.filter((g) => g.status === "draft").reduce<Gift | undefined>((best, g) => (!best || g.createdAt > best.createdAt ? g : best), undefined);
+  gifts.filter((g) => g.status !== "sent").reduce<Gift | undefined>((best, g) => (!best || g.createdAt > best.createdAt ? g : best), undefined);
 
 /** Newest first, `limit` of them. */
 export const newestPhotos = <T extends { takenAt: number }>(photos: readonly T[], limit: number) => [...photos].sort((a, b) => b.takenAt - a.takenAt).slice(0, limit);
@@ -166,6 +170,15 @@ export const dayAfter = (day: string) => {
   d.setDate(d.getDate() + 1);
   return dayKey(d.getTime());
 };
+
+/** "Thursday, Nov 12". */
+export const longDayLabel = (day: string) => dayDate(day).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+
+/** The sent screen's line, as designed (GIFT-16). */
+export function sentLine({ opens }: Pick<Gift, "opens">, name: string, group: boolean): string {
+  const tree = group ? `every tree in ${name}` : `${name}’s tree`;
+  return opens.kind === "on" ? `It’ll sit under ${tree}, wrapped, until ${longDayLabel(opens.day)}.` : `It’s under ${tree} now, shaking until they open it.`;
+}
 
 /** "Thu, Nov 12". */
 export const dayLabel = (day: string) => dayDate(day).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });

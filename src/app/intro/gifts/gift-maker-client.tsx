@@ -6,11 +6,15 @@ import { formatPhotoDate } from "../daily5/format";
 import type { PhotoStore, StoredPhoto } from "../daily5/photo-store";
 import { usePhotoUrls } from "../messages/use-photo-urls";
 import { friendParty, groupParty } from "../parties";
+import { CheckoutSheet } from "@/components/gifts/checkout-sheet";
 import { GiftMaker, type GiftChip } from "@/components/gifts/gift-maker";
+import { SentScreen } from "@/components/gifts/sent-screen";
 import { FrameStep, NoteStep, PhotoStep, ToStep, WrapStep } from "@/components/gifts/gift-steps";
 import type { GiftCardLook } from "@/components/gifts/gift-card";
 import type { CircleGroup, Friend, Party } from "@/components/home/types";
-import { STEPS, canContinue, canOpenStep, dateStampAllowed, dayAfter, dayKey, dayLabel, defaultSide, monthCaption, monthFrameLabel, newestPhotos, nextStep, noteLength, NOTE_MAX, postmark, previousStep, shortDay, stampCode, writtenDate, type Gift, type GiftAction, type GiftStep } from "./gift";
+import type { SendResult } from "./gift-flow";
+import { GIFT_SKU, type Product } from "./payment";
+import { STEPS, canContinue, canOpenStep, dateStampAllowed, dayAfter, dayKey, dayLabel, defaultSide, monthCaption, monthFrameLabel, newestPhotos, nextStep, noteLength, NOTE_MAX, postmark, previousStep, sentLine, shortDay, stampCode, writtenDate, type Gift, type GiftAction, type GiftStep } from "./gift";
 import { FRAMES, HANDS, INKS, RIBBONS, STAMPS, WRAPS, colorOf, isAvailable } from "./gift-catalog";
 import { giftRecipients } from "./gift-recipients";
 
@@ -30,6 +34,21 @@ type GiftMakerClientProps = {
   senderName: string;
   now: () => number;
   onDaily5: () => void;
+  /** Pays and delivers the gift (GIFT-15). */
+  onSend: () => Promise<SendResult | undefined>;
+  /** The gift's price, from the payment service (GIFT-14). */
+  priceOf: (sku: string) => Promise<Product>;
+  /** Dev only: make the next payment fail. */
+  onDevFail?: () => void;
+};
+
+/** Where checkout is: not open, ready, paying, or back with what went wrong. */
+type Checkout = "ready" | "sending" | "failed" | "pending" | "deliveryFailed";
+
+const MESSAGES: Partial<Record<Checkout, string>> = {
+  failed: "Payment didn’t go through. Your gift is saved.",
+  pending: "Waiting for the purchase to be approved. Your gift is saved.",
+  deliveryFailed: "It’s paid for, but it didn’t send. Your gift is saved.",
 };
 
 /** The person or group a gift is for, as a party the views can draw. */
@@ -58,7 +77,13 @@ function usePhotoList(store: PhotoStore | null) {
 }
 
 /** The gift maker, wired (docs/specs/gifts.md). Rules are in `gift.ts`; this only connects them to the views. */
-export function GiftMakerClient({ gift, dispatch, onClose, friends, groups, placements, photos, senderName, now, onDaily5 }: GiftMakerClientProps) {
+export function GiftMakerClient({ gift, dispatch, onClose, friends, groups, placements, photos, senderName, now, onDaily5, onSend, priceOf, onDevFail }: GiftMakerClientProps) {
+  const [checkout, setCheckout] = useState<Checkout | null>(null);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [sent, setSent] = useState(false);
+  useEffect(() => {
+    if (checkout && !product) void priceOf(GIFT_SKU).then(setProduct);
+  }, [checkout, product, priceOf]);
   const [query, setQuery] = useState("");
   const [limit, setLimit] = useState(PAGE);
   /** The step the card was turned over on; the turn lasts until the step changes. */
@@ -104,7 +129,26 @@ export function GiftMakerClient({ gift, dispatch, onClose, friends, groups, plac
     if (p) dispatch({ type: "photo", photo: { kind: "stored", photoId: p.id }, takenAt: p.takenAt, ...(p.fileDated ? { fileDated: true } : {}) });
   };
 
+  const isGroup = gift.to?.kind === "group";
+  const group = isGroup ? groups.find((g) => g.id === gift.to?.id) : undefined;
+  const price = product?.displayPrice;
+  const paid = gift.status === "paid";
+  const buttonLabel =
+    checkout === "sending" ? "Sending…" : !price ? "…" : checkout === "failed" || checkout === "pending" ? `Try again · ${price}` : checkout === "deliveryFailed" || paid ? (checkout === "deliveryFailed" ? "Try again" : `Send to ${name}`) : `Send to ${name} · ${price}`;
+  const pay = async () => {
+    setCheckout("sending");
+    const result = await onSend();
+    if (!result) return setCheckout("ready");
+    if (result.kind === "sent") {
+      setCheckout(null);
+      setSent(true);
+    } else setCheckout(result.kind === "cancelled" ? "ready" : result.kind);
+  };
+  const frameLabel = gift.frame.id === "month" ? monthFrameLabel(now()) : (FRAMES.find((f) => f.id === gift.frame.id)?.label ?? "Classic");
+  const rings: readonly [string, string, string] = group ? [group.palette.canopy, group.palette.highlight, group.palette.shade] : ["#6F9B4E", "#E49B2E", "#B43A2A"];
+
   return (
+    <>
     <GiftMaker
       title={recipient ? `A gift for ${recipient.name}` : "A gift"}
       recipient={recipient}
@@ -114,9 +158,8 @@ export function GiftMakerClient({ gift, dispatch, onClose, friends, groups, plac
       side={side}
       onFlip={() => setTurnedOn(turnedOn === gift.step ? null : gift.step)}
       nextLabel={next ? `Next: ${next}` : `Send to ${name}`}
-      // TODO(re-evaluate when checkout is built): Wrap's "Send to ‹name›" opens it (GIFT-8).
-      canNext={!!next && canContinue(gift, today)}
-      onNext={() => next && go(next)}
+      canNext={canContinue(gift, today)}
+      onNext={() => (next ? go(next) : setCheckout("ready"))}
       onBack={back ? () => go(back) : undefined}
       onClose={onClose}
     >
@@ -174,6 +217,24 @@ export function GiftMakerClient({ gift, dispatch, onClose, friends, groups, plac
         />
       )}
     </GiftMaker>
+    {checkout && (
+      <CheckoutSheet
+        recipient={recipient}
+        forLine={group ? `${group.name} · ${group.members.length + 1} people` : name}
+        group={isGroup}
+        opens={gift.opens.kind === "on" && gift.opens.day ? dayLabel(gift.opens.day) : "right away"}
+        inside={`${frameLabel} frame · ${gift.note.text.trim() ? "a note on the back" : "no note"}`}
+        wrap={{ pattern: gift.wrap.pattern, ribbon: colorOf(RIBBONS, gift.wrap.ribbon) }}
+        buttonLabel={buttonLabel}
+        busy={checkout === "sending" || !price}
+        paying={checkout === "sending"}
+        message={MESSAGES[checkout]}
+        onSend={() => void pay()}
+        onCancel={() => setCheckout(null)}
+        onDevFail={onDevFail}
+      />
+    )}
+    {sent && <SentScreen recipient={recipient} title={`On its way to ${name}`} line={sentLine(gift, name, isGroup)} wrap={{ to: name, ...look.wrap }} rings={rings} onDone={onClose} />}
+    </>
   );
 }
-

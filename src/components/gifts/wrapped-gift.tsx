@@ -9,6 +9,8 @@ type WrappedGiftProps = {
   ribbon: string;
   /** "Nov 12", or "later" before a day is picked, for a gift that opens on a chosen day. */
   opens?: string;
+  /** Skip the wrapping motion: it is already wrapped (the sent screen). */
+  still?: boolean;
 };
 
 /** The torn halves of the paper, from the design's polygons, in the card's 296×226 space (with a pixel's bleed). */
@@ -32,7 +34,8 @@ function tagLines(label: string, width: number): string[] {
  * The wrapping laid over the card (docs/specs/gifts.md, GIFT-8), as in the design: two torn halves slide in, the
  * ribbons run along and across, the bow pops on, the tag swings into place. All SVG and transforms, so it ports.
  */
-export function WrappedGift({ to, pattern, ribbon, opens }: WrappedGiftProps) {
+export function WrappedGift({ to, pattern, ribbon, opens, still = false }: WrappedGiftProps) {
+  const motion = (c: string) => (still ? undefined : c);
   const id = `wrap${useId().replace(/[^\w-]/g, "")}`;
   const label = `to ${to}`;
   const long = label.length > 12;
@@ -60,24 +63,24 @@ export function WrappedGift({ to, pattern, ribbon, opens }: WrappedGiftProps) {
           <stop offset="1" stopColor="#000000" stopOpacity=".14" />
         </linearGradient>
       </defs>
-      <g className="gf-paper-l">
+      <g className={motion("gf-paper-l")}>
         <PaperFill id={id} pattern={pattern} shape={(fill) => <polygon points={LEFT} fill={fill} />} />
         <polygon points={LEFT} fill={`url(#${id}-sheen)`} />
       </g>
-      <g className="gf-paper-r">
+      <g className={motion("gf-paper-r")}>
         <PaperFill id={id} pattern={pattern} shape={(fill) => <polygon points={RIGHT} fill={fill} />} />
         <polygon points={RIGHT} fill={`url(#${id}-sheen)`} />
       </g>
-      <g className="gf-ribbon-v">
+      <g className={motion("gf-ribbon-v")}>
         <rect data-ribbon="" x="134" y="-1" width="28" height="228" fill={ribbon} />
         <rect x="134" y="-1" width="28" height="228" fill={`url(#${id}-rv)`} stroke="rgba(0,0,0,.1)" />
       </g>
-      <g className="gf-ribbon-h">
+      <g className={motion("gf-ribbon-h")}>
         <rect x="-1" y="99" width="298" height="28" fill={ribbon} />
         <rect x="-1" y="99" width="298" height="28" fill={`url(#${id}-rh)`} stroke="rgba(0,0,0,.1)" />
       </g>
       <g transform="translate(84 72) scale(.8)">
-        <g className="gf-bow">
+        <g className={motion("gf-bow")}>
           {/* A soft shadow under the bow, drawn rather than filtered. */}
           <g transform="translate(0 5)" fill="#000000" opacity=".18">
             <path d="M80 50 C 58 6, 10 0, 6 30 C 2 62, 52 68, 80 50 Z" />
@@ -97,7 +100,7 @@ export function WrappedGift({ to, pattern, ribbon, opens }: WrappedGiftProps) {
         </g>
       </g>
       <g transform={`translate(${long ? 150 : 168} 118)`}>
-        <g data-tag="" className="gf-tag">
+        <g data-tag="" className={still ? undefined : "gf-tag"} transform={still ? "rotate(10 8 20)" : undefined}>
           <polygon points={`${notch},0 ${tagW},0 ${tagW},${tagH} ${notch},${tagH} 0,${tagH / 2}`} fill="#E9D2A2" stroke="#A8834F" />
           <circle cx="10.5" cy={tagH / 2} r="3.5" fill="#F6ECCD" stroke="#A8834F" />
           {lines.map((line, i) => (

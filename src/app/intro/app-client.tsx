@@ -15,7 +15,11 @@ import { detectFaces } from "./daily5/face-detector";
 import { openPhotoStore, type PhotoStore } from "./daily5/photo-store";
 import type { GiftEvents } from "./gifts/gift-events";
 import type { GiftStore } from "./gifts/gift-store";
+import type { GiftDelivery } from "./gifts/gift-delivery";
+import { localGiftDelivery } from "./gifts/local-gift-delivery";
 import { localGiftEvents } from "./gifts/local-gift-events";
+import { localPayment } from "./gifts/local-payment";
+import { betaPayment, type PaymentService } from "./gifts/payment";
 import { localGiftStore } from "./gifts/local-gift-store";
 import { validateGroupName, withGroupNames, type GroupNameStore } from "./group-names/group-names";
 import { localGroupNameStore } from "./group-names/local-group-names";
@@ -49,6 +53,10 @@ type AppClientProps = {
   /** Where gifts are saved, and what's recorded about them (docs/specs/gifts.md, GIFT-9/11). */
   giftStore?: (storageSuffix: string) => GiftStore;
   giftEvents?: (storageSuffix: string) => GiftEvents;
+  /** How gifts are paid for (GIFT-14). In production, until a real one exists, gifts are free during beta. */
+  payment?: () => PaymentService;
+  /** How gifts reach people (GIFT-15). */
+  giftDelivery?: (storageSuffix: string) => GiftDelivery;
   hasFace?: (image: Blob) => Promise<boolean>;
   readCapture?: (f: File) => Promise<number | undefined>;
   decode?: (f: File) => Promise<Blob>;
@@ -105,6 +113,9 @@ export function AppClient({
   groupNames = localGroupNameStore,
   giftStore = localGiftStore,
   giftEvents = localGiftEvents,
+  // TODO(mobile: Apple in-app purchase): a real PaymentService replaces both.
+  payment = () => (process.env.NODE_ENV === "production" ? betaPayment() : localPayment()),
+  giftDelivery = localGiftDelivery,
   hasFace = detectFaces,
   readCapture = captureDate,
   decode = downscale,
@@ -117,6 +128,7 @@ export function AppClient({
   const [openOrnamentsNamed] = useState(() => () => openOrnaments(ORNAMENT_DB + data.storageSuffix));
   const ornaments = useOrnaments(openOrnamentsNamed);
   const [overrides, setColorOverride] = useColorOverrides(colorOverrides(data.storageSuffix));
+  const [paymentService] = useState(payment);
   const [names, saveGroupName] = useGroupNames(groupNames(data.storageSuffix));
   // Names and colors are applied once, here, so every screen shows the same ones (COLOR-9, RENAME-7).
   const viewerData = useMemo(() => ({ ...data, groups: withViewerColors(withGroupNames(data.groups, names), overrides) }), [data, names, overrides]);
@@ -237,6 +249,6 @@ export function AppClient({
         />
       );
     case "Me":
-      return <MeClient data={viewerData} now={now} store={archive} nav={nav} gifts={{ store: giftStore(data.storageSuffix), events: giftEvents(data.storageSuffix), photos: store, placements: circle.placements, groups: homeGroups }} />;
+      return <MeClient data={viewerData} now={now} store={archive} nav={nav} gifts={{ store: giftStore(data.storageSuffix), events: giftEvents(data.storageSuffix), photos: store, placements: circle.placements, groups: homeGroups, payment: paymentService, delivery: giftDelivery(data.storageSuffix) }} />;
   }
 }
