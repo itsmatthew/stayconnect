@@ -1,0 +1,18 @@
+# Mailbox drops
+
+Drop a Daily 5 photo in someone's mailbox: anyone on Now & Then, in your circle or not, or a phone number with no account, which becomes an invite. Free. Built from `design-ref/project/Daily5Send.dc.html` (phone, 390×844).
+The rules are plain TypeScript in `src/app/intro/mail/`, so the mobile app can import them unchanged.
+TODO(server): finding people, delivery, invites and the "find me" setting are fakes in this browser. Nothing reaches anyone yet.
+Tests: `tests/mail/`. The recipient's side (keep, not now, block, report) comes next.
+
+| ID | Behaviour |
+|----|-----------|
+| MAIL-1 | **On the card.** Each Daily 5 polaroid has three round buttons, labelled underneath: mailbox (light blue, "Drop this photo in someone's mailbox"), gift (gold, "Send this photo as a gift") and send (red). They look 46px and are at least 44 to tap. |
+| MAIL-2 | **One search box.** "Drop it in a mailbox" ("Anyone on Now & Then. They don't have to be in your circles.") has one box for a name, an @username or a phone number. A number (ten digits or more, or starting with +) is read as a phone number, normalized to E.164; "@" starts a username; anything else is a name, which also matches an exact username. The button reads "Pick someone" until someone's picked. |
+| MAIL-3 | **Who's found.** People in your circle match by name, labelled by ring ("in your branches"). Others match by name only if they let people find them that way (MAIL-7); anyone matches by exact username. Each result is a minimal card: photo, name, @username and mutual friends ("2 mutual · Leo, Ana", or "no mutual friends"). Nothing else from their profile. A search with no match says "Nobody by that name on Now & Then." |
+| MAIL-4 | **By number.** A phone number shows one row, "Drop for (555) 012-3456", and never a name or photo: whether the number has an account is only known after the drop, so typing numbers can't reveal who's on the app. Dropped on an account, the scene reads "In their mailbox". |
+| MAIL-5 | **Not on the app.** A number with no account becomes an invite: the share sheet opens with the link, and the mailbox stays shut with its flag down: "Waiting in their mailbox", "It’ll be there when they join.", and "Send the link again". TODO(server): the link's landing page is issue #26's; until it exists, production doesn't make invites and says "They're not on Now & Then yet, and invites aren't open yet." |
+| MAIL-6 | **Limits.** Inside your circle there are none. Outside it: one drop per person every 14 days, and 3 drops in any 7 days, invites included. Limits are time-based only, so nothing ever tells a sender a drop was opened. When one applies, the button stays off and says when: "You dropped Kate Morgan a photo recently. You can send another on Nov 23." |
+| MAIL-7 | **Let people find me by name.** A switch on Me, on by default. Off, people can still find you by your exact @username or phone number. TODO(server): the setting doesn't reach anyone's search yet. |
+| MAIL-8 | **Dropped.** As designed: a dark sky, the mailbox rising, its door opening, the photo dropping in, the door shutting, the flag snapping up and the box glowing. Then their face, "In ‹name›’s mailbox", "Their mailbox will glow under their tree. No friend request needed.", and Done. Free: drops never touch payment. With motion off, everything is simply in place. |
+| MAIL-9 | **Portable.** The logic files in `src/app/intro/mail/` use no React or browser APIs. Only the localStorage fakes, the share adapter and the hook may. |

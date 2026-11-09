@@ -7,6 +7,7 @@ import type { ArchivePost } from "./archive/posts";
 import type { ReceivedGift } from "./circle/gifts";
 import type { Placements } from "./circle/rings";
 import { fakeMemberColors, type MemberColorSource } from "./colors/member-colors";
+import { fakeDirectory, type Directory } from "./mail/directory";
 import { DEMO_DATA } from "./demo";
 import type { Conversation } from "./messages/conversations";
 import {
@@ -18,6 +19,7 @@ import {
   placeholderGifts,
   placeholderReplies,
   placeholderRings,
+  placeholderDirectory,
   placeholderSenderName,
   placeholderUpTo,
   seedConversations,
@@ -45,6 +47,8 @@ export type AppData = {
   memberColors: MemberColorSource;
   /** How the user signs a gift's postcard. TODO(server): the user's real name. */
   senderName: string;
+  /** Finding people outside your circle (docs/specs/mail.md, MAIL-3). TODO(server): a fake. */
+  directory: Directory;
   /** Appended to storage names so demo and real data never mix (DEMO-3). */
   storageSuffix: string;
 };
@@ -62,6 +66,7 @@ export const emptyData: AppData = {
   upTo: {},
   memberColors: fakeMemberColors({}),
   senderName: "",
+  directory: fakeDirectory([]),
   storageSuffix: "",
 };
 
@@ -78,6 +83,7 @@ export const demoData: AppData = {
   upTo: placeholderUpTo,
   memberColors: fakeMemberColors(placeholderMemberColors),
   senderName: placeholderSenderName,
+  directory: fakeDirectory(placeholderDirectory),
   storageSuffix: ".demo",
 };
 

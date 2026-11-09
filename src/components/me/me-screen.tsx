@@ -8,14 +8,24 @@ import { TileViewer } from "./tile-viewer";
 import type { MeTile } from "./types";
 import { YearSelect } from "./year-select";
 
-type MeScreenProps = { year: number; years: readonly number[]; onYearChange: (y: number) => void; tiles: readonly MeTile[]; nav: NavProps; /** Opens the gift maker (docs/specs/gifts.md, GIFT-1). */ onSendGift?: () => void };
+type MeScreenProps = {
+  year: number;
+  years: readonly number[];
+  onYearChange: (y: number) => void;
+  tiles: readonly MeTile[];
+  nav: NavProps;
+  /** Opens the gift maker (docs/specs/gifts.md, GIFT-1). */
+  onSendGift?: () => void;
+  /** "Let people find me by name" (docs/specs/mail.md, MAIL-7). */
+  findMe?: { on: boolean; onChange: (on: boolean) => void };
+};
 
 /** The pill's look, 32 tall as designed; the button around it is 44 to tap. */
 const pill = { width: "100%", height: s(32), boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "center", gap: s(5), borderRadius: s(16), border: `${s(2)} solid ${NAVY}`, fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 700, fontSize: s(14) } as const;
 const pillButton = { flex: 1, minHeight: 44, padding: 0, border: 0, background: "none", display: "flex", alignItems: "center", cursor: "pointer" } as const;
 
 /** Me (docs/specs/me.md): the posts / year / gifts row, then your 65 for that year. Profile and bio come later (TODO). */
-export function MeScreen({ year, years, onYearChange, tiles, nav, onSendGift }: MeScreenProps) {
+export function MeScreen({ year, years, onYearChange, tiles, nav, onSendGift, findMe }: MeScreenProps) {
   const [view, setView] = useState<"posts" | "gifts">("posts");
   const [openKey, setOpenKey] = useState<string | null>(null);
   const open = tiles.find((t) => t.key === openKey);
@@ -32,7 +42,25 @@ export function MeScreen({ year, years, onYearChange, tiles, nav, onSendGift }: 
         </button>
       </div>
       {view === "posts" ? <SixtyFiveGrid year={year} tiles={tiles} onOpen={setOpenKey} /> : <GiftShelf onSendGift={onSendGift} />}
+      {findMe && <FindMeRow {...findMe} />}
       {open?.photo && <TileViewer tile={{ ...open, photo: open.photo }} onClose={() => setOpenKey(null)} />}
     </TabFrame>
+  );
+}
+
+/** "Let people find me by name", on by default (docs/specs/mail.md, MAIL-7). */
+function FindMeRow({ on, onChange }: { on: boolean; onChange: (on: boolean) => void }) {
+  return (
+    <div style={{ margin: `${s(18)} ${s(14)} ${s(24)}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: s(12) }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: s(2) }}>
+        <span style={{ fontSize: s(14), fontWeight: 800 }}>Let people find me by name</span>
+        <span style={{ fontSize: s(12), fontWeight: 500, color: "#5C5442" }}>They can still find you by your exact @username or phone number.</span>
+      </div>
+      <button type="button" role="switch" aria-label="Let people find me by name" aria-checked={on} onClick={() => onChange(!on)} style={{ flex: "none", width: s(52), minWidth: 44, minHeight: 44, padding: 0, border: 0, background: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+        <span style={{ position: "relative", display: "block", width: s(48), height: s(28), boxSizing: "border-box", borderRadius: s(14), border: `${s(2)} solid ${NAVY}`, background: on ? "#4F7A36" : "#D9CBA4" }}>
+          <span style={{ position: "absolute", left: s(on ? 22 : 2), top: s(2), width: s(20), height: s(20), boxSizing: "border-box", borderRadius: "50%", background: "#FFF6DA", border: `${s(2)} solid ${NAVY}`, transition: "left .2s ease" }} />
+        </span>
+      </button>
+    </div>
   );
 }

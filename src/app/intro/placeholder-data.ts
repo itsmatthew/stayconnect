@@ -10,6 +10,7 @@ import type { Placements } from "./circle/rings";
 import { isOpen, isoWeek, periodsOfYear } from "./archive/periods";
 import type { ArchivePost } from "./archive/posts";
 import { groupPalette } from "./colors/palette";
+import type { DirectoryEntry } from "./mail/directory";
 import { ME, type ChatMessage, type Conversation } from "./messages/conversations";
 import { localDay, type GoalState } from "./profile/goals";
 
@@ -274,6 +275,16 @@ export function placeholderGifts(now: number): ReceivedGift[] {
     { id: "placeholder-gift/leo", from: "leo", receivedAt: now - 2 * HOUR },
   ];
 }
+
+/**
+ * People on Now & Then outside the demo user's circle, for dropping photos (docs/specs/mail.md, MAIL-3).
+ * Theo has turned off "Let people find me by name", so only his username or number finds him.
+ */
+export const placeholderDirectory: readonly DirectoryEntry[] = [
+  { id: "kate-morgan", name: "Kate Morgan", username: "katemorgan", phone: "+15550123456", findableByName: true, mutual: ["Leo", "Ana"], look: { skin: "#F1C7A0", hair: "#B8562E", shirt: "#7A4E8C", bg: "#E6D3F0", ring: "#7A4E8C" } },
+  { id: "katie-ruiz", name: "Katie Ruiz", username: "katieruiz", phone: "+15550198765", findableByName: true, mutual: ["Sam"], look: { skin: "#C98A5C", hair: "#2A1C14", shirt: "#4F8F8B", bg: "#CFE0D4", ring: "#4F8F8B" } },
+  { id: "theo-park", name: "Theo Park", username: "theopark", phone: "+15550111222", findableByName: false, mutual: [], look: { skin: "#F1C7A0", hair: "#8C8C8C", shirt: "#2B3350", bg: "#F6D9A8", ring: "#2B3350" } },
+];
 
 /** How the demo user signs a gift's postcard (docs/specs/gifts.md, GIFT-7). */
 export const placeholderSenderName = "Jackson";

@@ -16,6 +16,13 @@ import { openPhotoStore, type PhotoStore } from "./daily5/photo-store";
 import type { GiftEvents } from "./gifts/gift-events";
 import type { GiftStore } from "./gifts/gift-store";
 import type { GiftDelivery } from "./gifts/gift-delivery";
+import type { GiftDeps } from "./gifts/use-gift-maker";
+import { browserShare } from "./mail/browser-share";
+import type { Directory } from "./mail/directory";
+import type { FindMeSetting } from "./mail/find-me";
+import { localFindMe } from "./mail/local-find-me";
+import { localInvites, localMail } from "./mail/local-mail";
+import type { Mail, Share } from "./mail/mail";
 import { localGiftDelivery } from "./gifts/local-gift-delivery";
 import { localGiftEvents } from "./gifts/local-gift-events";
 import { localPayment } from "./gifts/local-payment";
@@ -57,6 +64,12 @@ type AppClientProps = {
   payment?: () => PaymentService;
   /** How gifts reach people (GIFT-15). */
   giftDelivery?: (storageSuffix: string) => GiftDelivery;
+  /** The share sheet, for invite links (docs/specs/mail.md, MAIL-5). */
+  share?: () => Share;
+  /** Where mailbox drops go (MAIL-4). TODO(server): a fake. */
+  mail?: (storageSuffix: string, directory: Directory) => Mail;
+  /** "Let people find me by name" (MAIL-7). */
+  findMe?: (storageSuffix: string) => FindMeSetting;
   hasFace?: (image: Blob) => Promise<boolean>;
   readCapture?: (f: File) => Promise<number | undefined>;
   decode?: (f: File) => Promise<Blob>;
@@ -116,6 +129,10 @@ export function AppClient({
   // TODO(mobile: Apple in-app purchase): a real PaymentService replaces both.
   payment = () => (process.env.NODE_ENV === "production" ? betaPayment() : localPayment()),
   giftDelivery = localGiftDelivery,
+  share = () => browserShare,
+  // Invite links go nowhere until issue #26's landing page exists, so production doesn't make them yet (MAIL-5).
+  mail = (suffix, directory) => localMail(suffix, directory, localInvites(typeof location === "undefined" ? "" : location.origin), { invitesEnabled: process.env.NODE_ENV !== "production" }),
+  findMe = localFindMe,
   hasFace = detectFaces,
   readCapture = captureDate,
   decode = downscale,
@@ -129,6 +146,9 @@ export function AppClient({
   const ornaments = useOrnaments(openOrnamentsNamed);
   const [overrides, setColorOverride] = useColorOverrides(colorOverrides(data.storageSuffix));
   const [paymentService] = useState(payment);
+  const [shareService] = useState(share);
+  const [mailService] = useState(() => mail(data.storageSuffix, data.directory));
+  const [findMeSetting] = useState(() => findMe(data.storageSuffix));
   const [names, saveGroupName] = useGroupNames(groupNames(data.storageSuffix));
   // Names and colors are applied once, here, so every screen shows the same ones (COLOR-9, RENAME-7).
   const viewerData = useMemo(() => ({ ...data, groups: withViewerColors(withGroupNames(data.groups, names), overrides) }), [data, names, overrides]);
@@ -174,6 +194,8 @@ export function AppClient({
     await saveGroupName(groupId, check.name);
     dispatch({ type: "rename", id: crypto.randomUUID(), conversationId: conversationId("group", groupId), by: ME, name: check.name, at: now() });
   };
+  /** Everything a gift needs, for Me and Daily 5 (docs/specs/gifts.md). */
+  const giftDeps: GiftDeps = { store: giftStore(data.storageSuffix), events: giftEvents(data.storageSuffix), photos: store, placements: circle.placements, groups: homeGroups, friends: viewerData.friends, senderName: data.senderName, payment: paymentService, delivery: giftDelivery(data.storageSuffix) };
   /** The next time together on Home's trees (HOME-19). */
   const countdowns = Object.fromEntries(
     homeGroups.flatMap((g) => {
@@ -201,7 +223,7 @@ export function AppClient({
         />
       );
     case "Daily 5":
-      return <Daily5Client store={store} track={trackStoreWork} now={now} hasFace={hasFace} recipients={recipients} dispatch={dispatch} nav={nav} />;
+      return <Daily5Client store={store} track={trackStoreWork} now={now} hasFace={hasFace} recipients={recipients} dispatch={dispatch} nav={nav} gifts={giftDeps} drops={{ directory: data.directory, mail: mailService, share: shareService, friends: data.friends, placements: circle.placements }} />;
     case "Archive":
       return <ArchiveClient data={viewerData} now={now} store={archive} track={trackArchiveWork} readCapture={readCapture} decode={decode} nav={nav} />;
     case "Messages":
@@ -249,6 +271,6 @@ export function AppClient({
         />
       );
     case "Me":
-      return <MeClient data={viewerData} now={now} store={archive} nav={nav} gifts={{ store: giftStore(data.storageSuffix), events: giftEvents(data.storageSuffix), photos: store, placements: circle.placements, groups: homeGroups, payment: paymentService, delivery: giftDelivery(data.storageSuffix) }} />;
+      return <MeClient data={viewerData} now={now} store={archive} nav={nav} gifts={giftDeps} findMe={findMeSetting} />;
   }
 }

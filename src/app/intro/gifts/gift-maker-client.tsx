@@ -34,6 +34,8 @@ type GiftMakerClientProps = {
   senderName: string;
   now: () => number;
   onDaily5: () => void;
+  /** After Done on the sent screen: who it went to (GIFT-17's toast). */
+  onSent?: (name: string) => void;
   /** Pays and delivers the gift (GIFT-15). */
   onSend: () => Promise<SendResult | undefined>;
   /** The gift's price, from the payment service (GIFT-14). */
@@ -77,7 +79,7 @@ function usePhotoList(store: PhotoStore | null) {
 }
 
 /** The gift maker, wired (docs/specs/gifts.md). Rules are in `gift.ts`; this only connects them to the views. */
-export function GiftMakerClient({ gift, dispatch, onClose, friends, groups, placements, photos, senderName, now, onDaily5, onSend, priceOf, onDevFail }: GiftMakerClientProps) {
+export function GiftMakerClient({ gift, dispatch, onClose, friends, groups, placements, photos, senderName, now, onDaily5, onSend, onSent, priceOf, onDevFail }: GiftMakerClientProps) {
   const [checkout, setCheckout] = useState<Checkout | null>(null);
   const [product, setProduct] = useState<Product | null>(null);
   const [sent, setSent] = useState(false);
@@ -234,7 +236,7 @@ export function GiftMakerClient({ gift, dispatch, onClose, friends, groups, plac
         onDevFail={onDevFail}
       />
     )}
-    {sent && <SentScreen recipient={recipient} title={`On its way to ${name}`} line={sentLine(gift, name, isGroup)} wrap={{ to: name, ...look.wrap }} rings={rings} onDone={onClose} />}
+    {sent && <SentScreen recipient={recipient} title={`On its way to ${name}`} line={sentLine(gift, name, isGroup)} wrap={{ to: name, ...look.wrap }} rings={rings} onDone={() => { onSent?.(name); onClose(); }} />}
     </>
   );
 }

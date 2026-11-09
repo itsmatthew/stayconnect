@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { giftReducer, newGift, newestDraft, type Gift, type GiftAction } from "./gift";
+import { giftReducer, newGift, newestDraft, type Gift, type GiftAction, type GiftPhoto } from "./gift";
 import type { GiftDelivery } from "./gift-delivery";
 import type { GiftEvents } from "./gift-events";
 import { sendGift, settlePaying, type SendResult } from "./gift-flow";
@@ -43,6 +43,15 @@ export function useGiftDraft(options: GiftDraftOptions) {
     show(draft ?? newGift({ id: makeId(), from, now: now() }));
   }, [store, payment, makeId, from, now, show]);
 
+  /** A new gift with this photo already picked (GIFT-17). Any saved gift stays saved. Nothing's saved until a person is picked. */
+  const start = useCallback(
+    (photo: { photo: GiftPhoto; takenAt: number; fileDated?: true }) => {
+      made.current = false;
+      show(giftReducer(newGift({ id: makeId(), from, now: now() }), { type: "photo", ...photo }));
+    },
+    [makeId, from, now, show],
+  );
+
   const dispatch = useCallback(
     (action: GiftAction) => {
       if (!current.current) return;
@@ -72,5 +81,5 @@ export function useGiftDraft(options: GiftDraftOptions) {
     show(null);
   }, [events, now, show]);
 
-  return { gift, open, dispatch, send, close };
+  return { gift, open, start, dispatch, send, close };
 }
