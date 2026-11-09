@@ -10,7 +10,7 @@ import { GiftMaker, type GiftChip } from "@/components/gifts/gift-maker";
 import { FrameStep, NoteStep, PhotoStep, ToStep, WrapStep } from "@/components/gifts/gift-steps";
 import type { GiftCardLook } from "@/components/gifts/gift-card";
 import type { CircleGroup, Friend, Party } from "@/components/home/types";
-import { STEPS, canContinue, canOpenStep, dateStampAllowed, dayAfter, dayKey, defaultSide, newestPhotos, nextStep, noteLength, NOTE_MAX, postmark, previousStep, shortDay, shortYear, writtenDate, type Gift, type GiftAction, type GiftStep } from "./gift";
+import { STEPS, canContinue, canOpenStep, dateStampAllowed, dayAfter, dayKey, dayLabel, defaultSide, monthCaption, monthFrameLabel, newestPhotos, nextStep, noteLength, NOTE_MAX, postmark, previousStep, shortDay, stampCode, writtenDate, type Gift, type GiftAction, type GiftStep } from "./gift";
 import { FRAMES, HANDS, INKS, RIBBONS, STAMPS, WRAPS, colorOf, isAvailable } from "./gift-catalog";
 import { giftRecipients } from "./gift-recipients";
 
@@ -71,7 +71,9 @@ export function GiftMakerClient({ gift, dispatch, onClose, friends, groups, plac
   const today = dayKey(now());
   const recipient = recipientParty(gift, friends, groups);
   const sections = giftRecipients({ friends, groups, placements }, query);
-  const stamp = gift.frame.dateStamp && gift.takenAt !== undefined ? { year: shortYear(gift.takenAt), written: writtenDate(gift.takenAt) } : undefined;
+  const stamp = gift.frame.dateStamp && gift.takenAt !== undefined ? { code: stampCode(gift.takenAt), written: writtenDate(gift.takenAt) } : undefined;
+  const name = recipient?.name ?? "";
+  const placeholder = `Something only ${name || "they"} would get…`;
   const look: GiftCardLook = {
     to: recipient?.name ?? "",
     signature: senderName,
@@ -79,8 +81,11 @@ export function GiftMakerClient({ gift, dispatch, onClose, friends, groups, plac
     alt: gift.takenAt !== undefined ? `Photo from ${formatPhotoDate(gift.takenAt)}` : "Your photo",
     frame: gift.frame.id,
     stamp,
-    note: { text: gift.note.text, hand: gift.note.hand, ink: colorOf(INKS, gift.note.ink), stamp: gift.note.stamp, postmark: postmark(now()) },
-    wrap: { pattern: gift.wrap.pattern, ribbon: colorOf(RIBBONS, gift.wrap.ribbon), opens: gift.opens.kind === "on" && gift.opens.day ? shortDay(gift.opens.day) : undefined },
+    // Instant's date is written whether or not the stamp is on, in the note's hand and ink (as designed).
+    written: gift.takenAt !== undefined && !gift.fileDated ? { text: writtenDate(gift.takenAt), hand: gift.note.hand, ink: colorOf(INKS, gift.note.ink) } : undefined,
+    monthCaption: monthCaption(now()),
+    note: { text: gift.note.text, placeholder, hand: gift.note.hand, ink: colorOf(INKS, gift.note.ink), stamp: gift.note.stamp, postmark: postmark(now()) },
+    wrap: { pattern: gift.wrap.pattern, ribbon: colorOf(RIBBONS, gift.wrap.ribbon), opens: gift.opens.kind === "on" ? (gift.opens.day ? shortDay(gift.opens.day) : "later") : undefined },
   };
 
   const base = defaultSide(gift.step);
@@ -108,8 +113,8 @@ export function GiftMakerClient({ gift, dispatch, onClose, friends, groups, plac
       look={look}
       side={side}
       onFlip={() => setTurnedOn(turnedOn === gift.step ? null : gift.step)}
-      nextLabel={next ? `Next: ${next} →` : "Review gift →"}
-      // TODO(re-evaluate when checkout is built): Wrap's "Review gift" opens it (GIFT-8).
+      nextLabel={next ? `Next: ${next}` : `Send to ${name}`}
+      // TODO(re-evaluate when checkout is built): Wrap's "Send to ‹name›" opens it (GIFT-8).
       canNext={!!next && canContinue(gift, today)}
       onNext={() => next && go(next)}
       onBack={back ? () => go(back) : undefined}
@@ -135,11 +140,12 @@ export function GiftMakerClient({ gift, dispatch, onClose, friends, groups, plac
           onDaily5={onDaily5}
         />
       )}
-      {gift.step === "frame" && <FrameStep frames={FRAMES.filter(isAvailable)} frame={gift.frame.id} onFrame={(id) => dispatch({ type: "frame", id })} src={look.src} dateStamp={gift.frame.dateStamp} stampAllowed={dateStampAllowed(gift)} onDateStamp={(on) => dispatch({ type: "dateStamp", on })} />}
+      {gift.step === "frame" && <FrameStep frames={FRAMES.filter(isAvailable).map((f) => (f.id === "month" ? { ...f, label: monthFrameLabel(now()) } : f))} frame={gift.frame.id} onFrame={(id) => dispatch({ type: "frame", id })} src={look.src} dateStamp={gift.frame.dateStamp} stampAllowed={dateStampAllowed(gift)} onDateStamp={(on) => dispatch({ type: "dateStamp", on })} />}
       {gift.step === "note" && (
         <NoteStep
           text={gift.note.text}
           count={`${noteLength(gift.note.text)}/${NOTE_MAX}`}
+          placeholder={placeholder}
           onText={(text) => dispatch({ type: "note", text })}
           hands={HANDS.filter(isAvailable)}
           hand={gift.note.hand}
@@ -162,6 +168,7 @@ export function GiftMakerClient({ gift, dispatch, onClose, friends, groups, plac
           ribbon={gift.wrap.ribbon}
           onRibbon={(id) => dispatch({ type: "ribbon", id })}
           day={gift.opens.kind === "on" ? gift.opens.day : undefined}
+          dayLabel={gift.opens.kind === "on" && gift.opens.day ? dayLabel(gift.opens.day) : undefined}
           minDay={dayAfter(today)}
           onOpens={(day) => dispatch({ type: "opens", opens: day === undefined ? { kind: "now" } : { kind: "on", day } })}
         />

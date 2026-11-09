@@ -15,27 +15,27 @@ const look: GiftCardLook = {
   src: "blob:p",
   alt: "A photo",
   frame: "classic",
-  stamp: { year: "’26", written: "Nov 5, 2026" },
-  note: { text: "Miss you guys.", hand: "caveat", ink: "#2B3350", stamp: "tree", postmark: "NOV 6 2026" },
+  stamp: { code: "11 05 '26", written: "Nov 5, 2026" },
+  note: { text: "Miss you guys.", placeholder: "Something only Maya would get…", hand: "pen", ink: "#2B3350", stamp: "tree", postmark: "NOV 6 2026" },
   wrap: { pattern: "candy", ribbon: "#E8B93A", opens: undefined },
 };
 
 describe("frames (GIFT-6)", () => {
-  it.each(["classic", "instant", "album", "film", "wood", "november"])("%s shows the photo", (frame) => {
+  it.each(["classic", "instant", "album", "film", "wood", "month"])("%s shows the photo", (frame) => {
     const { container } = render(<FramedPhoto src="blob:p" alt="A photo" frame={frame} />);
     expect(container.querySelector(`[data-frame="${frame}"]`)).toBeTruthy();
     expect(screen.getByRole("img", { name: "A photo" }).getAttribute("src")).toBe("blob:p");
   });
 
-  it("prints the year on the photo with the date stamp, and only then", () => {
+  it("prints the date stamp on the photo, and only with the stamp on", () => {
     const { rerender } = render(<FramedPhoto src="blob:p" alt="" frame="classic" stamp={look.stamp} />);
-    expect(screen.getByText("’26")).toBeTruthy();
+    expect(screen.getByText("11 05 '26")).toBeTruthy();
     rerender(<FramedPhoto src="blob:p" alt="" frame="classic" />);
-    expect(screen.queryByText("’26")).toBeNull();
+    expect(screen.queryByText("11 05 '26")).toBeNull();
   });
 
   it("writes the date under an Instant photo", () => {
-    render(<FramedPhoto src="blob:p" alt="" frame="instant" stamp={look.stamp} />);
+    render(<FramedPhoto src="blob:p" alt="" frame="instant" written={{ text: "Nov 5, 2026", hand: "pen", ink: "#2B3350" }} />);
     expect(screen.getByText("Nov 5, 2026")).toBeTruthy();
   });
 
@@ -49,7 +49,7 @@ describe("postcard (GIFT-7)", () => {
   it("shows the note, signature, address and printed footer", () => {
     const { container } = render(<Postcard to="Maya" signature="Harry" note={look.note} />);
     const text = container.textContent!;
-    for (const part of ["Miss you guys.", "– Harry", "Maya", "under their tree", "NOW & THEN · POST CARD"]) expect(text).toContain(part);
+    for (const part of ["Miss you guys.", "— Harry", "Maya", "under their tree", "Now & Then · Post card"]) expect(text).toContain(part);
     expect(container.querySelector('[data-stamp="tree"]')).toBeTruthy();
   });
 
@@ -60,12 +60,12 @@ describe("postcard (GIFT-7)", () => {
 
   it("leaves off the signature when there's no name", () => {
     const { container } = render(<Postcard to="Maya" signature="" note={look.note} />);
-    expect(container.textContent).not.toContain("–");
+    expect(container.textContent).not.toContain("—");
   });
 });
 
 describe("wrapped gift (GIFT-8)", () => {
-  it.each(["candy", "dots", "kraft", "gingham", "newsprint", "stars"])("%s draws its pattern as SVG", (pattern) => {
+  it.each(["candy", "dots", "kraft", "gingham", "newsprint", "stars"])("%s draws its paper as an SVG pattern", (pattern) => {
     const { container } = render(<WrappedGift to="Maya" pattern={pattern} ribbon="#E8B93A" />);
     expect(container.querySelector(`[data-pattern="${pattern}"] pattern`)).toBeTruthy();
   });
@@ -93,9 +93,11 @@ describe("wrapped gift (GIFT-8)", () => {
 });
 
 describe("the card (GIFT-3)", () => {
-  it("shows the wrapped gift on its own, with nothing to turn over", () => {
-    render(<GiftCard look={look} side="wrapped" onFlip={() => {}} />);
+  it("wraps the card itself, with nothing to turn over", () => {
+    const { container } = render(<GiftCard look={look} side="wrapped" onFlip={() => {}} />);
     expect(screen.queryByRole("button")).toBeNull();
+    expect(container.querySelector("[data-flip] [data-side='photo']")).toBeTruthy();
+    expect(container.querySelector("[data-pattern]")).toBeTruthy();
   });
 
   it("offers the other side, and hides the side you can't see", () => {
@@ -109,11 +111,12 @@ describe("the card (GIFT-3)", () => {
     expect(container.querySelector("[data-side='photo']")!.getAttribute("aria-hidden")).toBe("true");
   });
 
-  it("flips with transforms that exist in React Native, instant under reduced motion", () => {
+  it("bobs, and flips with transforms that exist in React Native, instant under reduced motion", () => {
     const { container } = render(<GiftCard look={look} side="postcard" onFlip={() => {}} />);
     expect(container.querySelector<HTMLElement>("[data-flip]")!.style.transform).toContain("rotateY(180deg)");
     const css = readFileSync(path.join(__dirname, "../../src/components/gifts/gifts.css"), "utf8");
     expect(css).toMatch(/prefers-reduced-motion[\s\S]*gf-flip/);
+    expect(container.querySelector(".gf-float")).toBeTruthy();
   });
 });
 

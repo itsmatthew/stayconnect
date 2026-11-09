@@ -1,55 +1,86 @@
-/** The wrapping papers (docs/specs/gifts.md, GIFT-8), as SVG patterns: CSS repeating gradients have no React Native equivalent. */
+import type { ReactNode } from "react";
+
+/**
+ * The wrapping papers, as in the design, drawn as SVG patterns: the design's CSS repeating gradients have no
+ * React Native equivalent, react-native-svg's Pattern does. `PaperFill` paints a shape with a paper.
+ */
 export function WrapPattern({ id, pattern }: { id: string; pattern: string }) {
   switch (pattern) {
     case "dots":
       return (
-        <pattern id={id} width="26" height="26" patternUnits="userSpaceOnUse">
-          <rect width="26" height="26" fill="#27305A" />
-          <circle cx="6" cy="6" r="3" fill="#E8B93A" />
-          <circle cx="19" cy="19" r="3" fill="#F3EAD3" />
+        <pattern id={id} width="16" height="16" patternUnits="userSpaceOnUse">
+          <rect width="16" height="16" fill="#2B3350" />
+          <circle cx="8" cy="8" r="2.6" fill="#F7CB4D" />
+          <circle cx="0" cy="0" r="1.5" fill="#F4E9C8" />
+          <circle cx="16" cy="0" r="1.5" fill="#F4E9C8" />
+          <circle cx="0" cy="16" r="1.5" fill="#F4E9C8" />
+          <circle cx="16" cy="16" r="1.5" fill="#F4E9C8" />
         </pattern>
       );
     case "kraft":
       return (
-        <pattern id={id} width="14" height="14" patternUnits="userSpaceOnUse">
-          <rect width="14" height="14" fill="#B98A52" />
-          <path d="M0 4H14M0 11H14" stroke="#A67845" strokeWidth=".8" />
-          <path d="M5 0V14" stroke="#C69A63" strokeWidth=".6" />
+        <pattern id={id} width="7" height="9" patternUnits="userSpaceOnUse">
+          <rect width="7" height="9" fill="#B88A57" />
+          <rect width="2" height="9" fill="rgba(90,55,25,.09)" />
+          <rect width="7" height="1" fill="rgba(255,240,210,.12)" />
         </pattern>
       );
     case "gingham":
       return (
-        <pattern id={id} width="30" height="30" patternUnits="userSpaceOnUse">
-          <rect width="30" height="30" fill="#F3F0DC" />
-          <rect width="15" height="30" fill="#6F9B4E" opacity=".5" />
-          <rect width="30" height="15" fill="#6F9B4E" opacity=".5" />
+        <pattern id={id} width="20" height="20" patternUnits="userSpaceOnUse">
+          <rect width="20" height="20" fill="#F4E9C8" />
+          <rect width="20" height="10" fill="rgba(79,122,54,.42)" />
+          <rect width="10" height="20" fill="rgba(79,122,54,.42)" />
         </pattern>
       );
     case "newsprint":
       return (
-        <pattern id={id} width="60" height="44" patternUnits="userSpaceOnUse">
-          <rect width="60" height="44" fill="#E9E4D3" />
-          <path d="M3 5H27M3 10H27M3 15H27M3 20H21M3 27H27M3 32H27M3 37H17M33 5H57M33 10H57M33 15H51M33 22H57M33 27H57M33 32H57M33 37H45" stroke="#9C988A" strokeWidth="1.6" />
+        <pattern id={id} width="64" height="5" patternUnits="userSpaceOnUse">
+          <rect width="64" height="5" fill="#EDE4CC" />
+          <rect width="64" height="1.5" fill="rgba(43,51,80,.3)" />
+          <rect x="56" width="8" height="5" fill="#EDE4CC" />
         </pattern>
       );
     case "stars":
       return (
-        <pattern id={id} width="44" height="44" patternUnits="userSpaceOnUse">
-          <rect width="44" height="44" fill="#1C2546" />
-          <circle cx="8" cy="10" r="1.4" fill="#F3EAD3" />
-          <circle cx="30" cy="6" r="1" fill="#F3EAD3" />
-          <circle cx="20" cy="26" r="1.6" fill="#E8B93A" />
-          <circle cx="38" cy="32" r="1.1" fill="#F3EAD3" />
-          <circle cx="7" cy="37" r="1" fill="#F3EAD3" />
+        <pattern id={id} width="22" height="22" patternUnits="userSpaceOnUse">
+          <circle cx="11" cy="11" r="1.6" fill="#FBD964" />
+          <circle cx="0" cy="18" r="1.2" fill="rgba(255,246,218,.8)" />
+          <circle cx="22" cy="18" r="1.2" fill="rgba(255,246,218,.8)" />
         </pattern>
       );
     default:
       return (
-        <pattern id={id} width="34" height="34" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
-          <rect width="34" height="34" fill="#B73420" />
-          <rect width="15" height="34" fill="#CC4A34" />
-          <rect x="24" width="2.4" height="34" fill="#F3D9CB" />
+        <pattern id={id} width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <rect width="12" height="24" fill="#B43A2A" />
+          <rect x="12" width="12" height="24" fill="#C9503A" />
+          <rect x="11" width="1.5" height="24" fill="rgba(255,240,210,.6)" />
         </pattern>
       );
   }
+}
+
+/** Night sky sits on a gradient, with its stars on top. */
+export function PaperDefs({ id, pattern }: { id: string; pattern: string }) {
+  return (
+    <>
+      <WrapPattern id={id} pattern={pattern} />
+      {pattern === "stars" && (
+        <linearGradient id={`${id}-sky`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#1E2440" />
+          <stop offset="1" stopColor="#2B3350" />
+        </linearGradient>
+      )}
+    </>
+  );
+}
+
+/** Paints `children` (one shape, given as a function of its fill) with a paper. */
+export function PaperFill({ id, pattern, shape }: { id: string; pattern: string; shape: (fill: string) => ReactNode }) {
+  return (
+    <>
+      {pattern === "stars" && shape(`url(#${id}-sky)`)}
+      {shape(`url(#${id})`)}
+    </>
+  );
 }

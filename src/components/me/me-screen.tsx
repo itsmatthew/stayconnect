@@ -10,7 +10,9 @@ import { YearSelect } from "./year-select";
 
 type MeScreenProps = { year: number; years: readonly number[]; onYearChange: (y: number) => void; tiles: readonly MeTile[]; nav: NavProps; /** Opens the gift maker (docs/specs/gifts.md, GIFT-1). */ onSendGift?: () => void };
 
-const pill = { flex: 1, height: s(32), minHeight: 44, boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "center", gap: s(5), borderRadius: s(16), border: `${s(2)} solid ${NAVY}`, fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 700, fontSize: s(14) } as const;
+/** The pill's look, 32 tall as designed; the button around it is 44 to tap. */
+const pill = { width: "100%", height: s(32), boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "center", gap: s(5), borderRadius: s(16), border: `${s(2)} solid ${NAVY}`, fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 700, fontSize: s(14) } as const;
+const pillButton = { flex: 1, minHeight: 44, padding: 0, border: 0, background: "none", display: "flex", alignItems: "center", cursor: "pointer" } as const;
 
 /** Me (docs/specs/me.md): the posts / year / gifts row, then your 65 for that year. Profile and bio come later (TODO). */
 export function MeScreen({ year, years, onYearChange, tiles, nav, onSendGift }: MeScreenProps) {
@@ -21,12 +23,12 @@ export function MeScreen({ year, years, onYearChange, tiles, nav, onSendGift }: 
     <TabFrame nav={nav}>
       <h1 style={{ margin: 0, padding: `${s(44)} ${s(20)} 0`, fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(28), letterSpacing: s(-0.5) }}>Me</h1>
       <div style={{ display: "flex", gap: s(8), padding: `${s(16)} ${s(14)} ${s(12)}` }}>
-        <button type="button" aria-current={view === "posts" ? "page" : undefined} onClick={() => setView("posts")} style={{ ...pill, background: "#B43A2A", color: "#FFF6DA", boxShadow: view === "posts" ? `0 ${s(3)} 0 ${NAVY}` : "none", cursor: "pointer" }}>
-          posts
+        <button type="button" aria-current={view === "posts" ? "page" : undefined} onClick={() => setView("posts")} style={pillButton}>
+          <span style={{ ...pill, background: "#B43A2A", color: "#FFF6DA", opacity: view === "posts" ? 1 : 0.92, boxShadow: view === "posts" ? `0 ${s(3)} 0 ${NAVY}` : "none" }}>posts</span>
         </button>
         <YearSelect year={year} years={years} onChange={onYearChange} />
-        <button type="button" aria-current={view === "gifts" ? "page" : undefined} onClick={() => setView("gifts")} style={{ ...pill, background: "#4F7A36", color: "#FFF6DA", boxShadow: view === "gifts" ? `0 ${s(3)} 0 ${NAVY}` : "none", cursor: "pointer" }}>
-          gifts
+        <button type="button" aria-current={view === "gifts" ? "page" : undefined} onClick={() => setView("gifts")} style={pillButton}>
+          <span style={{ ...pill, background: "#4F7A36", color: "#FFF6DA", boxShadow: view === "gifts" ? `0 ${s(3)} 0 ${NAVY}` : "none" }}>gifts</span>
         </button>
       </div>
       {view === "posts" ? <SixtyFiveGrid year={year} tiles={tiles} onOpen={setOpenKey} /> : <GiftShelf onSendGift={onSendGift} />}

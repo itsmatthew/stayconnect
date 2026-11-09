@@ -82,7 +82,7 @@ describe("five steps (GIFT-2)", () => {
     expect((chips[1] as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByRole("button", { name: /^Next: photo/ }) as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByRole("button", { name: /^Next: photo/ }).style.minHeight).toBe("44px");
-    expect(screen.getByRole("button", { name: "Close" }).style.minHeight).toBe("44px");
+    expect(screen.getByRole("button", { name: "Cancel and go back to your gifts" }).style.minHeight).toBe("44px");
   });
 
   it("walks to Wrap and back, keeping everything", async () => {
@@ -125,8 +125,8 @@ describe("live card (GIFT-3)", () => {
     expect(flip()!.style.transform).toContain("180deg");
     next("note");
     next("wrap");
-    expect(flip()).toBeNull();
     expect(container.ownerDocument.querySelector("[data-pattern]")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /turn it over|see the photo/ })).toBeNull();
   });
 });
 
@@ -137,6 +137,7 @@ describe("To (GIFT-4)", () => {
     expect(screen.getByText("your nest")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Leo" })).toBeTruthy();
     expect(screen.getByRole("button", { name: /everyone/ })).toBeTruthy();
+    tap("Search friends");
     fireEvent.change(screen.getByRole("searchbox", { name: "Search people" }), { target: { value: "gran" } });
     expect(screen.getByRole("button", { name: "Grandma" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Leo" })).toBeNull();
@@ -181,6 +182,7 @@ describe("groups (GIFT-4, GIFT-13)", () => {
   it("searches groups", async () => {
     renderMe();
     await openMaker();
+    tap("Search friends");
     fireEvent.change(screen.getByRole("searchbox", { name: "Search people" }), { target: { value: "hoops" } });
     expect(screen.getByRole("button", { name: HOOPS })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Madrid Crew" })).toBeNull();
@@ -198,18 +200,15 @@ describe("groups (GIFT-4, GIFT-13)", () => {
     fireEvent.click((await screen.findAllByRole("button", { name: /^Photo from / }))[0]);
     next("frame");
     next("note");
-    expect(screen.getByRole("button", { name: "Handwriting 1" }).textContent).toBe("Hey all");
+    expect(screen.getByRole("button", { name: "Pen handwriting" }).textContent).toBe("Hey all");
     next("wrap");
     expect(document.querySelector("[data-pattern]")!.textContent).toContain(`to ${HOOPS}`);
   });
 
-  it("keeps Next in reach however long the list gets, and a long title to two lines", async () => {
+  it("keeps a long title to two lines", async () => {
     renderMe();
     await openMaker();
     tap(HOOPS);
-    const footer = screen.getByRole("button", { name: /^Next: photo/ }).parentElement!;
-    expect(footer.style.position).toBe("sticky");
-    expect(footer.style.bottom).toBe("0px");
     expect(screen.getByRole("heading", { name: `A gift for ${HOOPS}` }).className).toBe("gf-two-lines");
   });
 
@@ -286,7 +285,7 @@ describe("Note (GIFT-7)", () => {
     expect(screen.getByText("11/140")).toBeTruthy();
     const card = screen.getByTestId("gift-postcard");
     expect(card.textContent).toContain("Found this.");
-    expect(card.textContent).toContain(`– ${demoData.senderName}`);
+    expect(card.textContent).toContain(`— ${demoData.senderName}`);
   });
 
   it("stops at 140", async () => {
@@ -297,11 +296,11 @@ describe("Note (GIFT-7)", () => {
 
   it("changes handwriting, ink and stamp", async () => {
     await toNote();
-    tap("Handwriting 2");
+    tap("Pencil handwriting");
     tap("Red ink");
     tap("Heart stamp");
-    expect(saved()[0].note).toMatchObject({ hand: "shadows", ink: "red", stamp: "heart" });
-    for (const name of ["Handwriting 2", "Red ink", "Heart stamp"]) expect(screen.getByRole("button", { name }).style.minHeight).toBe("44px");
+    expect(saved()[0].note).toMatchObject({ hand: "pencil", ink: "red", stamp: "heart" });
+    for (const name of ["Pencil handwriting", "Red ink", "Heart stamp"]) expect(screen.getByRole("button", { name }).style.minHeight).toBe("44px");
   });
 });
 
@@ -314,12 +313,12 @@ describe("Wrap (GIFT-8)", () => {
     next("wrap");
   };
 
-  it("chooses a pattern and ribbon, ready to review once checkout exists", async () => {
+  it("chooses a paper and ribbon; Send waits for checkout", async () => {
     await toWrap();
-    tap("Gingham");
+    tap("Gingham paper");
     tap("Red ribbon");
     expect(saved()[0].wrap).toEqual({ pattern: "gingham", ribbon: "red" });
-    expect((screen.getByRole("button", { name: /^Review gift/ }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: /^Send to Leo/ }) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it("opens on a chosen day after today, and tags it", async () => {
@@ -343,7 +342,7 @@ describe("never lost (GIFT-9, GIFT-11)", () => {
     await toFrame();
     next("note");
     fireEvent.change(screen.getByLabelText("Write on the back"), { target: { value: "Keep me" } });
-    tap("Close");
+    tap("Cancel and go back to your gifts");
     expect(screen.queryByRole("heading", { name: "A gift for Leo" })).toBeNull();
     first.unmount();
 
@@ -359,7 +358,7 @@ describe("never lost (GIFT-9, GIFT-11)", () => {
     renderMe();
     await openMaker();
     tap("Leo");
-    tap("Close");
+    tap("Cancel and go back to your gifts");
     await waitFor(() => expect(JSON.parse(localStorage.getItem(giftEventsKey(".demo")) ?? "[]").map((e: { type: string }) => e.type)).toEqual(["made", "abandoned"]));
   });
 });

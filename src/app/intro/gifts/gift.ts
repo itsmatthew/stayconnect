@@ -51,7 +51,7 @@ export function newGift({ id, from, now }: { id: string; from: string; now: numb
     id,
     from,
     frame: { id: "classic", dateStamp: false },
-    note: { text: "", hand: "caveat", ink: "navy", stamp: "tree" },
+    note: { text: "", hand: "pen", ink: "navy", stamp: "tree" },
     wrap: { pattern: "candy", ribbon: "gold" },
     opens: { kind: "now" },
     status: "draft",
@@ -171,8 +171,15 @@ export const dayAfter = (day: string) => {
 export const dayLabel = (day: string) => dayDate(day).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 /** "Nov 12". */
 export const shortDay = (day: string) => dayDate(day).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-/** "’26": what old cameras printed. */
-export const shortYear = (t: number) => `’${String(new Date(t).getFullYear()).slice(-2)}`;
+/** "11 05 '26": what old cameras printed in the corner. */
+export function stampCode(t: number): string {
+  const d = new Date(t);
+  return `${pad(d.getMonth() + 1)} ${pad(d.getDate())} '${String(d.getFullYear()).slice(-2)}`;
+}
+/** The month frame is named for the month it's sent in: "November". */
+export const monthFrameLabel = (t: number) => new Date(t).toLocaleDateString("en-US", { month: "long" });
+/** The month frame's caption: "November '26". */
+export const monthCaption = (t: number) => `${monthFrameLabel(t)} '${String(new Date(t).getFullYear()).slice(-2)}`;
 /** "Nov 5, 2026". */
 export const writtenDate = (t: number) => new Date(t).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 /** "NOV 6 2026". */

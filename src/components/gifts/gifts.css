@@ -1,13 +1,43 @@
-/* The live card's flip (GIFT-3): a plain rotateY, which React Native also has. */
+/* Gift motion, from the design (design-ref/project/GiftCompose.dc.html, MeGifts.dc.html). Transforms and opacity
+   only, so each has a Reanimated equivalent. SVG groups animate around their own box. */
+
 .gf-flip {
-  transition: transform 0.6s cubic-bezier(0.3, 0.9, 0.3, 1);
+  transition: transform 0.75s cubic-bezier(0.3, 1.25, 0.5, 1);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .gf-flip {
-    transition: none;
-  }
+@keyframes gf-float {
+  0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+  50% { transform: translateY(-6px) rotate(-1deg); }
 }
+.gf-float { animation: gf-float 4.5s ease-in-out infinite; }
+
+.gf-paper-l, .gf-paper-r, .gf-ribbon-v, .gf-ribbon-h, .gf-bow, .gf-tag { transform-box: fill-box; }
+@keyframes gf-paper-l { 0% { transform: translateX(-240px) rotate(-12deg); opacity: 0; } 25% { opacity: 1; } 100% { transform: none; opacity: 1; } }
+@keyframes gf-paper-r { 0% { transform: translateX(240px) rotate(12deg); opacity: 0; } 25% { opacity: 1; } 100% { transform: none; opacity: 1; } }
+@keyframes gf-ribbon-v { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes gf-ribbon-h { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes gf-bow { 0% { transform: scale(0) rotate(-40deg); } 70% { transform: scale(1.15) rotate(4deg); } 100% { transform: scale(1) rotate(0); } }
+@keyframes gf-tag { 0% { transform: rotate(70deg); opacity: 0; } 30% { opacity: 1; } 60% { transform: rotate(2deg); } 80% { transform: rotate(16deg); } 100% { transform: rotate(10deg); opacity: 1; } }
+.gf-paper-l { animation: gf-paper-l 0.6s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+.gf-paper-r { animation: gf-paper-r 0.6s cubic-bezier(0.2, 0.9, 0.3, 1) 0.08s both; }
+.gf-ribbon-v { transform-origin: 50% 0; animation: gf-ribbon-v 0.35s cubic-bezier(0.3, 0.8, 0.4, 1) 0.55s both; }
+.gf-ribbon-h { transform-origin: 0 50%; animation: gf-ribbon-h 0.35s cubic-bezier(0.3, 0.8, 0.4, 1) 0.68s both; }
+.gf-bow { transform-origin: 50% 46%; animation: gf-bow 0.5s cubic-bezier(0.3, 1.4, 0.5, 1) 0.9s both; }
+.gf-tag { transform-origin: 8px 20px; transform: rotate(10deg); animation: gf-tag 0.9s ease-out 1.15s both; }
+
+/* The maker slides up over the shelf, and back down when it's closed. */
+@keyframes gf-sheet { from { transform: translateY(100%); border-radius: 28px 28px 0 0; } to { transform: none; border-radius: 0; } }
+@keyframes gf-sheet-out { from { transform: none; border-radius: 0; } to { transform: translateY(100%); border-radius: 28px 28px 0 0; } }
+.gf-sheet { animation: gf-sheet 0.6s cubic-bezier(0.2, 0.9, 0.25, 1) both; }
+.gf-sheet-out { animation: gf-sheet-out 0.45s cubic-bezier(0.4, 0, 0.6, 1) both; }
+
+/* The drawer under the shelf, pulled. */
+@keyframes gf-pull { 0% { transform: none; } 40% { transform: translateY(5px) scale(1.03); } 100% { transform: translateY(3px) scale(1.02); } }
+.gf-pull { animation: gf-pull 0.25s ease-out both; }
+
+/* Sideways rows in the To step: a horizontal list on mobile. */
+.gf-row { scrollbar-width: none; }
+.gf-row::-webkit-scrollbar { display: none; }
 
 /* Two lines, then an ellipsis, for long group names. numberOfLines={2} in React Native. */
 .gf-two-lines {
@@ -16,4 +46,9 @@
   -webkit-line-clamp: 2;
   line-clamp: 2;
   overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gf-flip { transition: none; }
+  .gf-float, .gf-paper-l, .gf-paper-r, .gf-ribbon-v, .gf-ribbon-h, .gf-bow, .gf-tag, .gf-sheet, .gf-sheet-out, .gf-pull { animation: none; }
 }

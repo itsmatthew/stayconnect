@@ -1,11 +1,22 @@
 import { CAVEAT } from "../home/units";
 
-/** Handwriting ids to fonts. On mobile these are the same font files through expo-font. */
-export const HAND_FONTS: Readonly<Record<string, string>> = {
-  caveat: CAVEAT,
-  shadows: "var(--font-gift-shadows), 'Comic Sans MS', cursive",
-  homemade: "var(--font-gift-homemade), 'Comic Sans MS', cursive",
+export type HandLook = { family: string; weight: number; /** The note on the postcard. */ size: number; lh: number; /** The sample in its choice tile. */ sample: number; /** The address and Instant's date. */ caption: number };
+
+/** Handwriting ids to fonts and sizes, from the design. On mobile these are the same font files through expo-font. */
+export const HAND_LOOKS: Readonly<Record<string, HandLook>> = {
+  pen: { family: CAVEAT, weight: 600, size: 21, lh: 1.12, sample: 22, caption: 19 },
+  pencil: { family: "var(--font-gift-pencil), 'Comic Sans MS', cursive", weight: 400, size: 23, lh: 1, sample: 24, caption: 21 },
+  script: { family: "var(--font-gift-script), 'Comic Sans MS', cursive", weight: 400, size: 12, lh: 1.75, sample: 12, caption: 11 },
 };
 
-/** The handwritten size for each font, so all three read at about the same size. */
-export const HAND_SCALE: Readonly<Record<string, number>> = { caveat: 1, shadows: 0.95, homemade: 0.72 };
+export const handLook = (id: string) => HAND_LOOKS[id] ?? HAND_LOOKS.pen;
+
+/** The date stamp's dot-matrix digits. */
+export const STAMP_FONT = "var(--font-gift-stamp), VT323, monospace";
+
+/** Shared colors from the design. */
+export const PAPER_PANEL = "#F7EFD6";
+export const TILE = "#EADDB8";
+export const TILE_ON = "#FFF6DA";
+export const NOTE_GREY = "#5C5442";
+export const RED = "#B43A2A";

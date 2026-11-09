@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { canContinue, canOpenStep, giftCharge, giftCopies, clampNote, dateStampAllowed, dayKey, dayLabel, giftReducer, newGift, noteLength, NOTE_MAX, previousStep, nextStep, shortYear, STEPS, writtenDate, type Gift } from "@/app/intro/gifts/gift";
+import { canContinue, canOpenStep, giftCharge, giftCopies, clampNote, dateStampAllowed, dayKey, dayLabel, giftReducer, newGift, noteLength, NOTE_MAX, previousStep, nextStep, stampCode, STEPS, writtenDate, type Gift } from "@/app/intro/gifts/gift";
 import { FRAMES, HANDS, INKS, RIBBONS, STAMPS, WRAPS, isAvailable } from "@/app/intro/gifts/gift-catalog";
 import { giftRecipients } from "@/app/intro/gifts/gift-recipients";
 
@@ -65,9 +65,9 @@ describe("date stamp (GIFT-6)", () => {
     expect(giftReducer(complete(), { type: "photo", photo: { kind: "stored", photoId: "p2" }, takenAt: NOW, fileDated: true }).frame.dateStamp).toBe(false);
   });
 
-  it("formats the printed year and the written date", () => {
+  it("formats the printed stamp and the written date", () => {
     const t = new Date(2026, 10, 5).getTime();
-    expect(shortYear(t)).toBe("’26");
+    expect(stampCode(t)).toBe("11 05 '26");
     expect(writtenDate(t)).toBe("Nov 5, 2026");
   });
 });
