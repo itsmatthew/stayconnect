@@ -24,3 +24,29 @@
 @media (prefers-reduced-motion: reduce) {
   .ml-fade, .ml-up, .ml-rise, .ml-door, .ml-drop, .ml-flag, .ml-glow, .ml-pop { animation: none; }
 }
+
+/* Your mailbox (docs/specs/mailbox.md), from Main.dc.html and MailOpen.dc.html. Transforms and opacity only. */
+@keyframes mb-glow { 0%, 100% { opacity: 0.75; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.14); } }
+@keyframes mb-flag { 0%, 64%, 100% { transform: rotate(0); } 70% { transform: rotate(-16deg); } 78% { transform: rotate(7deg); } 86% { transform: rotate(-3deg); } }
+@keyframes mb-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mb-down { from { opacity: 0; transform: translateY(calc(-16 * var(--s))); } to { opacity: 1; transform: none; } }
+@keyframes mb-up { from { opacity: 0; transform: translateY(calc(60 * var(--s))) scale(0.94); } to { opacity: 1; transform: none; } }
+@keyframes mb-slide { 0% { opacity: 0; transform: translateY(calc(150 * var(--s))) scale(0.8); } 60% { opacity: 1; transform: translateY(calc(-10 * var(--s))) scale(1.01) rotate(-1.5deg); } 100% { opacity: 1; transform: rotate(-1deg); } }
+@keyframes mb-bob { 0%, 100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(calc(-5 * var(--s))) rotate(-0.5deg); } }
+@keyframes mb-sheet { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes mb-zoom { from { opacity: 0; transform: scale(0.72); } to { opacity: 1; transform: none; } }
+.mb-glow { transform-origin: 50% 50%; animation: mb-glow 1.9s ease-in-out infinite; }
+.mb-flag-turn { transform-box: view-box; transform-origin: 54.5px 39px; transition: transform 0.5s cubic-bezier(0.3, 1.5, 0.5, 1); }
+.mb-flag-wave { transform-box: view-box; transform-origin: 54.5px 39px; animation: mb-flag 3.4s ease-in-out infinite; }
+.mb-fade { animation: mb-fade 0.35s ease both; }
+.mb-down { animation: mb-down 0.45s cubic-bezier(0.2, 1.3, 0.4, 1) 0.1s both; }
+.mb-up { animation: mb-up 0.55s cubic-bezier(0.2, 1.1, 0.4, 1) 0.3s both; }
+.mb-bob { animation: mb-bob 3.4s ease-in-out 1.2s infinite; }
+.mb-slide { animation: mb-slide 0.7s cubic-bezier(0.2, 1, 0.3, 1) both; }
+.mb-sheet { animation: mb-sheet 0.45s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+.mb-zoom { animation: mb-zoom 0.35s cubic-bezier(0.2, 1, 0.3, 1) both; }
+.mb-late { animation: mb-fade 0.5s ease 0.6s both; }
+@media (prefers-reduced-motion: reduce) {
+  .mb-glow, .mb-flag-wave, .mb-fade, .mb-down, .mb-up, .mb-bob, .mb-slide, .mb-sheet, .mb-zoom, .mb-late { animation: none; }
+  .mb-flag-turn { transition: none; }
+}

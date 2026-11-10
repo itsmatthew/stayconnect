@@ -3,7 +3,7 @@
 Drop a Daily 5 photo in someone's mailbox: anyone on Now & Then, in your circle or not, or a phone number with no account, which becomes an invite. Free. Built from `design-ref/project/Daily5Send.dc.html` (phone, 390×844).
 The rules are plain TypeScript in `src/app/intro/mail/`, so the mobile app can import them unchanged.
 TODO(server): finding people, delivery, invites and the "find me" setting are fakes in this browser. Nothing reaches anyone yet.
-Tests: `tests/mail/`. The recipient's side (keep, not now, block, report) comes next.
+Tests: `tests/mail/`. The recipient's side is `docs/specs/mailbox.md`.
 
 | ID | Behaviour |
 |----|-----------|
@@ -17,5 +17,5 @@ Tests: `tests/mail/`. The recipient's side (keep, not now, block, report) comes 
 | MAIL-8 | **Dropped.** As designed: a dark sky, the mailbox rising, its door opening, the photo dropping in, the door shutting, the flag snapping up and the box glowing. Then their face, "In ‹name›’s mailbox", "Their mailbox will glow under their tree. No friend request needed.", and Done. Free: drops never touch payment. With motion off, everything is simply in place. |
 | MAIL-9 | **Portable.** The logic files in `src/app/intro/mail/` use no React or browser APIs. Only the localStorage fakes, the share adapter and the hook may. |
 | MAIL-10 | **Who can drop in my mailbox.** On Me, under MAIL-7: Anyone (the default), Friends of friends (at least one mutual friend) or Only my circles; "Your circles always can." Three choices, 32 to look at and 44 to tap. Someone found whose setting leaves you out is still listed, with the button off and a neutral line that never says which setting: "Theo Park isn't taking drops right now." A phone number says so only after the drop ("This number isn't taking drops right now."), as MAIL-4. A turned-away drop sends nothing and doesn't count toward MAIL-6. TODO(server): the setting is a fake in this browser, and the server must enforce it and MAIL-6. |
-| MAIL-11 | **Stacking (Phase 2c, not built).** On the recipient's side, unopened drops from the same person stack into one envelope ("3 photos from Kate") instead of filling the mailbox. The sender sees nothing different. |
+| MAIL-11 | **Stacking.** On the recipient's side, new drops from the same person stack into one envelope ("3 photos") instead of filling the mailbox (`docs/specs/mailbox.md`, MAILBOX-3). The sender sees nothing different. |
 | MAIL-12 | **Order.** Results update as you type, in this order: someone whose whole @username you typed, then your circle, then most mutual friends, then the best name match (first name starts with it, then a later name, then anywhere; a match by username only comes last), then A to Z. Typing "kate" shows Kate Bishop (4 mutual), Kate Morgan (2), then Kate Sullivan (none). No location: it would mean collecting everyone's. The rule is plain TypeScript (`search-rank.ts`) for the server to match. |

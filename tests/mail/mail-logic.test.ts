@@ -141,12 +141,12 @@ describe("who can drop in my mailbox (MAIL-10)", () => {
 
 describe("portable (MAIL-9)", () => {
   const DIR = path.join(__dirname, "../../src/app/intro/mail");
-  const PLATFORM = ["local-mail.ts", "local-find-me.ts", "local-mailbox-setting.ts", "browser-share.ts", "use-find-me.ts", "use-saved-setting.ts"];
+  const PLATFORM = ["local-mail.ts", "local-find-me.ts", "local-mailbox-setting.ts", "browser-share.ts", "use-find-me.ts", "use-saved-setting.ts", "local-inbox.ts", "use-inbox.ts"];
   const logic = readdirSync(DIR).filter((f) => f.endsWith(".ts") && !PLATFORM.includes(f));
 
   it("has the logic files, with server TODOs on the interfaces", () => {
-    expect(logic).toEqual(expect.arrayContaining(["find-query.ts", "directory.ts", "drop-limits.ts", "mail.ts", "find-me.ts", "mailbox-setting.ts"]));
-    for (const f of ["directory.ts", "mail.ts", "find-me.ts", "mailbox-setting.ts"]) expect(readFileSync(path.join(DIR, f), "utf8")).toContain("TODO(server)");
+    expect(logic).toEqual(expect.arrayContaining(["find-query.ts", "directory.ts", "drop-limits.ts", "mail.ts", "find-me.ts", "mailbox-setting.ts", "inbox.ts"]));
+    for (const f of ["directory.ts", "mail.ts", "find-me.ts", "mailbox-setting.ts", "inbox.ts"]) expect(readFileSync(path.join(DIR, f), "utf8")).toContain("TODO(server)");
   });
 
   it.each(logic)("%s uses no React or browser APIs", (file) => {

@@ -13,6 +13,8 @@ import { newestFirst, type ReceivedGift } from "./circle/gifts";
 import { activity, isLit, suggestion } from "./circle/suggestions";
 import { openingCenter, rotate, visibleAround } from "./circle-carousel";
 import { RenameSheetClient } from "./group-names/rename-sheet-client";
+import type { InboxAction, InboxState, MailSender } from "./mail/inbox";
+import { useMailbox } from "./mail/mailbox-client";
 import { initialChatState, type ChatState } from "./messages/conversations";
 import { OrnamentSheetClient, noOrnaments, type OrnamentControls } from "./ornaments/ornament-sheet-client";
 
@@ -34,7 +36,11 @@ type HomeClientProps = {
   onRename?: (groupId: string, raw: string) => Promise<void>;
   /** Group id → "46 days · lake weekend" (docs/specs/home.md, HOME-19). */
   countdowns?: Readonly<Record<string, string>>;
+  /** Your mailbox, by your circle's tree (docs/specs/mailbox.md). */
+  mail?: { state: InboxState; dispatch: (a: InboxAction) => void; recipientName?: string };
 };
+
+const noMail = { state: { letters: [], blocked: [], reports: [] }, dispatch: () => {} };
 
 const noChat = initialChatState([]);
 const noCircle = initialCircleState({});
@@ -54,7 +60,11 @@ export function HomeClient({
   ornaments = noOrnaments,
   onRename = async () => {},
   countdowns = {},
+  mail = noMail,
 }: HomeClientProps) {
+  // Your circle is everyone you've placed or can place: the dev control sends as some of them (MAILBOX-8).
+  const circleSenders: MailSender[] = friends.map((f) => ({ id: f.id, name: f.name, look: f.look, inCircle: true }));
+  const mailbox = useMailbox({ ...mail, now, circle: circleSenders });
   const [center, setCenter] = useState(() => openingCenter(groups));
   const [sheet, setSheet] = useState<OpenSheet | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
@@ -77,7 +87,9 @@ export function HomeClient({
     const next = suggestion(state, chat, at);
     const name = next && byId.get(next.friendId)?.name;
     return (
+      <>
       <CircleScreen
+        mailbox={mailbox.tree}
         people={people}
         gifts={newestFirst(gifts).map((g) => ({ id: g.id }))}
         crowded={RINGS.filter((r) => overGuide(r, placed.filter((p) => p.ring === r).length))}
@@ -90,6 +102,8 @@ export function HomeClient({
         onViewChange={setView}
         nav={nav}
       />
+      {mailbox.screens}
+      </>
     );
   }
 

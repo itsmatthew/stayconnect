@@ -1,0 +1,21 @@
+# Your mailbox
+
+The receiving side of mailbox drops (`docs/specs/mail.md`): photos people dropped for you, by your circle's tree. Built from `design-ref/project/MailOpen.dc.html` and the mailbox in `Main.dc.html` (phone, 390×844); the wide layout extends it.
+The rules are plain TypeScript in `src/app/intro/mail/inbox.ts`, so the mobile app can import them unchanged. Views are in `src/components/mail/`.
+TODO(server): mail arrives only from the demo and the dev control, and is kept in this browser. Reports go nowhere yet.
+Tests: `tests/mail/inbox.test.ts`, `tests/mail/mailbox.test.tsx`. Birthday reminders and "Schedule a gift", also in MailOpen, come with Phase 4.
+
+Nothing in the mailbox ever reaches the sender: opening, keeping, removing, blocking and reporting are all invisible to them.
+
+| ID | Behaviour |
+|----|-----------|
+| MAILBOX-1 | **On your tree.** "your circle" shows your mailbox left of the trunk, standing on the grass, where Main.dc.html puts it (on wide screens, the same spot scaled with the tree). With new mail its flag is up and wiggles, a soft gold glow pulses behind it, an envelope peeks out, and a gold badge counts the new photos. With none, the flag is down and nothing glows. It reads "Your mailbox, 4 new photos" ("1 new photo", "nothing new"). 74×106 to look at and tap. |
+| MAILBOX-2 | **New mail.** Tapping it with new mail opens a night sky with "Your mailbox" and "4 new", and one big envelope at a time: airmail stripes, "from ‹name›", a Daily 5 stamp, a postmark with the day it was dropped, your name, and "Now & Then · Mail". "Tap to open". Arrows and dots at the bottom flip between people ("1 of 2"); the first and last arrows are off at the ends. Envelopes come in the order they arrived. |
+| MAILBOX-3 | **Stacked.** Several new photos from one person share one envelope, with envelopes peeking out behind and "3 photos" on it. Opened, it shows one photo at a time ("photo 1 of 3", "Next photo"), then Done. The count still counts photos. The sender sees nothing different. |
+| MAILBOX-4 | **Opened, then Done.** Opening slides the photo up as a polaroid with its date in handwriting and "‹name›'s Daily 5". Done keeps the envelope's photos and moves to the next envelope. After the last, the mailbox closes and the tree says "All caught up. Tap your mailbox to see old mail." Closing (×) without Done is "not now": everything unopened stays new. |
+| MAILBOX-5 | **Kept.** Tapping the mailbox with nothing new opens a sheet: "Your mailbox", "nothing new · here's what you've kept", and kept photos as small polaroids, two across, newest first, under "this week", then each month ("october"; "december 2025" for another year). With nothing kept: "Photos people drop for you will be kept here." |
+| MAILBOX-6 | **Big.** Tapping a polaroid, opened or kept, shows it big on near-black with its date and "from ‹name› · Daily 5". |
+| MAILBOX-7 | **⋯: remove, block, report.** An opened or big photo has ⋯ (44 to tap), which offers "Remove from my mailbox", "Block ‹name›" and "Report", each 44 tall, and says "‹name› is never told." Remove takes that photo away. Block takes all of theirs away, and their later drops never arrive. Report records it and takes the photo away. A note says what happened ("Removed from your mailbox.", "‹name› is blocked. Their photos won't reach you.", "Thanks for telling us. We'll take a look."). TODO(design): the reference has no menu, so it follows the app's other sheets. TODO(server): blocks and reports must reach the server. |
+| MAILBOX-8 | **Testing as the receiver.** In development only, "Receive a test drop" on your circle drops a new photo in your mailbox, from "Riley Test" (outside your circle), then from people in your circle, in turn. Production never shows it. |
+| MAILBOX-9 | **Kept until you remove it.** Kept photos stay until you remove them. TODO(re-evaluate when Matthew decides retention): ADR 0001's 60-day rule conflicts. |
+| MAILBOX-10 | **Demo.** With demo data: one new photo from Leo, three stacked from Kate Morgan (outside your circle), and three kept (this week from Priya, October from Leo and Ana), all drawn, never real photos. Saved under `nowandthen.inbox.v1` plus the demo suffix (`docs/specs/demo.md`, DEMO-3). Without demo data the mailbox starts empty. |

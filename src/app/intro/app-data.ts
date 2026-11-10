@@ -8,6 +8,7 @@ import type { ReceivedGift } from "./circle/gifts";
 import type { Placements } from "./circle/rings";
 import { fakeMemberColors, type MemberColorSource } from "./colors/member-colors";
 import { fakeDirectory, type Directory } from "./mail/directory";
+import { emptyInbox, type InboxState } from "./mail/inbox";
 import { DEMO_DATA } from "./demo";
 import type { Conversation } from "./messages/conversations";
 import {
@@ -20,6 +21,7 @@ import {
   placeholderReplies,
   placeholderRings,
   placeholderDirectory,
+  placeholderMail,
   placeholderSenderName,
   placeholderUpTo,
   seedConversations,
@@ -49,6 +51,8 @@ export type AppData = {
   senderName: string;
   /** Finding people outside your circle (docs/specs/mail.md, MAIL-3). TODO(server): a fake. */
   directory: Directory;
+  /** Your mailbox to start from (docs/specs/mailbox.md). TODO(server): mail will arrive from the server. */
+  mail: (now: number) => InboxState;
   /** Appended to storage names so demo and real data never mix (DEMO-3). */
   storageSuffix: string;
 };
@@ -67,6 +71,7 @@ export const emptyData: AppData = {
   memberColors: fakeMemberColors({}),
   senderName: "",
   directory: fakeDirectory([]),
+  mail: () => emptyInbox,
   storageSuffix: "",
 };
 
@@ -84,6 +89,7 @@ export const demoData: AppData = {
   memberColors: fakeMemberColors(placeholderMemberColors),
   senderName: placeholderSenderName,
   directory: fakeDirectory(placeholderDirectory),
+  mail: placeholderMail,
   storageSuffix: ".demo",
 };
 

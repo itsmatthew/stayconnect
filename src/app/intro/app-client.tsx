@@ -22,6 +22,9 @@ import type { Directory } from "./mail/directory";
 import type { FindMeSetting } from "./mail/find-me";
 import { localFindMe } from "./mail/local-find-me";
 import { localMailboxSetting } from "./mail/local-mailbox-setting";
+import type { InboxStore } from "./mail/inbox";
+import { localInbox } from "./mail/local-inbox";
+import { useInbox } from "./mail/use-inbox";
 import { localInvites, localMail } from "./mail/local-mail";
 import type { Mail, Share } from "./mail/mail";
 import type { MailboxSetting } from "./mail/mailbox-setting";
@@ -74,6 +77,8 @@ type AppClientProps = {
   findMe?: (storageSuffix: string) => FindMeSetting;
   /** "Who can drop in my mailbox" (MAIL-10). */
   mailboxSetting?: (storageSuffix: string) => MailboxSetting;
+  /** Your mailbox (docs/specs/mailbox.md). TODO(server): a fake. */
+  inbox?: (storageSuffix: string) => InboxStore;
   hasFace?: (image: Blob) => Promise<boolean>;
   readCapture?: (f: File) => Promise<number | undefined>;
   decode?: (f: File) => Promise<Blob>;
@@ -138,6 +143,7 @@ export function AppClient({
   mail = (suffix, directory) => localMail(suffix, directory, localInvites(typeof location === "undefined" ? "" : location.origin), { invitesEnabled: process.env.NODE_ENV !== "production" }),
   findMe = localFindMe,
   mailboxSetting = localMailboxSetting,
+  inbox = localInbox,
   hasFace = detectFaces,
   readCapture = captureDate,
   decode = downscale,
@@ -155,6 +161,7 @@ export function AppClient({
   const [mailService] = useState(() => mail(data.storageSuffix, data.directory));
   const [findMeSetting] = useState(() => findMe(data.storageSuffix));
   const [mailboxFrom] = useState(() => mailboxSetting(data.storageSuffix));
+  const [inboxState, inboxDispatch] = useInbox(inbox(data.storageSuffix), () => data.mail(now()));
   const [names, saveGroupName] = useGroupNames(groupNames(data.storageSuffix));
   // Names and colors are applied once, here, so every screen shows the same ones (COLOR-9, RENAME-7).
   const viewerData = useMemo(() => ({ ...data, groups: withViewerColors(withGroupNames(data.groups, names), overrides) }), [data, names, overrides]);
@@ -226,6 +233,7 @@ export function AppClient({
           ornaments={ornamentControls}
           onRename={renameGroup}
           countdowns={countdowns}
+          mail={{ state: inboxState, dispatch: inboxDispatch, recipientName: data.senderName || undefined }}
         />
       );
     case "Daily 5":

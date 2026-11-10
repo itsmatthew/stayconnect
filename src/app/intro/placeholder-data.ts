@@ -11,6 +11,7 @@ import { isOpen, isoWeek, periodsOfYear } from "./archive/periods";
 import type { ArchivePost } from "./archive/posts";
 import { groupPalette } from "./colors/palette";
 import type { DirectoryEntry } from "./mail/directory";
+import type { InboxState, Letter, MailSender } from "./mail/inbox";
 import { ME, type ChatMessage, type Conversation } from "./messages/conversations";
 import { localDay, type GoalState } from "./profile/goals";
 
@@ -350,4 +351,39 @@ export function placeholderPosts(now: number): ArchivePost[] {
       return open || missed ? theirs : [...theirs, make(ME)];
     }),
   );
+}
+
+/**
+ * Your mailbox (docs/specs/mailbox.md): three new photos from Kate Morgan, who isn't in your circle, stacked in one
+ * envelope; one from Leo; and some kept from before. Photos are drawn, never real.
+ */
+export function placeholderMail(now: number): InboxState {
+  const DAY = 86_400_000;
+  const friend = (id: string): MailSender => {
+    const f = friends.find((x) => x.id === id)!;
+    return { id: f.id, name: f.name, look: f.look, inCircle: true };
+  };
+  const kate = placeholderDirectory[0];
+  const stranger: MailSender = { id: kate.id, name: kate.name, look: kate.look, inCircle: false };
+  const l = (id: string, from: MailSender, art: string, sentAgo: number, takenYear: number, status: Letter["status"]): Letter => ({
+    id,
+    from,
+    photo: { kind: "art", art },
+    takenAt: new Date(takenYear, 10, 4).getTime(),
+    sentAt: now - sentAgo,
+    status,
+  });
+  return {
+    letters: [
+      l("demo-mail-1", friend("leo"), "basketball", DAY, 2019, "new"),
+      l("demo-mail-2", stranger, "faces", 3 * 3_600_000, 2014, "new"),
+      l("demo-mail-3", stranger, "sunset", 2 * 3_600_000, 2016, "new"),
+      l("demo-mail-4", stranger, "people", 3_600_000, 2017, "new"),
+      l("demo-mail-5", friend("priya"), "cookie", 2 * DAY, 2021, "kept"),
+      l("demo-mail-6", friend("leo"), "city", 20 * DAY, 2023, "kept"),
+      l("demo-mail-7", friend("ana"), "churro", 38 * DAY, 2024, "kept"),
+    ],
+    blocked: [],
+    reports: [],
+  };
 }

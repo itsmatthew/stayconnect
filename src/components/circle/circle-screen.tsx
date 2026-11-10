@@ -5,6 +5,7 @@ import { HeaderActions, Wordmark } from "../home/header-actions";
 import { BottomNav, TopNav, type NavProps } from "../home/main-nav";
 import { Scenery, useSceneIds } from "../home/scenery/scenery";
 import { INK, KARLA, s } from "../home/units";
+import { TreeMailbox } from "../mail/tree-mailbox";
 import { CircleTree } from "./circle-tree";
 import { RingCard } from "./ring-card";
 import { TREE_BOX } from "./ring-layout";
@@ -25,6 +26,8 @@ type CircleScreenProps = {
   view: CirclesView;
   onViewChange: (v: CirclesView) => void;
   nav: NavProps;
+  /** Your mailbox, by the tree (docs/specs/mailbox.md, MAILBOX-1). */
+  mailbox?: { count: number; label: string; onOpen: () => void };
 };
 
 /** Your circle (docs/specs/circle.md): the private tree and its card, in Home's scenery. Phone below 768px, wide at 768px and up. */
@@ -64,6 +67,12 @@ function PhoneLayout(props: CircleScreenProps) {
           <div style={{ position: "absolute", left: s(195 - TREE_BOX.cx), top: s(318 - TREE_BOX.cy) }}>
             <Tree {...props} />
           </div>
+          {/* Where Main.dc.html puts it: left of the trunk, standing on the grass. */}
+          {props.mailbox && (
+            <div style={{ position: "absolute", left: s(24), top: s(464), zIndex: 1 }}>
+              <TreeMailbox {...props.mailbox} />
+            </div>
+          )}
           <div
             style={{
               position: "absolute",
@@ -135,6 +144,12 @@ function WideLayout(props: CircleScreenProps) {
           >
             <Tree {...props} />
           </div>
+          {/* The phone's spot beside the tree, scaled with it: 171 left of the canopy's center and 146 below. */}
+          {props.mailbox && (
+            <div style={{ position: "absolute", left: d(WIDE_TREE.cx - 171 * WIDE_TREE.scale), top: d(WIDE_TREE.cy + 146 * WIDE_TREE.scale), "--s": `calc(${WIDE_TREE.scale} * var(--d))`, zIndex: 1 } as CSSProperties}>
+              <TreeMailbox {...props.mailbox} />
+            </div>
+          )}
           <div style={{ position: "absolute", top: d(118), left: "50%", transform: "translateX(-50%)", "--s": "calc(1.18 * var(--d))" } as CSSProperties}>
             <CircleToggle value={view} onChange={onViewChange} />
           </div>
