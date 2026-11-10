@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { canContinue, canOpenStep, giftCharge, giftCopies, clampNote, dateStampAllowed, dayKey, dayLabel, giftReducer, newGift, noteLength, NOTE_MAX, previousStep, nextStep, stampCode, STEPS, writtenDate, type Gift } from "@/app/intro/gifts/gift";
+import { canContinue, canOpenStep, giftCharge, giftCopies, giftSteps, clampNote, dateStampAllowed, dayKey, dayLabel, giftReducer, newGift, noteLength, NOTE_MAX, previousStep, nextStep, stampCode, startWithPhoto, STEPS, writtenDate, type Gift } from "@/app/intro/gifts/gift";
 import { FRAMES, HANDS, INKS, RIBBONS, STAMPS, WRAPS, isAvailable } from "@/app/intro/gifts/gift-catalog";
 import { giftRecipients } from "@/app/intro/gifts/gift-recipients";
 
@@ -14,10 +14,12 @@ const complete = (): Gift => giftReducer(giftReducer(start(), { type: "to", to: 
 describe("steps (GIFT-2)", () => {
   it("runs To, Photo, Frame, Note, Wrap", () => {
     expect(STEPS).toEqual(["to", "photo", "frame", "note", "wrap"]);
-    expect(nextStep("to")).toBe("photo");
-    expect(nextStep("wrap")).toBeUndefined();
-    expect(previousStep("photo")).toBe("to");
-    expect(previousStep("to")).toBeUndefined();
+    expect(giftSteps(start())).toEqual(STEPS);
+    const at = (step: Gift["step"]) => giftReducer(start(), { type: "step", step });
+    expect(nextStep(at("to"))).toBe("photo");
+    expect(nextStep(at("wrap"))).toBeUndefined();
+    expect(previousStep(at("photo"))).toBe("to");
+    expect(previousStep(at("to"))).toBeUndefined();
   });
 
   it("needs a person, then a photo, and nothing else", () => {
@@ -43,6 +45,36 @@ describe("steps (GIFT-2)", () => {
     const g = giftReducer(giftReducer(complete(), { type: "note", text: "hi" }), { type: "step", step: "to" });
     expect(g.note.text).toBe("hi");
     expect(g.photo).toEqual(photo);
+  });
+});
+
+describe("a gift started from a photo (GIFT-17)", () => {
+  const fixed = () => startWithPhoto({ id: "g2", from: "me", now: NOW, photo, takenAt: new Date(2019, 4, 2).getTime() });
+  const at = (g: Gift, step: Gift["step"]) => giftReducer(g, { type: "step", step });
+
+  it("has the photo picked, starts on To and skips Photo both ways", () => {
+    const g = fixed();
+    expect(g.photo).toEqual(photo);
+    expect(g.photoFixed).toBe(true);
+    expect(g.step).toBe("to");
+    expect(g.frame.dateStamp).toBe(true);
+    expect(giftSteps(g)).toEqual(["to", "frame", "note", "wrap"]);
+    expect(nextStep(g)).toBe("frame");
+    expect(previousStep(at(g, "frame"))).toBe("to");
+  });
+
+  it("opens Frame once a person is picked, and never opens Photo", () => {
+    const g = fixed();
+    expect(canOpenStep(g, "frame", TODAY)).toBe(false);
+    const withPerson = giftReducer(g, { type: "to", to: { kind: "person", id: "leo" } });
+    expect(canOpenStep(withPerson, "frame", TODAY)).toBe(true);
+    expect(canOpenStep(withPerson, "photo", TODAY)).toBe(false);
+  });
+
+  it("keeps its photo: another photo and the Photo step are ignored", () => {
+    const g = fixed();
+    expect(giftReducer(g, { type: "photo", photo: { kind: "stored", photoId: "p2" } })).toBe(g);
+    expect(giftReducer(g, { type: "step", step: "photo" })).toBe(g);
   });
 });
 

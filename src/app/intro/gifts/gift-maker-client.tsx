@@ -14,7 +14,7 @@ import type { GiftCardLook } from "@/components/gifts/gift-card";
 import type { CircleGroup, Friend, Party } from "@/components/home/types";
 import type { SendResult } from "./gift-flow";
 import { GIFT_SKU, type Product } from "./payment";
-import { STEPS, canContinue, canOpenStep, dateStampAllowed, dayAfter, dayKey, dayLabel, defaultSide, monthCaption, monthFrameLabel, newestPhotos, nextStep, noteLength, NOTE_MAX, postmark, previousStep, sentLine, shortDay, stampCode, writtenDate, type Gift, type GiftAction, type GiftStep } from "./gift";
+import { canContinue, giftSteps, canOpenStep, dateStampAllowed, dayAfter, dayKey, dayLabel, defaultSide, monthCaption, monthFrameLabel, newestPhotos, nextStep, noteLength, NOTE_MAX, postmark, previousStep, sentLine, shortDay, stampCode, writtenDate, type Gift, type GiftAction, type GiftStep } from "./gift";
 import { FRAMES, HANDS, INKS, RIBBONS, STAMPS, WRAPS, colorOf, isAvailable } from "./gift-catalog";
 import { giftRecipients } from "./gift-recipients";
 
@@ -117,14 +117,15 @@ export function GiftMakerClient({ gift, dispatch, onClose, friends, groups, plac
 
   const base = defaultSide(gift.step);
   const side = base === "wrapped" || turnedOn !== gift.step ? base : base === "photo" ? "postcard" : "photo";
-  const chips: GiftChip[] = STEPS.map((id) => ({
+  const steps = giftSteps(gift);
+  const chips: GiftChip[] = steps.map((id) => ({
     id,
     label: LABELS[id],
-    state: id === gift.step ? "current" : STEPS.indexOf(id) < STEPS.indexOf(gift.step) ? "done" : "todo",
+    state: id === gift.step ? "current" : steps.indexOf(id) < steps.indexOf(gift.step) ? "done" : "todo",
     enabled: canOpenStep(gift, id, today),
   }));
-  const next = nextStep(gift.step);
-  const back = previousStep(gift.step);
+  const next = nextStep(gift);
+  const back = previousStep(gift);
   const go = (step: GiftStep) => dispatch({ type: "step", step });
   const pickPhoto = (id: string) => {
     const p = list?.find((x) => x.id === id);

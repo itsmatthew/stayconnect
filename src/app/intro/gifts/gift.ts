@@ -22,6 +22,8 @@ export type Gift = {
   takenAt?: number;
   /** `takenAt` is the file's modified date, not a capture date (D5-4). */
   fileDated?: true;
+  /** Started from one photo (Daily 5's "gift"), so the photo can't change and there's no Photo step (GIFT-17). */
+  photoFixed?: true;
   frame: { id: string; dateStamp: boolean };
   note: { text: string; hand: string; ink: string; stamp: string };
   wrap: { pattern: string; ribbon: string };
@@ -64,6 +66,11 @@ export function newGift({ id, from, now }: { id: string; from: string; now: numb
   };
 }
 
+/** A new gift with this photo already picked and kept: To, Frame, Note, Wrap (GIFT-17). */
+export function startWithPhoto({ id, from, now, ...photo }: { id: string; from: string; now: number; photo: GiftPhoto; takenAt?: number; fileDated?: true }): Gift {
+  return { ...giftReducer(newGift({ id, from, now }), { type: "photo", ...photo }), photoFixed: true };
+}
+
 /** Counts code points, so an emoji is one. */
 export const noteLength = (text: string) => [...text].length;
 export const clampNote = (text: string) => [...text].slice(0, NOTE_MAX).join("");
@@ -72,6 +79,8 @@ export const clampNote = (text: string) => [...text].slice(0, NOTE_MAX).join("")
 export const dateStampAllowed = (g: Pick<Gift, "takenAt" | "fileDated">) => g.takenAt !== undefined && !g.fileDated;
 
 export function giftReducer(gift: Gift, action: GiftAction): Gift {
+  // A gift started from a photo keeps it (GIFT-17).
+  if (gift.photoFixed && (action.type === "photo" || (action.type === "step" && action.step === "photo"))) return gift;
   switch (action.type) {
     case "to":
       return { ...gift, to: action.to };
@@ -118,11 +127,17 @@ const stepDone = (gift: Gift, step: GiftStep, today: string): boolean => {
 
 export const canContinue = (gift: Gift, today: string) => stepDone(gift, gift.step, today);
 
-/** Any step up to the first unfinished one. */
-export const canOpenStep = (gift: Gift, step: GiftStep, today: string) => STEPS.slice(0, STEPS.indexOf(step)).every((s) => stepDone(gift, s, today));
+/** This gift's steps: all five, or four without Photo for a gift started from a photo (GIFT-2, GIFT-17). */
+export const giftSteps = (gift: Pick<Gift, "photoFixed">): readonly GiftStep[] => (gift.photoFixed ? STEPS.filter((s) => s !== "photo") : STEPS);
 
-export const nextStep = (step: GiftStep): GiftStep | undefined => STEPS[STEPS.indexOf(step) + 1];
-export const previousStep = (step: GiftStep): GiftStep | undefined => STEPS[STEPS.indexOf(step) - 1];
+/** Any of this gift's steps up to the first unfinished one. */
+export function canOpenStep(gift: Gift, step: GiftStep, today: string): boolean {
+  const steps = giftSteps(gift);
+  return steps.includes(step) && steps.slice(0, steps.indexOf(step)).every((s) => stepDone(gift, s, today));
+}
+
+export const nextStep = (gift: Pick<Gift, "step" | "photoFixed">): GiftStep | undefined => giftSteps(gift)[giftSteps(gift).indexOf(gift.step) + 1];
+export const previousStep = (gift: Pick<Gift, "step" | "photoFixed">): GiftStep | undefined => giftSteps(gift)[giftSteps(gift).indexOf(gift.step) - 1];
 
 /** What one recipient receives. Each has their own id, so each is unwrapped and kept on its own. */
 export type GiftCopy = { id: string; giftId: string; to: string };

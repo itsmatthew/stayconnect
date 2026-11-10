@@ -74,8 +74,6 @@ describe("send as a gift (MAIL-8)", () => {
     fireEvent.click(within(await firstCard()).getByRole("button", { name: "Send this photo as a gift" }));
     expect(await screen.findByRole("heading", { name: "Who's it for?" })).toBeTruthy();
     tap("Leo");
-    tap(/^Next: photo/);
-    expect(screen.getAllByRole("button", { name: /^Photo from / }).some((b) => b.getAttribute("aria-pressed") === "true")).toBe(true);
     tap(/^Next: frame/);
     tap(/^Next: note/);
     tap(/^Next: wrap/);
@@ -86,6 +84,38 @@ describe("send as a gift (MAIL-8)", () => {
     expect(toast.textContent).toContain("Wrapped and on its way to Leo");
     fireEvent.click(within(toast).getByRole("button", { name: "Dismiss" }));
     expect(screen.queryByText("Wrapped and on its way to Leo")).toBeNull();
+  });
+});
+
+describe("a Daily 5 gift keeps its photo (GIFT-17)", () => {
+  const chipNames = () => within(screen.getByRole("navigation", { name: "Gift steps" })).getAllByRole("button").map((c) => c.textContent);
+
+  it("has four steps, no camera roll, and Back from Frame goes to To", async () => {
+    await seed();
+    renderTab("Daily 5");
+    fireEvent.click(within(await firstCard()).getByRole("button", { name: "Send this photo as a gift" }));
+    await screen.findByRole("heading", { name: "Who's it for?" });
+    expect(chipNames()).toEqual(["1To", "2Frame", "3Note", "4Wrap"]);
+    tap("Leo");
+    tap(/^Next: frame/);
+    expect(screen.queryAllByRole("button", { name: /^Photo from / })).toEqual([]);
+    tap(/^Back/);
+    expect(screen.getByRole("heading", { name: "Who's it for?" })).toBeTruthy();
+  });
+
+  it("stays four steps when picked up again from Me", async () => {
+    await seed();
+    renderTab("Daily 5");
+    fireEvent.click(within(await firstCard()).getByRole("button", { name: "Send this photo as a gift" }));
+    await screen.findByRole("heading", { name: "Who's it for?" });
+    tap("Leo");
+    tap(/^Cancel/);
+    cleanup();
+    renderTab("Me");
+    tap("gifts");
+    tap(/send a gift/);
+    await screen.findByRole("navigation", { name: "Gift steps" });
+    expect(chipNames()).toEqual(["1To", "2Frame", "3Note", "4Wrap"]);
   });
 });
 
