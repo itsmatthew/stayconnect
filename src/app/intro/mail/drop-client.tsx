@@ -8,6 +8,7 @@ import type { Placements } from "../circle/rings";
 import type { Directory, FoundPerson } from "./directory";
 import { checkDrop, type DropRecord } from "./drop-limits";
 import { formatPhone, parseFindQuery } from "./find-query";
+import { rankCandidates } from "./search-rank";
 import type { DropOutcome, Mail, Share } from "./mail";
 
 /** What a drop needs, gathered once by AppClient (docs/specs/mail.md). */
@@ -27,6 +28,7 @@ const mutualLine = (p: FoundPerson) => `@${p.username} · ${p.mutual.count ? `${
 
 /** `accepts`: false when their "Who can drop in my mailbox" leaves you out (MAIL-10). A number is only known after the drop. */
 type Picked = { row: DropRow; to: string; outside: boolean; label: string; accepts: boolean; face?: Extract<DropRow, { kind: "person" }> };
+type Ranked = Picked & { name: string; inCircle: boolean; mutualCount: number; exactUsername?: boolean };
 type Done = { outcome: Extract<DropOutcome, { kind: "mailbox" | "invite" }>; picked: Picked };
 
 /** Drop it in a mailbox (docs/specs/mail.md): find someone, check the limits, drop, then the mailbox scene. */
@@ -53,17 +55,19 @@ export function DropClient({ photo, from, now, onClose, directory, mail, share, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [directory, query]);
 
-  const friendRows: Picked[] =
+  const typed = q.kind === "name" ? q.text : q.kind === "username" ? q.username : "";
+  const friendRows: Ranked[] =
     q.kind === "name"
       ? friends
           .filter((f) => f.name.toLowerCase().includes(q.text))
-          .map((f) => ({ row: { kind: "person", key: `friend:${f.id}`, name: f.name, look: f.look, detail: RING_WORDS[placements[f.id]] ?? "on Now & Then" }, to: f.id, outside: false, label: f.name, accepts: true }))
+          .map((f) => ({ row: { kind: "person", key: `friend:${f.id}`, name: f.name, look: f.look, detail: RING_WORDS[placements[f.id]] ?? "on Now & Then" }, to: f.id, outside: false, label: f.name, accepts: true, name: f.name, inCircle: true, mutualCount: 0 }))
       : [];
-  const strangerRows: Picked[] = found
+  const strangerRows: Ranked[] = found
     .filter((p) => !friends.some((f) => f.id === p.id))
-    .map((p) => ({ row: { kind: "person", key: `person:${p.id}`, name: p.name, look: p.look, detail: mutualLine(p) }, to: p.id, outside: true, label: p.name, accepts: p.canDrop }));
+    .map((p) => ({ row: { kind: "person", key: `person:${p.id}`, name: p.name, look: p.look, detail: mutualLine(p) }, to: p.id, outside: true, label: p.name, accepts: p.canDrop, name: p.name, inCircle: false, mutualCount: p.mutual.count, exactUsername: p.username === typed }));
   const phoneRows: Picked[] = q.kind === "phone" ? [{ row: { kind: "phone", key: `phone:${q.phone}`, number: formatPhone(q.phone) }, to: q.phone, outside: true, label: "this number", accepts: true }] : [];
-  const choices = [...phoneRows, ...friendRows, ...strangerRows];
+  // Ranked as MAIL-12: exact @username, your circle, mutual friends, then the name match.
+  const choices: Picked[] = [...phoneRows, ...rankCandidates([...friendRows, ...strangerRows], typed)];
   const picked = choices.find((c) => c.row.key === pickedKey);
   const check = picked && checkDrop(history, picked.outside, now());
   // Neutral on purpose: never says which setting they chose (MAIL-10).

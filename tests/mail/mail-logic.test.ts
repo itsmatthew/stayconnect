@@ -5,6 +5,7 @@ import { checkDrop, type DropRecord } from "@/app/intro/mail/drop-limits";
 import { fakeDirectory } from "@/app/intro/mail/directory";
 import { DEFAULT_WHO_CAN_DROP, WHO_CAN_DROP, isWhoCanDrop, mailboxAllows } from "@/app/intro/mail/mailbox-setting";
 import { formatPhone, normalizePhone, parseFindQuery } from "@/app/intro/mail/find-query";
+import { nameMatch, rankCandidates } from "@/app/intro/mail/search-rank";
 
 const DAY = 86_400_000;
 const NOW = new Date(2026, 10, 9, 12).getTime();
@@ -45,6 +46,12 @@ describe("finding people (MAIL-3)", () => {
     expect(await dir.search({ kind: "username", username: "theo" })).toEqual([]);
   });
 
+  it("finishes a partial @username as you type, but only for people who let themselves be found", async () => {
+    expect((await dir.search({ kind: "username", username: "kat" })).map((p) => p.id)).toEqual(["kate"]);
+    expect((await dir.search({ kind: "name", text: "kat" })).map((p) => p.id)).toEqual(["kate"]);
+    expect(await dir.search({ kind: "username", username: "the" })).toEqual([]);
+  });
+
   it("returns only a minimal card: photo, name, username, mutual friends, and whether you can drop", async () => {
     const [kate] = await dir.search({ kind: "name", text: "kate" });
     expect(Object.keys(kate).sort()).toEqual(["canDrop", "id", "look", "mutual", "name", "username"]);
@@ -55,6 +62,31 @@ describe("finding people (MAIL-3)", () => {
     expect(await dir.search({ kind: "phone", phone: "+15550123456" })).toEqual([]);
     expect(await dir.accountFor("+15550123456")).toBe("kate");
     expect(await dir.accountFor("+15559999999")).toBeUndefined();
+  });
+});
+
+describe("the order of results (MAIL-12)", () => {
+  const c = (name: string, mutualCount = 0, more: { inCircle?: boolean; exactUsername?: boolean } = {}) => ({ name, mutualCount, inCircle: false, ...more });
+
+  it("rates a match: first name, then a later name, then anywhere", () => {
+    expect(nameMatch("Kate Morgan", "kate")).toBe(0);
+    expect(nameMatch("Anna Kateb", "kate")).toBe(1);
+    expect(nameMatch("Mckate Lee", "kate")).toBe(2);
+    expect(nameMatch("Leo", "kate")).toBeUndefined();
+  });
+
+  it("puts an exact @username first, then your circle, then most mutual friends", () => {
+    const list = [c("Kate Sullivan"), c("Kate Morgan", 2), c("Kate Lin", 0, { inCircle: true }), c("Kate Bishop", 4), c("Kate Exact", 0, { exactUsername: true })];
+    expect(rankCandidates(list, "kate").map((p) => p.name)).toEqual(["Kate Exact", "Kate Lin", "Kate Bishop", "Kate Morgan", "Kate Sullivan"]);
+  });
+
+  it("with the same mutual friends, the better name match wins, then A to Z", () => {
+    const list = [c("Mckate Lee", 1), c("Anna Kateb", 1), c("Kate Zane", 1), c("Kate Adams", 1), c("Bo Katz", 1)];
+    expect(rankCandidates(list, "kat").map((p) => p.name)).toEqual(["Kate Adams", "Kate Zane", "Anna Kateb", "Bo Katz", "Mckate Lee"]);
+  });
+
+  it("puts someone matched only by username after name matches", () => {
+    expect(rankCandidates([c("Zed", 1), c("Kate Morgan", 1)], "kat").map((p) => p.name)).toEqual(["Kate Morgan", "Zed"]);
   });
 });
 

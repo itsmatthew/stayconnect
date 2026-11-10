@@ -120,6 +120,24 @@ describe("a Daily 5 gift keeps its photo (GIFT-17)", () => {
   });
 });
 
+describe("results as you type (MAIL-12)", () => {
+  it("orders people with the same name by mutual friends", async () => {
+    await openDrop();
+    search("kate");
+    await within(sheet()).findByRole("button", { name: /^Kate Sullivan/ });
+    const names = within(sheet()).getAllByRole("button", { name: /^Kate / }).map((b) => b.getAttribute("aria-label") ?? b.textContent ?? "");
+    const order = ["Kate Bishop", "Kate Morgan", "Kate Sullivan"].map((n) => names.findIndex((x) => x.startsWith(n)));
+    expect(order.every((i) => i >= 0)).toBe(true);
+    expect(order).toEqual([...order].sort((a, b) => a - b));
+  });
+
+  it("finishes a partial @username", async () => {
+    await openDrop();
+    search("@katem");
+    expect(await within(sheet()).findByRole("button", { name: /^Kate Morgan/ })).toBeTruthy();
+  });
+});
+
 describe("no per-person wait, and who can drop (MAIL-6, MAIL-10)", () => {
   it("lets you drop for the same person again right away", async () => {
     await openDrop();

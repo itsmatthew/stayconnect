@@ -283,6 +283,8 @@ export function placeholderGifts(now: number): ReceivedGift[] {
 export const placeholderDirectory: readonly DirectoryEntry[] = [
   { id: "kate-morgan", name: "Kate Morgan", username: "katemorgan", phone: "+15550123456", findableByName: true, mutual: ["Leo", "Ana"], look: { skin: "#F1C7A0", hair: "#B8562E", shirt: "#7A4E8C", bg: "#E6D3F0", ring: "#7A4E8C" } },
   { id: "katie-ruiz", name: "Katie Ruiz", username: "katieruiz", phone: "+15550198765", findableByName: true, mutual: ["Sam"], mailbox: "friendsOfFriends", look: { skin: "#C98A5C", hair: "#2A1C14", shirt: "#4F8F8B", bg: "#CFE0D4", ring: "#4F8F8B" } },
+  { id: "kate-bishop", name: "Kate Bishop", username: "katebishop", phone: "+15550133344", findableByName: true, mutual: ["Leo", "Ana", "Sam", "Priya"], look: { skin: "#E8B48C", hair: "#3B2A1E", shirt: "#B43A2A", bg: "#F6D9A8", ring: "#B43A2A" } },
+  { id: "kate-sullivan", name: "Kate Sullivan", username: "katesullivan", phone: "+15550144455", findableByName: true, mutual: [], look: { skin: "#F3D2B5", hair: "#D9A441", shirt: "#3F9AD8", bg: "#CFE0F4", ring: "#3F9AD8" } },
   { id: "theo-park", name: "Theo Park", username: "theopark", phone: "+15550111222", findableByName: false, mutual: [], mailbox: "circles", look: { skin: "#F1C7A0", hair: "#8C8C8C", shirt: "#2B3350", bg: "#F6D9A8", ring: "#2B3350" } },
 ];
 

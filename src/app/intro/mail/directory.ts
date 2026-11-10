@@ -15,7 +15,7 @@ export type FoundPerson = { id: string; name: string; username: string; look: Fa
  * and phone numbers are matched as hashes.
  */
 export interface Directory {
-  /** Names match only people who allow it; an exact username matches anyone. A phone number lists nobody. */
+  /** Names and the start of a username match only people who allow it; an exact username matches anyone. A phone number lists nobody. */
   search(query: FindQuery): Promise<FoundPerson[]>;
   /** The account behind a number, used only when dropping, so typing a number never shows who's on the app. */
   accountFor(phone: string): Promise<string | undefined>;
@@ -33,11 +33,11 @@ export function fakeDirectory(people: readonly DirectoryEntry[]): Directory {
   const card = (p: DirectoryEntry): FoundPerson => ({ id: p.id, name: p.name, username: p.username, look: p.look, mutual: { count: p.mutual.length, names: p.mutual.slice(0, 3) }, canDrop: allows(p) });
   return {
     async search(q) {
-      if (q.kind === "username") return people.filter((p) => p.username === q.username).map(card);
-      if (q.kind !== "name") return [];
-      const byUsername = people.filter((p) => p.username === q.text);
-      const byName = people.filter((p) => p.findableByName && p.name.toLowerCase().includes(q.text) && !byUsername.includes(p));
-      return [...byUsername, ...byName].map(card);
+      if (q.kind !== "name" && q.kind !== "username") return [];
+      const text = q.kind === "name" ? q.text : q.username;
+      // Finishing a partial username only for people who allow it, so hidden people can't be found letter by letter (MAIL-7).
+      const matches = (p: DirectoryEntry) => p.username === text || (p.findableByName && (p.username.startsWith(text) || (q.kind === "name" && p.name.toLowerCase().includes(text))));
+      return people.filter(matches).map(card);
     },
     accountFor: async (phone) => people.find((p) => p.phone === phone)?.id,
     canDropTo: async (id) => {
