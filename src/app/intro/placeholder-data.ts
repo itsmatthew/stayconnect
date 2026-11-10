@@ -282,8 +282,8 @@ export function placeholderGifts(now: number): ReceivedGift[] {
  */
 export const placeholderDirectory: readonly DirectoryEntry[] = [
   { id: "kate-morgan", name: "Kate Morgan", username: "katemorgan", phone: "+15550123456", findableByName: true, mutual: ["Leo", "Ana"], look: { skin: "#F1C7A0", hair: "#B8562E", shirt: "#7A4E8C", bg: "#E6D3F0", ring: "#7A4E8C" } },
-  { id: "katie-ruiz", name: "Katie Ruiz", username: "katieruiz", phone: "+15550198765", findableByName: true, mutual: ["Sam"], look: { skin: "#C98A5C", hair: "#2A1C14", shirt: "#4F8F8B", bg: "#CFE0D4", ring: "#4F8F8B" } },
-  { id: "theo-park", name: "Theo Park", username: "theopark", phone: "+15550111222", findableByName: false, mutual: [], look: { skin: "#F1C7A0", hair: "#8C8C8C", shirt: "#2B3350", bg: "#F6D9A8", ring: "#2B3350" } },
+  { id: "katie-ruiz", name: "Katie Ruiz", username: "katieruiz", phone: "+15550198765", findableByName: true, mutual: ["Sam"], mailbox: "friendsOfFriends", look: { skin: "#C98A5C", hair: "#2A1C14", shirt: "#4F8F8B", bg: "#CFE0D4", ring: "#4F8F8B" } },
+  { id: "theo-park", name: "Theo Park", username: "theopark", phone: "+15550111222", findableByName: false, mutual: [], mailbox: "circles", look: { skin: "#F1C7A0", hair: "#8C8C8C", shirt: "#2B3350", bg: "#F6D9A8", ring: "#2B3350" } },
 ];
 
 /** How the demo user signs a gift's postcard (docs/specs/gifts.md, GIFT-7). */

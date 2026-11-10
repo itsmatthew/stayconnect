@@ -18,6 +18,8 @@ type MeScreenProps = {
   onSendGift?: () => void;
   /** "Let people find me by name" (docs/specs/mail.md, MAIL-7). */
   findMe?: { on: boolean; onChange: (on: boolean) => void };
+  /** "Who can drop in my mailbox" (docs/specs/mail.md, MAIL-10). */
+  mailbox?: { options: readonly { id: string; label: string }[]; value: string; onChange: (id: string) => void };
 };
 
 /** The pill's look, 32 tall as designed; the button around it is 44 to tap. */
@@ -25,7 +27,7 @@ const pill = { width: "100%", height: s(32), boxSizing: "border-box", display: "
 const pillButton = { flex: 1, minHeight: 44, padding: 0, border: 0, background: "none", display: "flex", alignItems: "center", cursor: "pointer" } as const;
 
 /** Me (docs/specs/me.md): the posts / year / gifts row, then your 65 for that year. Profile and bio come later (TODO). */
-export function MeScreen({ year, years, onYearChange, tiles, nav, onSendGift, findMe }: MeScreenProps) {
+export function MeScreen({ year, years, onYearChange, tiles, nav, onSendGift, findMe, mailbox }: MeScreenProps) {
   const [view, setView] = useState<"posts" | "gifts">("posts");
   const [openKey, setOpenKey] = useState<string | null>(null);
   const open = tiles.find((t) => t.key === openKey);
@@ -43,6 +45,7 @@ export function MeScreen({ year, years, onYearChange, tiles, nav, onSendGift, fi
       </div>
       {view === "posts" ? <SixtyFiveGrid year={year} tiles={tiles} onOpen={setOpenKey} /> : <GiftShelf onSendGift={onSendGift} />}
       {findMe && <FindMeRow {...findMe} />}
+      {mailbox && <MailboxRow {...mailbox} />}
       {open?.photo && <TileViewer tile={{ ...open, photo: open.photo }} onClose={() => setOpenKey(null)} />}
     </TabFrame>
   );
@@ -61,6 +64,26 @@ function FindMeRow({ on, onChange }: { on: boolean; onChange: (on: boolean) => v
           <span style={{ position: "absolute", left: s(on ? 22 : 2), top: s(2), width: s(20), height: s(20), boxSizing: "border-box", borderRadius: "50%", background: "#FFF6DA", border: `${s(2)} solid ${NAVY}`, transition: "left .2s ease" }} />
         </span>
       </button>
+    </div>
+  );
+}
+
+/** "Who can drop in my mailbox": three choices, anyone by default (docs/specs/mail.md, MAIL-10). Each looks 32 tall and is 44 to tap. */
+function MailboxRow({ options, value, onChange }: NonNullable<MeScreenProps["mailbox"]>) {
+  return (
+    <div style={{ margin: `0 ${s(14)} ${s(24)}`, display: "flex", flexDirection: "column", gap: s(6) }}>
+      <span id="mailbox-from-label" style={{ fontSize: s(14), fontWeight: 800 }}>Who can drop in my mailbox</span>
+      <span style={{ fontSize: s(12), fontWeight: 500, color: "#5C5442" }}>Your circles always can.</span>
+      <div role="radiogroup" aria-labelledby="mailbox-from-label" style={{ display: "flex", gap: s(6) }}>
+        {options.map((o) => {
+          const on = o.id === value;
+          return (
+            <button key={o.id} type="button" role="radio" aria-checked={on} onClick={() => onChange(o.id)} style={{ flex: 1, minHeight: 44, padding: 0, border: 0, background: "none", display: "flex", alignItems: "center", cursor: "pointer" }}>
+              <span style={{ width: "100%", minHeight: s(32), boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "center", padding: `0 ${s(6)}`, borderRadius: s(16), border: `${s(2)} solid ${NAVY}`, background: on ? NAVY : "#FFF6DA", color: on ? "#FFF6DA" : NAVY, fontSize: s(12), fontWeight: 800, textAlign: "center", lineHeight: 1.15 }}>{o.label}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

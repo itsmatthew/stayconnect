@@ -23,6 +23,8 @@ export function localMail(suffix: string, directory: Directory, invites: Invites
     async drop(req) {
       const account = req.to.kind === "person" ? req.to.id : await directory.accountFor(req.to.phone);
       if (!account && !invitesEnabled) return { kind: "invitesUnavailable" };
+      // Only a drop to someone outside your circle can be turned away; your circle is always let in (MAIL-10).
+      if (account && req.outside && !(await directory.canDropTo(account))) return { kind: "notAccepting" };
       const id = `${req.at}-${Math.random().toString(36).slice(2, 8)}`;
       const to = account ?? (req.to.kind === "phone" ? req.to.phone : "");
       localStorage.setItem(key, JSON.stringify([...read(), { id, to, at: req.at, outside: req.outside, photoId: req.photoId }]));

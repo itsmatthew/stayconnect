@@ -25,8 +25,9 @@ const INVITE_TEXT = "I dropped a photo in your mailbox on Now & Then.";
 const shortDate = (t: number) => new Date(t).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 const mutualLine = (p: FoundPerson) => `@${p.username} · ${p.mutual.count ? `${p.mutual.count} mutual · ${p.mutual.names.join(", ")}` : "no mutual friends"}`;
 
-type Picked = { row: DropRow; to: string; outside: boolean; label: string; face?: Extract<DropRow, { kind: "person" }> };
-type Done = { outcome: Exclude<DropOutcome, { kind: "invitesUnavailable" }>; picked: Picked };
+/** `accepts`: false when their "Who can drop in my mailbox" leaves you out (MAIL-10). A number is only known after the drop. */
+type Picked = { row: DropRow; to: string; outside: boolean; label: string; accepts: boolean; face?: Extract<DropRow, { kind: "person" }> };
+type Done = { outcome: Extract<DropOutcome, { kind: "mailbox" | "invite" }>; picked: Picked };
 
 /** Drop it in a mailbox (docs/specs/mail.md): find someone, check the limits, drop, then the mailbox scene. */
 export function DropClient({ photo, from, now, onClose, directory, mail, share, friends, placements }: DropClientProps) {
@@ -56,21 +57,22 @@ export function DropClient({ photo, from, now, onClose, directory, mail, share, 
     q.kind === "name"
       ? friends
           .filter((f) => f.name.toLowerCase().includes(q.text))
-          .map((f) => ({ row: { kind: "person", key: `friend:${f.id}`, name: f.name, look: f.look, detail: RING_WORDS[placements[f.id]] ?? "on Now & Then" }, to: f.id, outside: false, label: f.name }))
+          .map((f) => ({ row: { kind: "person", key: `friend:${f.id}`, name: f.name, look: f.look, detail: RING_WORDS[placements[f.id]] ?? "on Now & Then" }, to: f.id, outside: false, label: f.name, accepts: true }))
       : [];
   const strangerRows: Picked[] = found
     .filter((p) => !friends.some((f) => f.id === p.id))
-    .map((p) => ({ row: { kind: "person", key: `person:${p.id}`, name: p.name, look: p.look, detail: mutualLine(p) }, to: p.id, outside: true, label: p.name }));
-  const phoneRows: Picked[] = q.kind === "phone" ? [{ row: { kind: "phone", key: `phone:${q.phone}`, number: formatPhone(q.phone) }, to: q.phone, outside: true, label: "this number" }] : [];
+    .map((p) => ({ row: { kind: "person", key: `person:${p.id}`, name: p.name, look: p.look, detail: mutualLine(p) }, to: p.id, outside: true, label: p.name, accepts: p.canDrop }));
+  const phoneRows: Picked[] = q.kind === "phone" ? [{ row: { kind: "phone", key: `phone:${q.phone}`, number: formatPhone(q.phone) }, to: q.phone, outside: true, label: "this number", accepts: true }] : [];
   const choices = [...phoneRows, ...friendRows, ...strangerRows];
   const picked = choices.find((c) => c.row.key === pickedKey);
-  const check = picked && checkDrop(history, picked.to, picked.outside, now());
+  const check = picked && checkDrop(history, picked.outside, now());
+  // Neutral on purpose: never says which setting they chose (MAIL-10).
   const limit =
-    check && !check.ok
-      ? check.reason === "person"
-        ? `You dropped ${picked.label} a photo recently. You can send another on ${shortDate(check.until)}.`
-        : `You've dropped 3 photos outside your circle this week. You can send another on ${shortDate(check.until)}.`
-      : undefined;
+    picked && !picked.accepts
+      ? `${picked.label} isn't taking drops right now.`
+      : check && !check.ok
+        ? `You've dropped 3 photos outside your circle this week. You can send another on ${shortDate(check.until)}.`
+        : undefined;
 
   const drop = async () => {
     if (!picked || limit) return;
@@ -80,6 +82,7 @@ export function DropClient({ photo, from, now, onClose, directory, mail, share, 
     const outcome = await mail.drop({ to, photoId: photo.id, takenAt: photo.takenAt, from, at: now(), outside: picked.outside });
     setBusy(false);
     if (outcome.kind === "invitesUnavailable") return setProblem("They're not on Now & Then yet, and invites aren't open yet.");
+    if (outcome.kind === "notAccepting") return setProblem(picked.row.kind === "phone" ? "This number isn't taking drops right now." : `${picked.label} isn't taking drops right now.`);
     if (outcome.kind === "invite") await share.share({ url: outcome.link, text: INVITE_TEXT });
     setDone({ outcome, picked });
   };

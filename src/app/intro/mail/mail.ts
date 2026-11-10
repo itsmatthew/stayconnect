@@ -13,7 +13,8 @@ export type DropRequest = {
 };
 
 /** Where it went. Only known after the drop, never while typing a number (MAIL-4). */
-export type DropOutcome = { kind: "mailbox" } | { kind: "invite"; link: string } | { kind: "invitesUnavailable" };
+/** `notAccepting`: their "Who can drop in my mailbox" leaves you out (MAIL-10). Nothing is sent or counted. */
+export type DropOutcome = { kind: "mailbox" } | { kind: "invite"; link: string } | { kind: "invitesUnavailable" } | { kind: "notAccepting" };
 
 /** TODO(server): only the fake in `local-mail.ts` exists, so a drop stays on this device. Free: drops never touch payment. */
 export interface Mail {

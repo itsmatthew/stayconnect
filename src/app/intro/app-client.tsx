@@ -21,8 +21,10 @@ import { browserShare } from "./mail/browser-share";
 import type { Directory } from "./mail/directory";
 import type { FindMeSetting } from "./mail/find-me";
 import { localFindMe } from "./mail/local-find-me";
+import { localMailboxSetting } from "./mail/local-mailbox-setting";
 import { localInvites, localMail } from "./mail/local-mail";
 import type { Mail, Share } from "./mail/mail";
+import type { MailboxSetting } from "./mail/mailbox-setting";
 import { localGiftDelivery } from "./gifts/local-gift-delivery";
 import { localGiftEvents } from "./gifts/local-gift-events";
 import { localPayment } from "./gifts/local-payment";
@@ -70,6 +72,8 @@ type AppClientProps = {
   mail?: (storageSuffix: string, directory: Directory) => Mail;
   /** "Let people find me by name" (MAIL-7). */
   findMe?: (storageSuffix: string) => FindMeSetting;
+  /** "Who can drop in my mailbox" (MAIL-10). */
+  mailboxSetting?: (storageSuffix: string) => MailboxSetting;
   hasFace?: (image: Blob) => Promise<boolean>;
   readCapture?: (f: File) => Promise<number | undefined>;
   decode?: (f: File) => Promise<Blob>;
@@ -133,6 +137,7 @@ export function AppClient({
   // Invite links go nowhere until issue #26's landing page exists, so production doesn't make them yet (MAIL-5).
   mail = (suffix, directory) => localMail(suffix, directory, localInvites(typeof location === "undefined" ? "" : location.origin), { invitesEnabled: process.env.NODE_ENV !== "production" }),
   findMe = localFindMe,
+  mailboxSetting = localMailboxSetting,
   hasFace = detectFaces,
   readCapture = captureDate,
   decode = downscale,
@@ -149,6 +154,7 @@ export function AppClient({
   const [shareService] = useState(share);
   const [mailService] = useState(() => mail(data.storageSuffix, data.directory));
   const [findMeSetting] = useState(() => findMe(data.storageSuffix));
+  const [mailboxFrom] = useState(() => mailboxSetting(data.storageSuffix));
   const [names, saveGroupName] = useGroupNames(groupNames(data.storageSuffix));
   // Names and colors are applied once, here, so every screen shows the same ones (COLOR-9, RENAME-7).
   const viewerData = useMemo(() => ({ ...data, groups: withViewerColors(withGroupNames(data.groups, names), overrides) }), [data, names, overrides]);
@@ -271,6 +277,6 @@ export function AppClient({
         />
       );
     case "Me":
-      return <MeClient data={viewerData} now={now} store={archive} nav={nav} gifts={giftDeps} findMe={findMeSetting} />;
+      return <MeClient data={viewerData} now={now} store={archive} nav={nav} gifts={giftDeps} findMe={findMeSetting} mailboxSetting={mailboxFrom} />;
   }
 }

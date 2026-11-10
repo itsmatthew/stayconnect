@@ -7,6 +7,7 @@ import { openArchiveStore } from "@/app/intro/archive/archive-store";
 import { openPhotoStore } from "@/app/intro/daily5/photo-store";
 import { localPayment } from "@/app/intro/gifts/local-payment";
 import { findMeKey } from "@/app/intro/mail/local-find-me";
+import { mailboxSettingKey } from "@/app/intro/mail/local-mailbox-setting";
 import { dropsKey } from "@/app/intro/mail/local-mail";
 import type { Share } from "@/app/intro/mail/mail";
 import { openOrnamentStore } from "@/app/intro/ornaments/ornament-store";
@@ -119,6 +120,52 @@ describe("a Daily 5 gift keeps its photo (GIFT-17)", () => {
   });
 });
 
+describe("no per-person wait, and who can drop (MAIL-6, MAIL-10)", () => {
+  it("lets you drop for the same person again right away", async () => {
+    await openDrop();
+    search("kate");
+    fireEvent.click(await within(sheet()).findByRole("button", { name: /^Kate Morgan/ }));
+    tap("Drop in Kate Morgan’s mailbox");
+    await screen.findByRole("heading", { name: "In Kate Morgan’s mailbox" });
+    tap("Done");
+    fireEvent.click(within(await firstCard()).getByRole("button", { name: "Drop this photo in someone's mailbox" }));
+    search("kate");
+    fireEvent.click(await within(sheet()).findByRole("button", { name: /^Kate Morgan/ }));
+    expect(sheet().textContent).not.toContain("recently");
+    expect((within(sheet()).getByRole("button", { name: "Drop in Kate Morgan’s mailbox" }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("shows someone who isn't taking drops, with the button off and no reason given", async () => {
+    await openDrop();
+    search("@theopark");
+    fireEvent.click(await within(sheet()).findByRole("button", { name: /^Theo Park/ }));
+    expect(sheet().textContent).toContain("Theo Park isn't taking drops right now.");
+    expect((within(sheet()).getByRole("button", { name: "Drop in Theo Park’s mailbox" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("by number, says so only after the drop, and records nothing", async () => {
+    await openDrop();
+    search("(555) 011-1222");
+    fireEvent.click(await within(sheet()).findByRole("button", { name: /^Drop for \(555\) 011-1222/ }));
+    tap("Drop it in their mailbox");
+    expect(await within(sheet()).findByText("This number isn't taking drops right now.")).toBeTruthy();
+    expect(localStorage.getItem(dropsKey(".demo"))).toBeNull();
+  });
+
+  it("Me has the setting, on anyone, and saves a change", async () => {
+    renderTab("Me");
+    const group = await screen.findByRole("radiogroup", { name: "Who can drop in my mailbox" });
+    const options = within(group).getAllByRole("radio");
+    expect(options.map((o) => o.textContent)).toEqual(["Anyone", "Friends of friends", "Only my circles"]);
+    expect(options[0].getAttribute("aria-checked")).toBe("true");
+    for (const o of options) expect(o.style.minHeight).toBe("44px");
+    fireEvent.click(options[2]);
+    expect(options[2].getAttribute("aria-checked")).toBe("true");
+    await new Promise((r) => setTimeout(r, 0));
+    expect(localStorage.getItem(mailboxSettingKey(".demo"))).toBe("circles");
+  });
+});
+
 describe("drop in a mailbox (MAIL-2 to MAIL-5)", () => {
   it("says who it's for, and waits for someone to be picked", async () => {
     await openDrop();
@@ -182,16 +229,13 @@ describe("drop in a mailbox (MAIL-2 to MAIL-5)", () => {
     expect(shared).toHaveLength(2);
   });
 
-  it("holds back a second drop to the same person, and says when", async () => {
+  it("holds back a fourth drop outside your circle in a week, and says when", async () => {
+    const at = NOW - 86_400_000;
+    localStorage.setItem(dropsKey(".demo"), JSON.stringify(["a", "b", "c"].map((to, i) => ({ id: `d${i}`, to, at, outside: true, photoId: "p" }))));
     await openDrop();
     search("kate");
     fireEvent.click(await within(sheet()).findByRole("button", { name: /^Kate Morgan/ }));
-    tap("Drop in Kate Morgan’s mailbox");
-    tap(await screen.findByRole("button", { name: "Done" }).then(() => "Done"));
-    fireEvent.click(within(await firstCard()).getByRole("button", { name: "Drop this photo in someone's mailbox" }));
-    search("kate");
-    fireEvent.click(await within(sheet()).findByRole("button", { name: /^Kate Morgan/ }));
-    expect(sheet().textContent).toContain("You dropped Kate Morgan a photo recently. You can send another on Nov 23.");
+    expect(await within(sheet()).findByText("You've dropped 3 photos outside your circle this week. You can send another on Nov 15.")).toBeTruthy();
     expect((within(sheet()).getByRole("button", { name: "Drop in Kate Morgan’s mailbox" }) as HTMLButtonElement).disabled).toBe(true);
   });
 });

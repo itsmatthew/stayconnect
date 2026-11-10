@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { checkDrop, type DropRecord } from "@/app/intro/mail/drop-limits";
 import { fakeDirectory } from "@/app/intro/mail/directory";
+import { DEFAULT_WHO_CAN_DROP, WHO_CAN_DROP, isWhoCanDrop, mailboxAllows } from "@/app/intro/mail/mailbox-setting";
 import { formatPhone, normalizePhone, parseFindQuery } from "@/app/intro/mail/find-query";
 
 const DAY = 86_400_000;
@@ -30,7 +31,7 @@ describe("reading the search box (MAIL-2)", () => {
 describe("finding people (MAIL-3)", () => {
   const dir = fakeDirectory([
     { id: "kate", name: "Kate Morgan", username: "katem", phone: "+15550123456", findableByName: true, mutual: ["Leo", "Ana"], look: { skin: "#F1C7A0", hair: "#B8562E", shirt: "#7A4E8C", bg: "#E6D3F0", ring: "#7A4E8C" } },
-    { id: "theo", name: "Theo Park", username: "theop", phone: "+15550000000", findableByName: false, mutual: [], look: { skin: "#F1C7A0", hair: "#8C8C8C", shirt: "#4F8F8B", bg: "#F6D9A8", ring: "#4F8F8B" } },
+    { id: "theo", name: "Theo Park", username: "theop", phone: "+15550000000", findableByName: false, mutual: [], mailbox: "friendsOfFriends", look: { skin: "#F1C7A0", hair: "#8C8C8C", shirt: "#4F8F8B", bg: "#F6D9A8", ring: "#4F8F8B" } },
   ]);
 
   it("matches names, ignoring case, only for people who let themselves be found", async () => {
@@ -44,9 +45,9 @@ describe("finding people (MAIL-3)", () => {
     expect(await dir.search({ kind: "username", username: "theo" })).toEqual([]);
   });
 
-  it("returns only a minimal card: photo, name, username and mutual friends", async () => {
+  it("returns only a minimal card: photo, name, username, mutual friends, and whether you can drop", async () => {
     const [kate] = await dir.search({ kind: "name", text: "kate" });
-    expect(Object.keys(kate).sort()).toEqual(["id", "look", "mutual", "name", "username"]);
+    expect(Object.keys(kate).sort()).toEqual(["canDrop", "id", "look", "mutual", "name", "username"]);
     expect(kate.mutual).toEqual({ count: 2, names: ["Leo", "Ana"] });
   });
 
@@ -60,32 +61,60 @@ describe("finding people (MAIL-3)", () => {
 describe("limits on drops outside your circle (MAIL-6)", () => {
   const out = (to: string, daysAgo: number): DropRecord => ({ to, at: NOW - daysAgo * DAY, outside: true });
 
-  it("allows one drop to the same person every 14 days", () => {
-    expect(checkDrop([out("kate", 13)], "kate", true, NOW)).toEqual({ ok: false, reason: "person", until: NOW + 1 * DAY });
-    expect(checkDrop([out("kate", 14)], "kate", true, NOW)).toEqual({ ok: true });
+  it("has no per-person wait: the same person can get another drop right away", () => {
+    expect(checkDrop([out("kate", 0)], true, NOW)).toEqual({ ok: true });
+    expect(checkDrop([out("kate", 0), out("kate", 1)], true, NOW)).toEqual({ ok: true });
   });
 
   it("allows three drops outside your circle in any 7 days, invites included", () => {
     const three = [out("a", 1), out("b", 2), out("+15551112222", 6)];
-    expect(checkDrop(three, "d", true, NOW)).toEqual({ ok: false, reason: "week", until: NOW + 1 * DAY });
-    expect(checkDrop([out("a", 1), out("b", 2), out("c", 7)], "d", true, NOW)).toEqual({ ok: true });
+    expect(checkDrop(three, true, NOW)).toEqual({ ok: false, until: NOW + 1 * DAY });
+    expect(checkDrop([out("a", 1), out("b", 2), out("c", 7)], true, NOW)).toEqual({ ok: true });
   });
 
   it("never limits drops to people in your circle, and they don't count", () => {
     const many = [out("a", 0), out("b", 0), out("c", 0), { to: "leo", at: NOW, outside: false }];
-    expect(checkDrop(many, "leo", false, NOW)).toEqual({ ok: true });
-    expect(checkDrop([{ to: "x", at: NOW, outside: false }, { to: "y", at: NOW, outside: false }, { to: "z", at: NOW, outside: false }], "d", true, NOW)).toEqual({ ok: true });
+    expect(checkDrop(many, false, NOW)).toEqual({ ok: true });
+    expect(checkDrop([{ to: "x", at: NOW, outside: false }, { to: "y", at: NOW, outside: false }, { to: "z", at: NOW, outside: false }], true, NOW)).toEqual({ ok: true });
+  });
+});
+
+describe("who can drop in my mailbox (MAIL-10)", () => {
+  it("offers anyone, friends of friends or only my circles, and starts at anyone", () => {
+    expect(WHO_CAN_DROP).toEqual(["anyone", "friendsOfFriends", "circles"]);
+    expect(DEFAULT_WHO_CAN_DROP).toBe("anyone");
+    expect(isWhoCanDrop("circles")).toBe(true);
+    expect(isWhoCanDrop("everyone")).toBe(false);
+  });
+
+  it("always lets your circles in; friends of friends needs a mutual friend", () => {
+    for (const setting of WHO_CAN_DROP) expect(mailboxAllows(setting, { inCircle: true, mutualCount: 0 })).toBe(true);
+    expect(mailboxAllows("anyone", { inCircle: false, mutualCount: 0 })).toBe(true);
+    expect(mailboxAllows("friendsOfFriends", { inCircle: false, mutualCount: 1 })).toBe(true);
+    expect(mailboxAllows("friendsOfFriends", { inCircle: false, mutualCount: 0 })).toBe(false);
+    expect(mailboxAllows("circles", { inCircle: false, mutualCount: 3 })).toBe(false);
+  });
+
+  it("the directory says whether you can drop, by search and by account", async () => {
+    const dir = fakeDirectory([
+      { id: "kate", name: "Kate Morgan", username: "katem", phone: "+15550123456", findableByName: true, mutual: ["Leo"], look: { skin: "#F1C7A0", hair: "#B8562E", shirt: "#7A4E8C", bg: "#E6D3F0", ring: "#7A4E8C" } },
+      { id: "theo", name: "Theo Park", username: "theop", phone: "+15550000000", findableByName: true, mutual: [], mailbox: "friendsOfFriends", look: { skin: "#F1C7A0", hair: "#8C8C8C", shirt: "#4F8F8B", bg: "#F6D9A8", ring: "#4F8F8B" } },
+    ]);
+    expect((await dir.search({ kind: "name", text: "kate" }))[0].canDrop).toBe(true);
+    expect((await dir.search({ kind: "name", text: "theo" }))[0].canDrop).toBe(false);
+    expect(await dir.canDropTo("kate")).toBe(true);
+    expect(await dir.canDropTo("theo")).toBe(false);
   });
 });
 
 describe("portable (MAIL-9)", () => {
   const DIR = path.join(__dirname, "../../src/app/intro/mail");
-  const PLATFORM = ["local-mail.ts", "local-find-me.ts", "browser-share.ts", "use-find-me.ts"];
+  const PLATFORM = ["local-mail.ts", "local-find-me.ts", "local-mailbox-setting.ts", "browser-share.ts", "use-find-me.ts", "use-saved-setting.ts"];
   const logic = readdirSync(DIR).filter((f) => f.endsWith(".ts") && !PLATFORM.includes(f));
 
   it("has the logic files, with server TODOs on the interfaces", () => {
-    expect(logic).toEqual(expect.arrayContaining(["find-query.ts", "directory.ts", "drop-limits.ts", "mail.ts", "find-me.ts"]));
-    for (const f of ["directory.ts", "mail.ts", "find-me.ts"]) expect(readFileSync(path.join(DIR, f), "utf8")).toContain("TODO(server)");
+    expect(logic).toEqual(expect.arrayContaining(["find-query.ts", "directory.ts", "drop-limits.ts", "mail.ts", "find-me.ts", "mailbox-setting.ts"]));
+    for (const f of ["directory.ts", "mail.ts", "find-me.ts", "mailbox-setting.ts"]) expect(readFileSync(path.join(DIR, f), "utf8")).toContain("TODO(server)");
   });
 
   it.each(logic)("%s uses no React or browser APIs", (file) => {
