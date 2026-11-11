@@ -9,12 +9,17 @@ export function useReceived(store: ReceivedGiftStore, seed: () => ReceivedGift[]
   const [list, setList] = useState<ReceivedGift[]>(seed);
   const current = useRef(list);
   const [saved] = useState(store);
+  /** The saved list has been read (or there was none), so the list is the real one. */
+  const [loaded, setLoaded] = useState(false);
   useEffect(() => {
     let live = true;
     void saved.load().then((v) => {
-      if (!live || !v) return;
-      current.current = v;
-      setList(v);
+      if (!live) return;
+      if (v) {
+        current.current = v;
+        setList(v);
+      }
+      setLoaded(true);
     });
     return () => {
       live = false;
@@ -30,6 +35,7 @@ export function useReceived(store: ReceivedGiftStore, seed: () => ReceivedGift[]
   );
   return {
     list,
+    loaded,
     open: (id: string) => change(openGift(current.current, id, now(), dayKey(now()))),
     receive: (g: ReceivedGift) => change(receiveGift(current.current, g)),
   };

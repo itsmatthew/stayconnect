@@ -33,8 +33,8 @@ export const canOpen = (g: Pick<ReceivedGift, "opens">, today: string) => g.open
 
 export const isOpened = (g: ReceivedGift) => g.openedAt !== undefined;
 
-/** Unopened gifts, newest first: the newest one is the one that glows and shakes (GIFT-19). */
-export const underTree = (list: readonly ReceivedGift[]) => list.filter((g) => !isOpened(g)).sort((a, b) => b.sentAt - a.sentAt);
+/** Gifts that pop up when the app opens: unopened, their day come, oldest first (GIFT-19). */
+export const waiting = (list: readonly ReceivedGift[], today: string) => list.filter((g) => !isOpened(g) && canOpen(g, today)).sort((a, b) => a.sentAt - b.sentAt);
 
 /** Opened gifts, the latest opened first (GIFT-21). */
 export const shelf = (list: readonly ReceivedGift[]) => list.filter(isOpened).sort((a, b) => b.openedAt! - a.openedAt!);

@@ -25,7 +25,7 @@ export const SIZES: Readonly<Record<Ring, { max: number; min: number }>> = {
   bloom: { max: 17, min: 8 },
 };
 
-/** The tree's box: the glow around the canopy, the trunk and the gift pile below it. */
+/** The tree's box: the glow around the canopy and the trunk below it. */
 export const TREE_BOX = { width: 340, height: 420, cx: 170, cy: 170 } as const;
 
 /** Clear space between avatars, and between an avatar and its band's edges. */

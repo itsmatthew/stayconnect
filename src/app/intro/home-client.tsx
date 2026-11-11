@@ -10,8 +10,8 @@ import type { NavProps } from "@/components/home/main-nav";
 import type { CircleGroup, Friend } from "@/components/home/types";
 import { initialCircleState, members, overGuide, type CircleAction, type CircleState } from "./circle/rings";
 import type { ReceivedGift } from "./gifts/received";
-import { shelf as shelfOf, underTree } from "./gifts/received";
-import { testGift, treeGifts, useUnwrap } from "./gifts/received-client";
+import { shelf as shelfOf } from "./gifts/received";
+import { testGift } from "./gifts/received-client";
 import { activity, isLit, suggestion } from "./circle/suggestions";
 import { openingCenter, rotate, visibleAround } from "./circle-carousel";
 import { RenameSheetClient } from "./group-names/rename-sheet-client";
@@ -29,10 +29,10 @@ type HomeClientProps = {
   chat?: ChatState;
   circle?: CircleState;
   circleDispatch?: (a: CircleAction) => void;
-  /** Gifts you've received: wrapped ones wait under your tree (docs/specs/gifts.md, GIFT-19). */
+  /** Gifts you've received; "your gifts" on the tree counts those on your shelf (docs/specs/gifts.md, GIFT-21). */
   gifts?: readonly ReceivedGift[];
-  /** Opening one, a test gift arriving (dev only), and the way to your shelf. */
-  giftActions?: { open: (id: string) => void; receive: (g: ReceivedGift) => void; onShowShelf: () => void; viewerName: string };
+  /** A test gift arriving (dev only, GIFT-22), and the way to your shelf. Waiting gifts pop up from AppClient (GIFT-19). */
+  giftActions?: { receive: (g: ReceivedGift) => void; onShowShelf: () => void };
   now?: () => number;
   onOpenChat?: (friendId: string) => void;
   nav?: NavProps;
@@ -45,7 +45,7 @@ type HomeClientProps = {
   mail?: { state: InboxState; dispatch: (a: InboxAction) => void; recipientName?: string };
 };
 
-const noGiftActions = { open: () => {}, receive: () => {}, onShowShelf: () => {}, viewerName: "" };
+const noGiftActions = { receive: () => {}, onShowShelf: () => {} };
 const noMail = { state: { letters: [], blocked: [], reports: [] }, dispatch: () => {} };
 
 const noChat = initialChatState([]);
@@ -72,9 +72,7 @@ export function HomeClient({
   // Your circle is everyone you've placed or can place: the dev control sends as some of them (MAILBOX-8).
   const circleSenders: MailSender[] = friends.map((f) => ({ id: f.id, name: f.name, look: f.look, inCircle: true }));
   const mailbox = useMailbox({ ...mail, now, circle: circleSenders });
-  const unwrap = useUnwrap({ list: gifts, open: giftActions.open, viewerName: giftActions.viewerName, onKept: giftActions.onShowShelf });
   const [testGifts, setTestGifts] = useState(0);
-  const wrapped = underTree(gifts);
   const [center, setCenter] = useState(() => openingCenter(groups));
   const [sheet, setSheet] = useState<OpenSheet | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
@@ -101,8 +99,6 @@ export function HomeClient({
       <CircleScreen
         mailbox={mailbox.tree}
         people={people}
-        gifts={treeGifts(gifts)}
-        openGift={wrapped.length ? { label: `Open ${wrapped[0].from.name}'s gift, ${wrapped.length} wrapped`, onOpen: () => unwrap.start(wrapped[0].id) } : undefined}
         shelf={{ count: shelfOf(gifts).length, onOpen: giftActions.onShowShelf }}
         crowded={RINGS.filter((r) => overGuide(r, placed.filter((p) => p.ring === r).length))}
         suggestion={next && name ? { name, to: next.to } : undefined}
@@ -115,18 +111,19 @@ export function HomeClient({
         nav={nav}
       />
       {mailbox.screens}
-      {unwrap.screen}
       {/* Dev only (Next inlines NODE_ENV, so production drops it): receive a gift to test opening one (GIFT-22). */}
-      {process.env.NODE_ENV !== "production" && !unwrap.screen && (
+      {process.env.NODE_ENV !== "production" && (
         <button
           type="button"
           onClick={() => {
             giftActions.receive(testGift(testGifts, now()));
             setTestGifts(testGifts + 1);
           }}
-          style={{ position: "fixed", left: 8, top: 56, zIndex: 45, minHeight: 44, padding: "0 12px", border: "2px dashed #2B3350", borderRadius: 12, background: "rgba(255,248,236,.92)", color: "#2B3350", font: "800 12px system-ui, sans-serif", cursor: "pointer" }}
+          aria-label="Receive a test gift"
+          title="Receive a test gift (dev only)"
+          style={{ position: "fixed", left: 4, top: 250, zIndex: 45, width: 44, height: 44, padding: 0, border: "1.5px dashed #2B3350", borderRadius: 22, background: "rgba(255,248,236,.85)", color: "#2B3350", font: "800 13px system-ui, sans-serif", cursor: "pointer" }}
         >
-          Receive a test gift
+          🎁+
         </button>
       )}
       </>

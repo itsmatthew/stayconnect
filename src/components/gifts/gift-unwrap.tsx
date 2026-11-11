@@ -20,7 +20,6 @@ type GiftUnwrapProps = {
   onPull: () => void;
   onFlip: () => void;
   onKeep: () => void;
-  onClose: () => void;
 };
 
 const CREAM = "#FFF6DA";
@@ -30,9 +29,10 @@ const CONFETTI = ["#F7CB4D", "#FFF6DA", "#C8402D", "#63A6A1", "#E49B2E", "#9668A
  * Receiving a gift (docs/specs/gifts.md, GIFT-20), from GiftReceive.dc.html: on a night sky, "‹name› sent you a gift",
  * and the gift drops in, wrapped in the paper and ribbon its sender chose. Pulling the ribbon slides it off and tears
  * the paper apart in a burst of confetti; the card lifts, turns over to the note, and "Put on my shelf" keeps it.
+ * There is no way to close it unopened (GIFT-20).
  * Rays, glows and confetti are SVG and transforms, so it ports.
  */
-export function GiftUnwrap({ fromName, line, look, phase, flipped, onPull, onFlip, onKeep, onClose }: GiftUnwrapProps) {
+export function GiftUnwrap({ fromName, line, look, phase, flipped, onPull, onFlip, onKeep }: GiftUnwrapProps) {
   const titleId = useId();
   const id = `gu${useId().replace(/[^\w-]/g, "")}`;
   const open = phase !== "tied";
@@ -85,11 +85,6 @@ export function GiftUnwrap({ fromName, line, look, phase, flipped, onPull, onFli
           </h1>
           <p style={{ margin: 0, fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 500, fontSize: s(15), color: "#E8D9A8" }}>{line}</p>
         </div>
-        <button type="button" aria-label="Close" onClick={onClose} style={{ position: "absolute", right: s(14), top: s(22), width: 44, height: 44, padding: 0, borderRadius: "50%", border: `2px solid ${CREAM}`, background: "rgba(43,51,80,.6)", color: CREAM, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true">
-            <path d="M6 6l12 12M18 6L6 18" />
-          </svg>
-        </button>
 
         {/* The gift: drops in, wiggles while tied, then lifts toward you once it's open. Flies to the shelf when kept. */}
         <div className="gf-fly" style={{ position: "absolute", left: s(47), top: s(250), width: s(296), height: s(226), transformOrigin: "50% 50%", transform: phase === "kept" ? `translate(${s(-118)}, ${s(139)}) scale(.295) rotate(-3deg)` : "none", opacity: phase === "kept" ? 0 : 1 }}>

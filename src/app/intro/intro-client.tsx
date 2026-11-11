@@ -2,6 +2,7 @@
 
 import { useRef, type ReactNode } from "react";
 import { IntroCrossfadeView } from "@/components/intro/intro-crossfade-view";
+import { AppShown } from "./app-shown";
 import { useIntroSequence } from "./use-intro-sequence";
 
 export function IntroClient({ home }: { home: ReactNode }) {
@@ -16,7 +17,7 @@ export function IntroClient({ home }: { home: ReactNode }) {
       onSkip={skip}
       videoRef={videoRef}
       backdropRef={backdropRef}
-      home={home}
+      home={<AppShown.Provider value={phase === "done"}>{home}</AppShown.Provider>}
     />
   );
 }

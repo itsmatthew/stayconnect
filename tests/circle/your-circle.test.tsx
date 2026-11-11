@@ -86,30 +86,19 @@ describe("the view (CIRCLE-1)", () => {
 
 });
 
-describe("gifts under the tree (CIRCLE-12)", () => {
-  const gifts = () => Array.from(tree().querySelectorAll("[data-gift]"), (g) => g.getAttribute("data-gift"));
-
-  it("demo on: the 2 wrapped placeholder gifts, announced; the pile opens the newest, outside the tree's people", () => {
+describe("the tree's foot (CIRCLE-12)", () => {
+  it("a tree with people in it has no empty seats and no 'You' (CIRCLE-11)", () => {
     renderApp();
     toCircle();
-    expect(gifts()).toHaveLength(2);
-    expect(within(tree()).getByRole("img", { name: "2 gifts received" })).toBeTruthy();
-    expect(tree().querySelector("[data-gift-pile] button")).toBeNull();
-    expect(within(layout("phone")).getByRole("button", { name: "Open Leo's gift, 2 wrapped" })).toBeTruthy();
+    expect(tree().querySelector("[data-seat]")).toBeNull();
+    expect(within(tree()).queryByRole("img", { name: "You" })).toBeNull();
   });
 
-  it("only gifts actually received and not yet opened, newest in front", () => {
-    const base = demoData.gifts(NOW)[0];
-    const received = (now: number) => [
-      { ...base, id: "older", sentAt: now - 3 * DAY },
-      { ...base, id: "newest", sentAt: now - 1000 },
-      { ...base, id: "middle", sentAt: now - DAY },
-      { ...base, id: "opened", sentAt: now, openedAt: now },
-    ];
-    renderApp({ ...demoData, gifts: received });
+  it("demo on: the wrapped gifts aren't under the tree; they pop up as the app opens (GIFT-19)", () => {
+    renderApp();
     toCircle();
-    // Drawn back to front: the last box is the one in front.
-    expect(gifts()).toEqual(["older", "middle", "newest"]);
+    expect(tree().querySelector("[data-gift-pile], [data-gift]")).toBeNull();
+    expect(within(layout("phone")).queryByRole("button", { name: /^Open .+'s gift/ })).toBeNull();
   });
 });
 
@@ -121,6 +110,8 @@ describe("the card (CIRCLE-5)", () => {
     expect(tab(/^Nest/).textContent).toBe("Nest 3");
     expect(tab(/^Branches/).textContent).toBe("Branches 3");
     expect(tab(/^Bloom/).textContent).toBe("Bloom 3");
+    // The demo's suggestion stands in for the line until it's answered (CIRCLE-9).
+    fireEvent.click(within(card()).getByRole("button", { name: "Not now" }));
     expect(card().textContent).toContain("your home people, the ones you love most");
     expect(cardPeople()).toEqual(["Mom", "Priya", "Ana"]);
     expect(within(card()).getByRole("button", { name: "Add to Nest" })).toBeTruthy();
@@ -224,10 +215,18 @@ describe("suggested moves (CIRCLE-9)", () => {
     renderApp();
     toCircle();
     expect(suggestionBox()?.textContent).toContain("You and Leo have been close lately — move to Nest?");
+    // In place of the ring's line, under the tabs, so the card stays its designed height and the tree's foot shows.
+    expect(card().textContent).not.toContain("your home people, the ones you love most");
+    expect(within(card()).getByRole("tablist").compareDocumentPosition(suggestionBox()!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // The privacy line steps aside while it shows, so the card doesn't grow; its buttons are 44 to tap.
+    expect(card().textContent).not.toContain("Only you see your circle.");
+    for (const name of ["Move", "Not now"]) expect(within(suggestionBox()!).getByRole("button", { name }).style.minHeight).toBe("44px");
     expect(inTree("Leo").getAttribute("data-ring")).toBe("branches");
     fireEvent.click(within(suggestionBox()!).getByRole("button", { name: "Move" }));
     expect(inTree("Leo").getAttribute("data-ring")).toBe("nest");
     expect(suggestionBox()).toBeNull();
+    expect(card().textContent).toContain("your home people, the ones you love most");
+    expect(card().textContent).toContain("Only you see your circle.");
   });
 
   it("Not now hides it, and it stays hidden after a reload until 30 days pass", () => {
@@ -254,11 +253,13 @@ describe("demo off (CIRCLE-11)", () => {
     renderApp(emptyData);
     toCircle(document.body);
     expect(within(tree()).queryAllByRole("button")).toEqual([]);
-    // No gifts: just the trunk.
     expect(tree().querySelector("[data-trunk]")).toBeTruthy();
-    expect(tree().querySelector("[data-gift-pile], [data-gift]")).toBeNull();
-    expect(within(tree()).queryByRole("img", { name: /gifts? received/ })).toBeNull();
-    expect(card().textContent).toContain("Your circle fills as you connect with people");
+    expect(card().textContent).toContain("Your tree fills in as your friends join.");
+    // As Main.dc.html's new account: you at the center, and a dashed seat waiting in each spot (CIRCLE-11).
+    expect(within(tree()).getByRole("img", { name: "You" })).toBeTruthy();
+    expect(tree().querySelectorAll("[data-seat='nest']")).toHaveLength(5);
+    expect(tree().querySelectorAll("[data-seat='branches']")).toHaveLength(12);
+    expect(tree().querySelectorAll("[data-seat='bloom']")).toHaveLength(38);
     expect(tab(/^Nest/).textContent).toBe("Nest 0");
     fireEvent.click(within(card()).getByRole("button", { name: "Add to Nest" }));
     expect(screen.getByRole("dialog", { name: "Add to Nest" }).textContent).toContain("No one to add yet");

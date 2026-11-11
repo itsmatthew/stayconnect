@@ -120,9 +120,11 @@ export function useMailbox({ state, dispatch, now, recipientName, circle }: Mail
             setDevSent(devSent + 1);
             dispatch({ type: "receive", letter: { id: `test-${at}-${devSent}`, from, photo: { kind: "art", art: ARTS[devSent % ARTS.length] }, takenAt: at - 3 * 365 * 86_400_000, sentAt: at, status: "new" } });
           }}
-          style={{ position: "fixed", left: 8, top: 8, zIndex: 45, minHeight: 44, padding: "0 12px", border: "2px dashed #2B3350", borderRadius: 12, background: "rgba(255,248,236,.92)", color: "#2B3350", font: "800 12px system-ui, sans-serif", cursor: "pointer" }}
+          aria-label="Receive a test drop"
+          title="Receive a test drop (dev only)"
+          style={{ position: "fixed", left: 4, top: 200, zIndex: 45, width: 44, height: 44, padding: 0, border: "1.5px dashed #2B3350", borderRadius: 22, background: "rgba(255,248,236,.85)", color: "#2B3350", font: "800 13px system-ui, sans-serif", cursor: "pointer" }}
         >
-          Receive a test drop
+          ✉+
         </button>
       )}
     </>

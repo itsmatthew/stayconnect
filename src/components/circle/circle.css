@@ -12,8 +12,3 @@
 @media (prefers-reduced-motion: reduce) {
   .yc-lit, .yc-pulse { animation: none !important; }
 }
-
-/* The newest gift under the tree, as GiftOpen.dc.html's: still, then a shake, then still (GIFT-19). */
-@keyframes yc-shake { 0%, 52%, 100% { transform: rotate(0) translateY(0); } 56% { transform: rotate(-9deg) translateY(-2px); } 62% { transform: rotate(8deg) translateY(-3px); } 68% { transform: rotate(-7deg) translateY(-1px); } 74% { transform: rotate(6deg) translateY(-2px); } 80% { transform: rotate(-4deg); } 86% { transform: rotate(2deg); } }
-.yc-shake { animation: yc-shake 2.4s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) { .yc-shake { animation: none; } }

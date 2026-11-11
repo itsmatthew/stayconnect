@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import type { NavLabel } from "@/components/home/main-nav";
 import { defaultData, type AppData } from "./app-data";
 import { ArchiveClient } from "./archive/archive-client";
@@ -35,7 +35,9 @@ import { betaPayment, type PaymentService } from "./gifts/payment";
 import { localGiftStore } from "./gifts/local-gift-store";
 import { localReceived } from "./gifts/local-received";
 import type { ReceivedGiftStore } from "./gifts/received";
+import { useGiftPopups } from "./gifts/received-client";
 import { useReceived } from "./gifts/use-received";
+import { AppShown } from "./app-shown";
 import { validateGroupName, withGroupNames, type GroupNameStore } from "./group-names/group-names";
 import { localGroupNameStore } from "./group-names/local-group-names";
 import { useGroupNames } from "./group-names/use-group-names";
@@ -179,6 +181,8 @@ export function AppClient({
   const gifts = useReceived(received(data.storageSuffix), () => data.gifts(now()), now);
   /** Me opens on the shelf when you come from "your gifts" or a kept gift (GIFT-21). */
   const [meOnShelf, setMeOnShelf] = useState(false);
+  // Waiting gifts pop up as the app opens, over whatever it opens on (GIFT-19).
+  const popups = useGiftPopups({ shown: useContext(AppShown), loaded: gifts.loaded, list: gifts.list, open: gifts.open, viewerName: data.senderName, now, onDone: () => showShelf() });
   const [goalSeed] = useState(() => data.goals(now()));
   const [goals, dispatchGoal] = useGoals(goalSeed, data.storageSuffix);
   /** A thread for Messages to open on arrival (CIRCLE-6). */
@@ -231,6 +235,14 @@ export function AppClient({
     }),
   );
 
+  return (
+    <>
+      {screen()}
+      {popups.screen}
+    </>
+  );
+
+  function screen() {
   switch (tab) {
     case "Circles":
       return (
@@ -241,7 +253,13 @@ export function AppClient({
           circle={circle}
           circleDispatch={circleDispatch}
           gifts={gifts.list}
-          giftActions={{ open: gifts.open, receive: gifts.receive, onShowShelf: showShelf, viewerName: data.senderName }}
+          giftActions={{
+            receive: (g) => {
+              gifts.receive(g);
+              popups.show(g.id);
+            },
+            onShowShelf: showShelf,
+          }}
           now={now}
           onOpenChat={openChat}
           nav={nav}
@@ -301,5 +319,6 @@ export function AppClient({
       );
     case "Me":
       return <MeClient data={viewerData} now={now} store={archive} nav={nav} gifts={giftDeps} findMe={findMeSetting} mailboxSetting={mailboxFrom} received={gifts.list} startOnShelf={meOnShelf} />;
+  }
   }
 }

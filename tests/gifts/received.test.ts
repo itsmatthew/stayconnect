@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { dayKey, giftReducer, newGift, type Gift } from "@/app/intro/gifts/gift";
-import { canOpen, copyOf, openGift, receiveGift, shelf, underTree, wrappedLine, type ReceivedGift } from "@/app/intro/gifts/received";
+import { canOpen, copyOf, openGift, receiveGift, shelf, waiting, wrappedLine, type ReceivedGift } from "@/app/intro/gifts/received";
 
 const DAY = 86_400_000;
 const NOW = new Date(2026, 10, 11, 12).getTime();
@@ -28,10 +28,16 @@ describe("a received gift is the gift as it was made (GIFT-18)", () => {
   });
 });
 
-describe("under the tree, then the shelf (GIFT-19, GIFT-21)", () => {
-  it("unopened gifts wait under the tree, newest first", () => {
+describe("waiting to pop up, then the shelf (GIFT-19, GIFT-21)", () => {
+  it("unopened gifts wait to pop up, oldest first", () => {
     const list = [gift("old", NOW - 3 * DAY), gift("new", NOW - 1000), gift("mid", NOW - DAY, { openedAt: NOW - 10 })];
-    expect(underTree(list).map((g) => g.id)).toEqual(["new", "old"]);
+    expect(waiting(list, TODAY).map((g) => g.id)).toEqual(["old", "new"]);
+  });
+
+  it("a gift for a later day doesn't pop up until that day", () => {
+    const list = [gift("later", NOW - DAY, { opens: { kind: "on", day: "2026-11-14" } }), gift("now", NOW)];
+    expect(waiting(list, TODAY).map((g) => g.id)).toEqual(["now"]);
+    expect(waiting(list, "2026-11-14").map((g) => g.id)).toEqual(["later", "now"]);
   });
 
   it("opening moves it to the shelf, newest opened first, and only once", () => {
@@ -39,7 +45,7 @@ describe("under the tree, then the shelf (GIFT-19, GIFT-21)", () => {
     list = openGift(list, "a", NOW - 100, TODAY);
     list = openGift(list, "b", NOW, TODAY);
     expect(shelf(list).map((g) => g.id)).toEqual(["b", "a"]);
-    expect(underTree(list)).toEqual([]);
+    expect(waiting(list, TODAY)).toEqual([]);
     expect(openGift(list, "a", NOW + 5000, TODAY).find((g) => g.id === "a")!.openedAt).toBe(NOW - 100);
   });
 

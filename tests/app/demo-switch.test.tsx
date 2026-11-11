@@ -80,7 +80,7 @@ describe("empty states with the switch off (DEMO-2)", () => {
   it("Your circle: an empty tree that fills as you connect (CIRCLE-11)", () => {
     renderOff("Circles");
     fireEvent.click(screen.getByRole("button", { name: "your circle" }));
-    expect(screen.getAllByText("Your circle fills as you connect with people").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Your tree fills in as your friends join.").length).toBeGreaterThan(0);
   });
 
   it("Messages: no messages yet", () => {

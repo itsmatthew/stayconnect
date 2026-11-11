@@ -6,7 +6,7 @@ import { BottomNav, TopNav, type NavProps } from "../home/main-nav";
 import { Scenery, useSceneIds } from "../home/scenery/scenery";
 import { INK, KARLA, s } from "../home/units";
 import { TreeMailbox } from "../mail/tree-mailbox";
-import { CircleTree, GiftPileButton, type TreeGift } from "./circle-tree";
+import { CircleTree } from "./circle-tree";
 import { RingCard } from "./ring-card";
 import { TREE_BOX } from "./ring-layout";
 import type { CirclePerson, CircleSuggestion, Ring } from "./types";
@@ -14,10 +14,6 @@ import type { CirclePerson, CircleSuggestion, Ring } from "./types";
 type CircleScreenProps = {
   /** Everyone the user can place, placed people in each ring's order. */
   people: readonly CirclePerson[];
-  /** Wrapped gifts, newest first, in their own paper and ribbon (CIRCLE-12, GIFT-19). */
-  gifts?: readonly TreeGift[];
-  /** Opens the newest gift; `label` names it ("Open Leo's gift, 2 wrapped"). */
-  openGift?: { label: string; onOpen: () => void };
   /** "your gifts" on the tree: how many are on your shelf, and the way there (GIFT-21). */
   shelf?: { count: number; onOpen: () => void };
   /** Rings past their soft guide (CIRCLE-2). */
@@ -44,11 +40,10 @@ export function CircleScreen(props: CircleScreenProps) {
   );
 }
 
-function Tree({ people, gifts = [], openGift, onOpenChat, onMove }: CircleScreenProps) {
+function Tree({ people, onOpenChat, onMove }: CircleScreenProps) {
   return (
     <>
-      <CircleTree people={people} gifts={gifts} onOpenChat={onOpenChat} onMove={onMove} />
-      {gifts.length > 0 && openGift && <GiftPileButton count={gifts.length} label={openGift.label} onOpen={openGift.onOpen} />}
+      <CircleTree people={people} onOpenChat={onOpenChat} onMove={onMove} />
     </>
   );
 }

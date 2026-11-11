@@ -269,7 +269,7 @@ export const placeholderUpTo: Readonly<Record<string, readonly UpToRow[]>> = {
   ],
 };
 
-/** Two gifts under Your circle's tree (CIRCLE-12), timed back from `now`. */
+/** Two wrapped gifts that pop up as the app opens (GIFT-19) and two already on the shelf, timed back from `now`. */
 export function placeholderGifts(now: number): ReceivedGift[] {
   // Each as its sender made it: their frame, note, handwriting, ink, stamp, paper and ribbon. Photos are drawn.
   const g = (id: string, from: [string, string], art: string, taken: number, frame: string, note: ReceivedGift["note"], wrap: ReceivedGift["wrap"], sentAgo: number, openedAgo?: number): ReceivedGift => ({

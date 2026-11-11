@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import type { TreeGift } from "@/components/circle/circle-tree";
 import type { GiftCardLook } from "@/components/gifts/gift-card";
 import { GiftUnwrap, type UnwrapPhase } from "@/components/gifts/gift-unwrap";
 import { prefersLessMotion } from "@/components/gifts/motion";
@@ -9,9 +8,9 @@ import { MemoryArt } from "@/components/home/memory-art";
 import type { ArtKind } from "@/components/home/types";
 import { ShelfGiftView } from "@/components/me/shelf-gift-view";
 import type { ShelfGift } from "@/components/me/gift-shelf";
-import { monthCaption, postmark, stampCode, writtenDate } from "./gift";
+import { dayKey, monthCaption, postmark, stampCode, writtenDate } from "./gift";
 import { INKS, RIBBONS, colorOf } from "./gift-catalog";
-import { shelf, underTree, wrappedLine, type ReceivedGift } from "./received";
+import { shelf, waiting, wrappedLine, type ReceivedGift } from "./received";
 
 const ARTS: readonly ArtKind[] = ["city", "churro", "faces", "people", "cookie", "sunset", "basketball"];
 
@@ -43,50 +42,67 @@ export function receivedLook(g: ReceivedGift, viewerName: string): GiftCardLook 
   };
 }
 
-/** Wrapped gifts under the tree, newest first, in their own paper and ribbon (GIFT-19). */
-export const treeGifts = (list: readonly ReceivedGift[]): TreeGift[] => underTree(list).map((g) => ({ id: g.id, pattern: g.wrap.pattern, ribbon: colorOf(RIBBONS, g.wrap.ribbon) }));
-
 /** Opened gifts for the shelf, newest first (GIFT-21). */
 export const shelfGifts = (list: readonly ReceivedGift[], viewerName: string): ShelfGift[] => shelf(list).map((g) => ({ id: g.id, fromName: g.from.name, look: receivedLook(g, viewerName) }));
 
 /** How long the gift takes to fly to the shelf before the shelf shows (GiftReceive.dc.html). */
 const FLY_MS = 950;
 
+type Popups = {
+  /** The intro has ended and the app is showing. */
+  shown: boolean;
+  /** The saved gifts have been read. */
+  loaded: boolean;
+  list: readonly ReceivedGift[];
+  open: (id: string) => void;
+  viewerName: string;
+  now: () => number;
+  /** After the last one is on the shelf: show the shelf. */
+  onDone: () => void;
+};
+
 /**
- * Opening a gift (GIFT-20): pull the ribbon, turn the card over, Put on my shelf. Opening is saved when it's kept,
- * and only here: nobody is told. Closing before then leaves it wrapped under the tree.
+ * Gifts pop up when the app opens (GIFT-19), oldest first, one after another, and can't be closed unopened (GIFT-20):
+ * pull the ribbon, turn the card over, Put on my shelf. Which ones is decided once, as the app opens, so a gift that
+ * arrives while you're using it waits for the next time. Opening is saved only here, and nobody is told.
  */
-export function useUnwrap({ list, open, viewerName, onKept }: { list: readonly ReceivedGift[]; open: (id: string) => void; viewerName: string; onKept: () => void }) {
-  const [state, setState] = useState<{ id: string; phase: UnwrapPhase; flipped: boolean } | null>(null);
+export function useGiftPopups({ shown, loaded, list, open, viewerName, now, onDone }: Popups) {
+  const [queue, setQueue] = useState<readonly string[] | null>(null);
+  // Decided during render, once, as soon as the app shows with its saved gifts read.
+  if (queue === null && shown && loaded) setQueue(waiting(list, dayKey(now())).map((g) => g.id));
+  const [look, setLook] = useState<{ phase: UnwrapPhase; flipped: boolean }>({ phase: "tied", flipped: false });
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
-  const g = state && list.find((x) => x.id === state.id);
+  const g = queue?.length ? list.find((x) => x.id === queue[0]) : undefined;
   const keep = () => {
-    if (!state || !g) return;
+    if (!g || !queue) return;
     open(g.id);
-    const done = () => {
-      setState(null);
-      onKept();
+    const rest = queue.slice(1);
+    const next = () => {
+      setQueue(rest);
+      setLook({ phase: "tied", flipped: false });
+      if (!rest.length) onDone();
     };
-    if (prefersLessMotion()) return done();
-    setState({ ...state, phase: "kept", flipped: false });
-    timer.current = setTimeout(done, FLY_MS);
+    if (prefersLessMotion()) return next();
+    setLook({ phase: "kept", flipped: false });
+    timer.current = setTimeout(next, FLY_MS);
   };
-  const screen =
-    state && g ? (
-      <GiftUnwrap
-        fromName={g.from.name}
-        line={wrappedLine(g)}
-        look={receivedLook(g, viewerName)}
-        phase={state.phase}
-        flipped={state.flipped}
-        onPull={() => setState({ ...state, phase: "open" })}
-        onFlip={() => setState({ ...state, flipped: !state.flipped })}
-        onKeep={keep}
-        onClose={() => setState(null)}
-      />
-    ) : null;
-  return { start: (id: string) => setState({ id, phase: "tied", flipped: false }), screen };
+  const screen = g ? (
+    <GiftUnwrap
+      key={g.id}
+      fromName={g.from.name}
+      line={wrappedLine(g)}
+      look={receivedLook(g, viewerName)}
+      phase={look.phase}
+      flipped={look.flipped}
+      onPull={() => setLook({ phase: "open", flipped: false })}
+      onFlip={() => setLook({ ...look, flipped: !look.flipped })}
+      onKeep={keep}
+    />
+  ) : null;
+  /** A gift to pop up now, after any already waiting: only the dev control does this (GIFT-22). */
+  const show = (id: string) => setQueue((q) => [...(q ?? []), id]);
+  return { screen, show };
 }
 
 /** A gift from your shelf, big (GIFT-21). */

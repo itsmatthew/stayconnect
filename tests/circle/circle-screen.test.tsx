@@ -17,13 +17,12 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-function setup(gifts: readonly { id: string }[] = []) {
+function setup() {
   const onMove = vi.fn();
   const onOpenChat = vi.fn();
   render(
     <CircleScreen
       people={people}
-      gifts={gifts}
       onMove={onMove}
       onOpenChat={onOpenChat}
       onAcceptSuggestion={() => {}}
@@ -99,36 +98,10 @@ describe("drag to move (CIRCLE-7)", () => {
   });
 });
 
-describe("the gift pile (CIRCLE-12)", () => {
-  const ids = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `g${i}` }));
-  const boxes = (tree: HTMLElement) => Array.from(tree.querySelectorAll("[data-gift]"), (g) => g.getAttribute("data-gift"));
-
-  it("none received: no pile at all, just the trunk", () => {
+describe("no gifts under the tree (CIRCLE-12)", () => {
+  it("just the trunk: waiting gifts pop up as the app opens instead (GIFT-19)", () => {
     const { tree } = setup();
     expect(tree.querySelector("[data-trunk]")).toBeTruthy();
-    expect(tree.querySelector("[data-gift-pile]")).toBeNull();
-    expect(within(tree).queryByRole("img", { name: /received/ })).toBeNull();
-  });
-
-  it("one box per gift, newest (first) in front, announced", () => {
-    const { tree } = setup(ids(1));
-    expect(boxes(tree)).toEqual(["g0"]);
-    expect(within(tree).getByRole("img", { name: "1 gift received" })).toBeTruthy();
-    cleanup();
-    const again = setup(ids(3)).tree;
-    expect(boxes(again)).toEqual(["g2", "g1", "g0"]);
-    expect(again.querySelector("[data-gift-more]")).toBeNull();
-  });
-
-  it("at most 4 boxes, then +N for the rest", () => {
-    const { tree } = setup(ids(7));
-    expect(boxes(tree)).toEqual(["g3", "g2", "g1", "g0"]);
-    expect(tree.querySelector("[data-gift-more]")?.textContent).toBe("+3");
-    expect(within(tree).getByRole("img", { name: "7 gifts received" })).toBeTruthy();
-  });
-
-  it("the boxes themselves aren't buttons: the pile opens through one button outside the tree (GIFT-19)", () => {
-    const { tree } = setup(ids(2));
-    expect(tree.querySelector("[data-gift-pile] button, [data-gift-pile] a")).toBeNull();
+    expect(tree.querySelector("[data-gift-pile], [data-gift]")).toBeNull();
   });
 });
