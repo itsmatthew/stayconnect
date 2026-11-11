@@ -9,8 +9,12 @@ type WrappedGiftProps = {
   ribbon: string;
   /** "Nov 12", or "later" before a day is picked, for a gift that opens on a chosen day. */
   opens?: string;
-  /** Skip the wrapping motion: it is already wrapped (the sent screen). */
+  /** Skip the wrapping motion: it is already wrapped (the sent screen, or a gift arriving). */
   still?: boolean;
+  /** The tag's words, in place of "to ‹to›": "from Leo" on a gift you've received (GIFT-20). */
+  tag?: string;
+  /** Unwrapped: the ribbon slides off, the bow and tag fly, and the paper tears into halves that fall away. */
+  torn?: boolean;
 };
 
 /** The torn halves of the paper, from the design's polygons, in the card's 296×226 space (with a pixel's bleed). */
@@ -34,10 +38,10 @@ function tagLines(label: string, width: number): string[] {
  * The wrapping laid over the card (docs/specs/gifts.md, GIFT-8), as in the design: two torn halves slide in, the
  * ribbons run along and across, the bow pops on, the tag swings into place. All SVG and transforms, so it ports.
  */
-export function WrappedGift({ to, pattern, ribbon, opens, still = false }: WrappedGiftProps) {
+export function WrappedGift({ to, pattern, ribbon, opens, still = false, tag, torn = false }: WrappedGiftProps) {
   const motion = (c: string) => (still ? undefined : c);
   const id = `wrap${useId().replace(/[^\w-]/g, "")}`;
-  const label = `to ${to}`;
+  const label = tag ?? `to ${to}`;
   const long = label.length > 12;
   const lines = long ? tagLines(label, 20) : [label];
   const lh = long ? 14 : 18;
@@ -45,7 +49,7 @@ export function WrappedGift({ to, pattern, ribbon, opens, still = false }: Wrapp
   const tagH = Math.max(40, 12 + lines.length * lh + (opens ? 11 : 0));
   const notch = tagW * 0.14 * (84 / tagW);
   return (
-    <svg data-pattern={pattern} viewBox="0 0 296 226" role="img" aria-label={`A wrapped gift for ${to}`} style={{ position: "absolute", left: 0, top: 0, width: s(296), height: s(226), display: "block", overflow: "visible" }}>
+    <svg data-pattern={pattern} data-torn={torn || undefined} className={torn ? "gf-torn" : undefined} viewBox="0 0 296 226" role="img" aria-label={tag ? `A gift wrapped ${tag}` : `A wrapped gift for ${to}`} style={{ position: "absolute", left: 0, top: 0, width: s(296), height: s(226), display: "block", overflow: "visible" }}>
       <defs>
         <PaperDefs id={id} pattern={pattern} />
         <linearGradient id={`${id}-sheen`} x1="0" y1="0" x2="1" y2="0.6">
@@ -63,24 +67,24 @@ export function WrappedGift({ to, pattern, ribbon, opens, still = false }: Wrapp
           <stop offset="1" stopColor="#000000" stopOpacity=".14" />
         </linearGradient>
       </defs>
-      <g className={motion("gf-paper-l")}>
+      <g data-half="l" className={motion("gf-paper-l")}>
         <PaperFill id={id} pattern={pattern} shape={(fill) => <polygon points={LEFT} fill={fill} />} />
         <polygon points={LEFT} fill={`url(#${id}-sheen)`} />
       </g>
-      <g className={motion("gf-paper-r")}>
+      <g data-half="r" className={motion("gf-paper-r")}>
         <PaperFill id={id} pattern={pattern} shape={(fill) => <polygon points={RIGHT} fill={fill} />} />
         <polygon points={RIGHT} fill={`url(#${id}-sheen)`} />
       </g>
-      <g className={motion("gf-ribbon-v")}>
+      <g data-rib="v" className={motion("gf-ribbon-v")}>
         <rect data-ribbon="" x="134" y="-1" width="28" height="228" fill={ribbon} />
         <rect x="134" y="-1" width="28" height="228" fill={`url(#${id}-rv)`} stroke="rgba(0,0,0,.1)" />
       </g>
-      <g className={motion("gf-ribbon-h")}>
+      <g data-rib="h" className={motion("gf-ribbon-h")}>
         <rect x="-1" y="99" width="298" height="28" fill={ribbon} />
         <rect x="-1" y="99" width="298" height="28" fill={`url(#${id}-rh)`} stroke="rgba(0,0,0,.1)" />
       </g>
       <g transform="translate(84 72) scale(.8)">
-        <g className={motion("gf-bow")}>
+        <g data-bow="" className={motion("gf-bow")}>
           {/* A soft shadow under the bow, drawn rather than filtered. */}
           <g transform="translate(0 5)" fill="#000000" opacity=".18">
             <path d="M80 50 C 58 6, 10 0, 6 30 C 2 62, 52 68, 80 50 Z" />
@@ -99,7 +103,7 @@ export function WrappedGift({ to, pattern, ribbon, opens, still = false }: Wrapp
           <rect x="67" y="36" width="26" height="28" rx="8" fill="none" stroke="rgba(0,0,0,0.22)" strokeWidth="1.5" />
         </g>
       </g>
-      <g transform={`translate(${long ? 150 : 168} 118)`}>
+      <g data-tag-hold="" transform={`translate(${long ? 150 : 168} 118)`}>
         <g data-tag="" className={still ? undefined : "gf-tag"} transform={still ? "rotate(10 8 20)" : undefined}>
           <polygon points={`${notch},0 ${tagW},0 ${tagW},${tagH} ${notch},${tagH} 0,${tagH / 2}`} fill="#E9D2A2" stroke="#A8834F" />
           <circle cx="10.5" cy={tagH / 2} r="3.5" fill="#F6ECCD" stroke="#A8834F" />

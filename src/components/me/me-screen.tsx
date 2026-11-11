@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { NavProps } from "../home/main-nav";
 import { FRAUNCES, NAVY, s } from "../home/units";
 import { TabFrame } from "../shell/tab-frame";
-import { GiftShelf } from "./gift-shelf";
+import { GiftShelf, type ShelfGift } from "./gift-shelf";
 import { SixtyFiveGrid } from "./sixty-five-grid";
 import { TileViewer } from "./tile-viewer";
 import type { MeTile } from "./types";
@@ -18,6 +18,10 @@ type MeScreenProps = {
   onSendGift?: () => void;
   /** "Let people find me by name" (docs/specs/mail.md, MAIL-7). */
   findMe?: { on: boolean; onChange: (on: boolean) => void };
+  /** Which view to open on: the shelf, when you come from "your gifts" or a kept gift (GIFT-21). */
+  initialView?: "posts" | "gifts";
+  /** Opened gifts on your shelf, newest first, and opening one big (GIFT-21). */
+  shelf?: { gifts: readonly ShelfGift[]; onOpenGift: (id: string) => void };
   /** "Who can drop in my mailbox" (docs/specs/mail.md, MAIL-10). */
   mailbox?: { options: readonly { id: string; label: string }[]; value: string; onChange: (id: string) => void };
 };
@@ -27,8 +31,8 @@ const pill = { width: "100%", height: s(32), boxSizing: "border-box", display: "
 const pillButton = { flex: 1, minHeight: 44, padding: 0, border: 0, background: "none", display: "flex", alignItems: "center", cursor: "pointer" } as const;
 
 /** Me (docs/specs/me.md): the posts / year / gifts row, then your 65 for that year. Profile and bio come later (TODO). */
-export function MeScreen({ year, years, onYearChange, tiles, nav, onSendGift, findMe, mailbox }: MeScreenProps) {
-  const [view, setView] = useState<"posts" | "gifts">("posts");
+export function MeScreen({ year, years, onYearChange, tiles, nav, onSendGift, findMe, mailbox, initialView = "posts", shelf }: MeScreenProps) {
+  const [view, setView] = useState<"posts" | "gifts">(initialView);
   const [openKey, setOpenKey] = useState<string | null>(null);
   const open = tiles.find((t) => t.key === openKey);
   return (
@@ -43,7 +47,7 @@ export function MeScreen({ year, years, onYearChange, tiles, nav, onSendGift, fi
           <span style={{ ...pill, background: "#4F7A36", color: "#FFF6DA", boxShadow: view === "gifts" ? `0 ${s(3)} 0 ${NAVY}` : "none" }}>gifts</span>
         </button>
       </div>
-      {view === "posts" ? <SixtyFiveGrid year={year} tiles={tiles} onOpen={setOpenKey} /> : <GiftShelf onSendGift={onSendGift} />}
+      {view === "posts" ? <SixtyFiveGrid year={year} tiles={tiles} onOpen={setOpenKey} /> : <GiftShelf onSendGift={onSendGift} gifts={shelf?.gifts} onOpenGift={shelf?.onOpenGift} />}
       {findMe && <FindMeRow {...findMe} />}
       {mailbox && <MailboxRow {...mailbox} />}
       {open?.photo && <TileViewer tile={{ ...open, photo: open.photo }} onClose={() => setOpenKey(null)} />}

@@ -4,7 +4,7 @@
 import type { CircleGroup, Friend } from "@/components/home/types";
 import type { UpToRow } from "@/components/profile/types";
 import type { ArchivePost } from "./archive/posts";
-import type { ReceivedGift } from "./circle/gifts";
+import type { ReceivedGift } from "./gifts/received";
 import type { Placements } from "./circle/rings";
 import { fakeMemberColors, type MemberColorSource } from "./colors/member-colors";
 import { fakeDirectory, type Directory } from "./mail/directory";
@@ -33,7 +33,7 @@ export type AppData = {
   friends: readonly Friend[];
   /** Who's in which ring of Your circle (docs/specs/circle.md). */
   rings: Placements;
-  /** Gifts received, piled under Your circle's tree (CIRCLE-12). */
+  /** Gifts received: wrapped under Your circle's tree, then on the shelf once opened (CIRCLE-12, GIFT-18). */
   gifts: (now: number) => ReceivedGift[];
   seedConversations: (now: number) => Conversation[];
   /** What a recipient says when "simulate reply" fires (MSG-6). */

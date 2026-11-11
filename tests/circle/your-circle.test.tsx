@@ -89,19 +89,22 @@ describe("the view (CIRCLE-1)", () => {
 describe("gifts under the tree (CIRCLE-12)", () => {
   const gifts = () => Array.from(tree().querySelectorAll("[data-gift]"), (g) => g.getAttribute("data-gift"));
 
-  it("demo on: the 2 placeholder gifts, announced, and nothing to open yet", () => {
+  it("demo on: the 2 wrapped placeholder gifts, announced; the pile opens the newest, outside the tree's people", () => {
     renderApp();
     toCircle();
     expect(gifts()).toHaveLength(2);
     expect(within(tree()).getByRole("img", { name: "2 gifts received" })).toBeTruthy();
     expect(tree().querySelector("[data-gift-pile] button")).toBeNull();
+    expect(within(layout("phone")).getByRole("button", { name: "Open Leo's gift, 2 wrapped" })).toBeTruthy();
   });
 
-  it("only gifts actually received, newest in front", () => {
+  it("only gifts actually received and not yet opened, newest in front", () => {
+    const base = demoData.gifts(NOW)[0];
     const received = (now: number) => [
-      { id: "older", from: "a", receivedAt: now - 3 * DAY },
-      { id: "newest", from: "b", receivedAt: now - 1000 },
-      { id: "middle", from: "c", receivedAt: now - DAY },
+      { ...base, id: "older", sentAt: now - 3 * DAY },
+      { ...base, id: "newest", sentAt: now - 1000 },
+      { ...base, id: "middle", sentAt: now - DAY },
+      { ...base, id: "opened", sentAt: now, openedAt: now },
     ];
     renderApp({ ...demoData, gifts: received });
     toCircle();

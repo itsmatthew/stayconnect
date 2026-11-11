@@ -33,6 +33,9 @@ import { localGiftEvents } from "./gifts/local-gift-events";
 import { localPayment } from "./gifts/local-payment";
 import { betaPayment, type PaymentService } from "./gifts/payment";
 import { localGiftStore } from "./gifts/local-gift-store";
+import { localReceived } from "./gifts/local-received";
+import type { ReceivedGiftStore } from "./gifts/received";
+import { useReceived } from "./gifts/use-received";
 import { validateGroupName, withGroupNames, type GroupNameStore } from "./group-names/group-names";
 import { localGroupNameStore } from "./group-names/local-group-names";
 import { useGroupNames } from "./group-names/use-group-names";
@@ -77,6 +80,8 @@ type AppClientProps = {
   findMe?: (storageSuffix: string) => FindMeSetting;
   /** "Who can drop in my mailbox" (MAIL-10). */
   mailboxSetting?: (storageSuffix: string) => MailboxSetting;
+  /** Gifts you've received (docs/specs/gifts.md, GIFT-18). TODO(server): a fake. */
+  received?: (storageSuffix: string) => ReceivedGiftStore;
   /** Your mailbox (docs/specs/mailbox.md). TODO(server): a fake. */
   inbox?: (storageSuffix: string) => InboxStore;
   hasFace?: (image: Blob) => Promise<boolean>;
@@ -144,6 +149,7 @@ export function AppClient({
   findMe = localFindMe,
   mailboxSetting = localMailboxSetting,
   inbox = localInbox,
+  received = localReceived,
   hasFace = detectFaces,
   readCapture = captureDate,
   decode = downscale,
@@ -170,7 +176,9 @@ export function AppClient({
   const recipients = useMemo(() => recipientSections(homeGroups, data.friends), [homeGroups, data.friends]);
   const nameOf = (id: string) => data.friends.find((f) => f.id === id)?.name;
   const [circle, circleDispatch] = useCircle(data.rings, data.storageSuffix);
-  const [gifts] = useState(() => data.gifts(now()));
+  const gifts = useReceived(received(data.storageSuffix), () => data.gifts(now()), now);
+  /** Me opens on the shelf when you come from "your gifts" or a kept gift (GIFT-21). */
+  const [meOnShelf, setMeOnShelf] = useState(false);
   const [goalSeed] = useState(() => data.goals(now()));
   const [goals, dispatchGoal] = useGoals(goalSeed, data.storageSuffix);
   /** A thread for Messages to open on arrival (CIRCLE-6). */
@@ -178,7 +186,13 @@ export function AppClient({
 
   const navigate = (to: NavLabel) => {
     setOpenThread(null);
+    setMeOnShelf(false);
     setTab(to);
+  };
+  const showShelf = () => {
+    setOpenThread(null);
+    setMeOnShelf(true);
+    setTab("Me");
   };
   const nav = { current: tab, onNavigate: navigate };
   const openChat = (friendId: string) => {
@@ -226,7 +240,8 @@ export function AppClient({
           chat={chat}
           circle={circle}
           circleDispatch={circleDispatch}
-          gifts={gifts}
+          gifts={gifts.list}
+          giftActions={{ open: gifts.open, receive: gifts.receive, onShowShelf: showShelf, viewerName: data.senderName }}
           now={now}
           onOpenChat={openChat}
           nav={nav}
@@ -285,6 +300,6 @@ export function AppClient({
         />
       );
     case "Me":
-      return <MeClient data={viewerData} now={now} store={archive} nav={nav} gifts={giftDeps} findMe={findMeSetting} mailboxSetting={mailboxFrom} />;
+      return <MeClient data={viewerData} now={now} store={archive} nav={nav} gifts={giftDeps} findMe={findMeSetting} mailboxSetting={mailboxFrom} received={gifts.list} startOnShelf={meOnShelf} />;
   }
 }

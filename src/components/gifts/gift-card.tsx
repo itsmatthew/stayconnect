@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { FRAUNCES, NAVY, s } from "../home/units";
 import { FramedPhoto, type DateStamp } from "./framed-photo";
 import "./gifts.css";
@@ -9,6 +9,8 @@ export type GiftCardLook = {
   to: string;
   signature: string;
   src?: string;
+  /** Drawn in place of `src`: the demo's art. */
+  picture?: ReactNode;
   alt: string;
   frame: string;
   stamp?: DateStamp;
@@ -36,7 +38,7 @@ export function GiftCard({ look, side, onFlip }: GiftCardProps) {
         <div style={{ position: "relative", width: "100%", height: "100%", perspective: 1200 }}>
           <div data-flip="" className="gf-flip" style={{ position: "relative", width: "100%", height: "100%", transformStyle: "preserve-3d", transform: `rotateY(${back ? 180 : 0}deg)` }}>
             <div data-side="photo" aria-hidden={back || undefined} style={face}>
-              <FramedPhoto src={look.src} alt={look.alt} frame={look.frame} stamp={look.stamp} written={look.written} monthCaption={look.monthCaption} />
+              <FramedPhoto src={look.src} picture={look.picture} alt={look.alt} frame={look.frame} stamp={look.stamp} written={look.written} monthCaption={look.monthCaption} />
             </div>
             <div data-side="postcard" aria-hidden={!back || undefined} style={{ ...face, transform: "rotateY(180deg)" }}>
               <Postcard to={look.to} signature={look.signature} note={look.note} />

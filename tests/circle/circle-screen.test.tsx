@@ -127,7 +127,7 @@ describe("the gift pile (CIRCLE-12)", () => {
     expect(within(tree).getByRole("img", { name: "7 gifts received" })).toBeTruthy();
   });
 
-  it("gifts can't be opened yet", () => {
+  it("the boxes themselves aren't buttons: the pile opens through one button outside the tree (GIFT-19)", () => {
     const { tree } = setup(ids(2));
     expect(tree.querySelector("[data-gift-pile] button, [data-gift-pile] a")).toBeNull();
   });

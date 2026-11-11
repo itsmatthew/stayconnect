@@ -5,7 +5,7 @@
 
 import type { ArtKind, CircleGroup, Friend } from "@/components/home/types";
 import type { UpToRow } from "@/components/profile/types";
-import type { ReceivedGift } from "./circle/gifts";
+import type { ReceivedGift } from "./gifts/received";
 import type { Placements } from "./circle/rings";
 import { isOpen, isoWeek, periodsOfYear } from "./archive/periods";
 import type { ArchivePost } from "./archive/posts";
@@ -271,9 +271,25 @@ export const placeholderUpTo: Readonly<Record<string, readonly UpToRow[]>> = {
 
 /** Two gifts under Your circle's tree (CIRCLE-12), timed back from `now`. */
 export function placeholderGifts(now: number): ReceivedGift[] {
+  // Each as its sender made it: their frame, note, handwriting, ink, stamp, paper and ribbon. Photos are drawn.
+  const g = (id: string, from: [string, string], art: string, taken: number, frame: string, note: ReceivedGift["note"], wrap: ReceivedGift["wrap"], sentAgo: number, openedAgo?: number): ReceivedGift => ({
+    id,
+    giftId: id.split("/")[0],
+    from: { id: from[0], name: from[1] },
+    photo: { kind: "art", art },
+    takenAt: taken,
+    frame: { id: frame, dateStamp: frame !== "film" },
+    note,
+    wrap,
+    opens: { kind: "now" },
+    sentAt: now - sentAgo,
+    ...(openedAgo !== undefined ? { openedAt: now - openedAgo } : {}),
+  });
   return [
-    { id: "placeholder-gift/mom", from: "mom", receivedAt: now - 1 * DAY },
-    { id: "placeholder-gift/leo", from: "leo", receivedAt: now - 2 * HOUR },
+    g("placeholder-gift-leo/me", ["leo", "Leo"], "basketball", new Date(2014, 2, 3).getTime(), "instant", { text: "We were just talking about this the other day. Studs.", hand: "script", ink: "navy", stamp: "tree" }, { pattern: "stars", ribbon: "gold" }, 2 * HOUR),
+    g("placeholder-gift-mom/me", ["mom", "Mom"], "cookie", new Date(2019, 8, 1).getTime(), "wood", { text: "Found this in the kitchen drawer. Love you.", hand: "pen", ink: "red", stamp: "heart" }, { pattern: "gingham", ribbon: "red" }, 1 * DAY),
+    g("placeholder-gift-ana/me", ["ana", "Ana"], "churro", new Date(2023, 6, 12).getTime(), "album", { text: "Madrid, round two?", hand: "pencil", ink: "green", stamp: "sunrise" }, { pattern: "kraft", ribbon: "cream" }, 9 * DAY, 8 * DAY),
+    g("placeholder-gift-priya/me", ["priya", "Priya"], "sunset", new Date(2021, 5, 20).getTime(), "classic", { text: "Best sky of that whole summer.", hand: "script", ink: "graphite", stamp: "calendar" }, { pattern: "dots", ribbon: "navy" }, 20 * DAY, 19 * DAY),
   ];
 }
 

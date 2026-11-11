@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { FRAUNCES, KARLA, s } from "../home/units";
 import { handLook, STAMP_FONT } from "./gift-looks";
 
@@ -14,6 +14,8 @@ type FramedPhotoProps = {
   written?: { text: string; hand: string; ink: string };
   /** The month frame's caption: "November '26". */
   monthCaption?: string;
+  /** Drawn in place of a photo file: the demo's art. TODO(server): received gifts will carry a stored photo. */
+  picture?: ReactNode;
 };
 
 type Look = { bg: string; l: number; t: number; w: number; h: number; photo?: CSSProperties };
@@ -76,7 +78,7 @@ function Leaves() {
 }
 
 /** The front of a gift: the photo in one of the six frames, on the 296×226 card (docs/specs/gifts.md, GIFT-6). */
-export function FramedPhoto({ src, alt, frame, stamp, written, monthCaption }: FramedPhotoProps) {
+export function FramedPhoto({ src, alt, frame, stamp, written, monthCaption, picture }: FramedPhotoProps) {
   const look = frameLook(frame);
   const box: CSSProperties = { position: "absolute", left: s(look.l), top: s(look.t), width: s(look.w), height: s(look.h), borderRadius: s(2), overflow: "hidden", background: "#E7DBB9", ...look.photo };
   const hand = written && handLook(written.hand);
@@ -86,12 +88,12 @@ export function FramedPhoto({ src, alt, frame, stamp, written, monthCaption }: F
         // Two rings around the photo, dark then gold, as borders so they port.
         <div style={{ ...box, boxSizing: "border-box", border: `${s(2)} solid #4F2713`, boxShadow: `0 ${s(3)} ${s(6)} rgba(0,0,0,.35)` }}>
           <div style={{ width: "100%", height: "100%", boxSizing: "border-box", border: `${s(2)} solid #E2B954`, overflow: "hidden" }}>
-            <Picture src={src} alt={alt} />
+            <Picture src={src} alt={alt} picture={picture} />
           </div>
         </div>
       ) : (
         <div style={box}>
-          <Picture src={src} alt={alt} />
+          <Picture src={src} alt={alt} picture={picture} />
         </div>
       )}
       {frame === "film" && (
@@ -117,7 +119,13 @@ export function FramedPhoto({ src, alt, frame, stamp, written, monthCaption }: F
   );
 }
 
-function Picture({ src, alt }: { src?: string; alt: string }) {
+function Picture({ src, alt, picture }: { src?: string; alt: string; picture?: ReactNode }) {
+  if (!src && picture)
+    return (
+      <span role="img" aria-label={alt} style={{ position: "absolute", inset: 0, display: "block" }}>
+        {picture}
+      </span>
+    );
   if (!src) return <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: KARLA, fontSize: s(13), fontWeight: 700, color: "#6B6A66" }}>Your photo goes here</span>;
   // eslint-disable-next-line @next/next/no-img-element -- a blob: URL from this browser
   return <img src={src} alt={alt} style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />;
@@ -127,12 +135,12 @@ function Picture({ src, alt }: { src?: string; alt: string }) {
 const MINI_PAD: Readonly<Record<string, string>> = { classic: "3px", instant: "3px 3px 10px", album: "5px", film: "7px 3px", wood: "5px", month: "5px 5px 8px" };
 
 /** A frame's small picture in its choice tile. */
-export function FrameMini({ frame, src }: { frame: string; src?: string }) {
+export function FrameMini({ frame, src, picture }: { frame: string; src?: string; picture?: ReactNode }) {
   const pad = (MINI_PAD[frame] ?? "3px").split(" ").map((v) => s(parseFloat(v))).join(" ");
   return (
     <span aria-hidden="true" style={{ display: "block", width: s(58), height: s(44), boxSizing: "border-box", padding: pad, borderRadius: s(3), background: frameLook(frame).bg, boxShadow: `0 ${s(2)} ${s(4)} rgba(74,44,20,.35)`, transform: "rotate(-2deg)" }}>
       {/* eslint-disable-next-line @next/next/no-img-element -- a blob: URL from this browser */}
-      {src ? <img src={src} alt="" style={{ display: "block", width: "100%", height: "100%", objectFit: "cover", borderRadius: s(1) }} /> : <span style={{ display: "block", width: "100%", height: "100%", background: "#D9CBA4" }} />}
+      {src ? <img src={src} alt="" style={{ display: "block", width: "100%", height: "100%", objectFit: "cover", borderRadius: s(1) }} /> : (picture ?? <span style={{ display: "block", width: "100%", height: "100%", background: "#D9CBA4" }} />)}
     </span>
   );
 }

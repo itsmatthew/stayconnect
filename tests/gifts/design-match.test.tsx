@@ -27,9 +27,9 @@ beforeEach(() => {
 afterEach(cleanup);
 
 const read = (p: string) => readFileSync(path.join(__dirname, "../..", p), "utf8");
-const renderMe = () =>
+const renderMe = (data = demoData) =>
   render(
-    <AppClient initialTab="Me" data={demoData} now={() => NOW} openStore={() => openPhotoStore(`${dbName}-p`)} openArchive={() => openArchiveStore(`${dbName}-a`)} openOrnaments={() => openOrnamentStore(dbName)} hasFace={async () => true} />,
+    <AppClient initialTab="Me" data={data} now={() => NOW} openStore={() => openPhotoStore(`${dbName}-p`)} openArchive={() => openArchiveStore(`${dbName}-a`)} openOrnaments={() => openOrnamentStore(dbName)} hasFace={async () => true} />,
   );
 
 describe("catalog matches the design's names and colors", () => {
@@ -135,7 +135,7 @@ describe("wrapping", () => {
 
 describe("the shelf and the drawer", () => {
   it("shows the cabinet's six cubbies and the drawer, with no text when empty", () => {
-    renderMe();
+    renderMe({ ...demoData, gifts: () => [] });
     fireEvent.click(screen.getByRole("button", { name: "gifts" }));
     const shelf = screen.getByRole("region", { name: "Your shelf" });
     expect(shelf.querySelectorAll("[data-cubby]")).toHaveLength(6);

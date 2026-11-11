@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type CSSProperties, type PointerEve
 import "./circle.css";
 import { faceGradient } from "../messages/avatar";
 import { FRAUNCES, s } from "../home/units";
+import { PaperDefs, PaperFill } from "../gifts/wrap-pattern";
 import { giftSpots, GROUND, LID_OVERHANG, moreChip, pileBox } from "./gift-layout";
 import { BANDS, LABELS, layoutRing, ringAt, TREE_BOX } from "./ring-layout";
 import { RINGS, type CirclePerson, type Ring } from "./types";
@@ -23,13 +24,16 @@ const ANNOUNCE_MS = 2500;
 
 type CircleTreeProps = {
   people: readonly CirclePerson[];
-  /** Gifts received, newest first (CIRCLE-12). */
-  gifts: readonly { id: string }[];
+  /** Gifts waiting under the tree, newest first, in their sender's paper and ribbon (CIRCLE-12, GIFT-19). */
+  gifts: readonly TreeGift[];
   onOpenChat: (id: string) => void;
   onMove: (id: string, ring: Ring) => void;
 };
 
 type Drag = { id: string; dx: number; dy: number; over?: Ring };
+
+/** A wrapped gift under the tree. Without a paper, it gets one of the reference's plain wraps. */
+export type TreeGift = { id: string; pattern?: string; /** The ribbon's color. */ ribbon?: string };
 
 /**
  * The private tree: three canopy rings, everyone placed in theirs (CIRCLE-1/3/4).
@@ -139,7 +143,7 @@ export function CircleTree({ people, gifts, onOpenChat, onMove }: CircleTreeProp
             <path d="M197 452c2 46 4 88 14 114h13c-14-26-17-68-14-114z" fill="#6F3820" />
           </g>
           <circle cx="195" cy="318" r="170" fill={`url(#${glowId})`} />
-          {gifts.length > 0 && <GiftPile gifts={gifts} />}
+          {gifts.length > 0 && <GiftPile gifts={gifts} id={glowId} />}
         </g>
         {CANOPY.map((c) => {
           const lit = drag?.over === c.ring;
@@ -273,10 +277,10 @@ function PileLabel({ count }: { count: number }) {
 const wrapOf = (id: string) => WRAPS[[...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % WRAPS.length];
 
 /**
- * Gifts the user has received, one box each, newest in front; past the slots, a "+N" chip (CIRCLE-12).
- * TODO(re-evaluate when the memory mailbox is built): gifts can't be opened yet; this pile is where the mailbox goes.
+ * Gifts waiting to be opened, one box each, newest in front; past the slots, a "+N" chip (CIRCLE-12). Each box is in
+ * the paper and ribbon its sender chose (GIFT-19); the newest glows and shakes, as GiftOpen.dc.html's new present does.
  */
-function GiftPile({ gifts }: { gifts: readonly { id: string }[] }) {
+function GiftPile({ gifts, id }: { gifts: readonly TreeGift[]; id: string }) {
   const spots = giftSpots(gifts.length);
   const more = gifts.length - spots.length;
   const chip = moreChip();
@@ -287,16 +291,39 @@ function GiftPile({ gifts }: { gifts: readonly { id: string }[] }) {
         .map((spot, i) => ({ g: gifts[i], spot }))
         .reverse()
         .map(({ g, spot: { x, w, h } }) => {
-          const [box, lid, line, ribbon] = wrapOf(g.id);
+          const fresh = g.id === gifts[0].id;
+          const [box, lid, line, plainRibbon] = wrapOf(g.id);
+          const ribbon = g.ribbon ?? plainRibbon;
+          const paper = `${id}-p${gifts.indexOf(g)}`;
+          const outline = g.pattern ? "rgba(43,51,80,.75)" : line;
           return (
-            <g key={g.id} data-gift={g.id}>
+            <g key={g.id} data-gift={g.id} data-pattern={g.pattern} data-ribbon={ribbon} data-gift-fresh={fresh ? "" : undefined}>
+              {g.pattern && (
+                <defs>
+                  <PaperDefs id={paper} pattern={g.pattern} />
+                </defs>
+              )}
               <ellipse cx={x + w / 2} cy={GROUND} rx={w / 2 + 5} ry="3" fill="#3F5A22" opacity=".35" />
-              <g transform={`translate(${x} ${GROUND - h - 10})`}>
-                <rect x="0" y="10" width={w} height={h} rx="3" fill={box} stroke={line} strokeWidth="1.5" />
-                <rect x={w / 2 - 3.5} y="10" width="7" height={h} fill={ribbon} />
-                <rect x={-LID_OVERHANG} y="4" width={w + 2 * LID_OVERHANG} height="8" rx="2.5" fill={lid} stroke={line} strokeWidth="1.5" />
-                <rect x={w / 2 - 3.5} y="4" width="7" height="8" fill={ribbon} />
-                <path transform={`translate(${w / 2} 4) scale(.85)`} d="M0 0c-4-13-13-11-10-4 2 4 6 4 10 4zm0 0c4-13 13-11 10-4-2 4-6 4-10 4z" fill={ribbon} stroke={line} strokeWidth="1.2" />
+              {fresh && <circle className="yc-pulse" cx={x + w / 2} cy={GROUND - h / 2 - 4} r={w * 0.95} fill="#FFE27A" opacity=".55" />}
+              <g className={fresh ? "yc-shake" : undefined} style={fresh ? { transformBox: "fill-box", transformOrigin: "50% 100%" } : undefined}>
+                <g transform={`translate(${x} ${GROUND - h - 10})`}>
+                  {g.pattern ? (
+                    <PaperFill id={paper} pattern={g.pattern} shape={(fill) => <rect x="0" y="10" width={w} height={h} rx="3" fill={fill} />} />
+                  ) : (
+                    <rect x="0" y="10" width={w} height={h} rx="3" fill={box} />
+                  )}
+                  <rect x="0" y="10" width={w} height={h} rx="3" fill="none" stroke={outline} strokeWidth="1.5" />
+                  <rect x={w / 2 - 3.5} y="10" width="7" height={h} fill={ribbon} />
+                  {g.pattern ? (
+                    <PaperFill id={paper} pattern={g.pattern} shape={(fill) => <rect x={-LID_OVERHANG} y="4" width={w + 2 * LID_OVERHANG} height="8" rx="2.5" fill={fill} />} />
+                  ) : (
+                    <rect x={-LID_OVERHANG} y="4" width={w + 2 * LID_OVERHANG} height="8" rx="2.5" fill={lid} />
+                  )}
+                  {/* The lid sits a shade lighter than the box. */}
+                  <rect x={-LID_OVERHANG} y="4" width={w + 2 * LID_OVERHANG} height="8" rx="2.5" fill={g.pattern ? "rgba(255,255,255,.14)" : "none"} stroke={outline} strokeWidth="1.5" />
+                  <rect x={w / 2 - 3.5} y="4" width="7" height="8" fill={ribbon} />
+                  <path transform={`translate(${w / 2} 4) scale(.85)`} d="M0 0c-4-13-13-11-10-4 2 4 6 4 10 4zm0 0c4-13 13-11 10-4-2 4-6 4-10 4z" fill={ribbon} stroke={outline} strokeWidth="1.2" />
+                </g>
               </g>
             </g>
           );
@@ -311,5 +338,21 @@ function GiftPile({ gifts }: { gifts: readonly { id: string }[] }) {
         </g>
       )}
     </g>
+  );
+}
+
+/**
+ * The pile, as one button over all of it: it opens the newest gift (GIFT-19). The boxes are small, so the whole pile is
+ * the target, at least 44px. Outside the tree's group, which only holds people.
+ */
+export function GiftPileButton({ count, label, onOpen }: { count: number; label: string; onOpen: () => void }) {
+  const b = pileBox(count);
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onOpen}
+      style={{ position: "absolute", left: s(b.x + TREE_BOX.cx - 195 - 6), top: s(b.y + TREE_BOX.cy - 318 - 10), width: s(b.w + 12), height: s(b.h + 16), minWidth: 44, minHeight: 44, padding: 0, border: 0, borderRadius: s(10), background: "none", cursor: "pointer", zIndex: 1 }}
+    />
   );
 }

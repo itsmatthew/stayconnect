@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { FramedPhoto } from "../gifts/framed-photo";
+import type { GiftCardLook } from "../gifts/gift-card";
 import "../gifts/gifts.css";
 import { prefersLessMotion } from "../gifts/motion";
 import { FRAUNCES, s } from "../home/units";
@@ -6,12 +8,19 @@ import { FRAUNCES, s } from "../home/units";
 const CUBBY = { height: s(112), borderRadius: s(4), background: "linear-gradient(#C9AF74, #D9C28C 22%, #EBDDB4)" } as const;
 const LEDGE = { height: s(25), borderTop: `${s(1)} solid rgba(255,214,160,.35)` } as const;
 
+/** A gift on the shelf: who it's from, and how it looks. */
+export type ShelfGift = { id: string; fromName: string; look: GiftCardLook };
+
+const CUBBIES = 6;
+
 /**
- * Your gift cabinet on Me (docs/specs/gifts.md, GIFT-1), as in design-ref/project/MeGifts.dc.html: two rows of three
- * cubbies, and a drawer underneath. Pulling the drawer starts a gift. Empty for now: kept gifts fill it in Phase 3.
+ * Your gift cabinet on Me (docs/specs/gifts.md, GIFT-1, GIFT-21), as in design-ref/project/MeGifts.dc.html: two rows
+ * of three cubbies, and a drawer underneath. Opened gifts stand in the cubbies, newest first, each in the frame its
+ * sender chose; tapping one shows it big. Pulling the drawer starts a gift.
+ * TODO(re-evaluate when someone keeps more than 6 gifts): the shelf shows the newest 6; older ones need a way in.
  * Inset shadows don't port to React Native, so the cubbies' depth is a gradient.
  */
-export function GiftShelf({ onSendGift }: { onSendGift?: () => void }) {
+export function GiftShelf({ onSendGift, gifts = [], onOpenGift }: { onSendGift?: () => void; gifts?: readonly ShelfGift[]; onOpenGift?: (id: string) => void }) {
   const [pulled, setPulled] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
@@ -24,14 +33,26 @@ export function GiftShelf({ onSendGift }: { onSendGift?: () => void }) {
   };
   return (
     <section aria-label="Your shelf" style={{ position: "relative", width: s(370), height: s(336), margin: `0 auto`, boxSizing: "border-box", padding: `${s(9)} ${s(9)} 0`, borderRadius: `${s(10)} ${s(10)} ${s(4)} ${s(4)}`, background: "linear-gradient(90deg, #7E4224, #A35E35 18%, #94522D 50%, #A35E35 82%, #7E4224)", border: `${s(2)} solid #4F2713`, boxShadow: `0 ${s(8)} ${s(14)} -${s(4)} rgba(74,44,20,.5)` }}>
-      <div aria-hidden="true" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", columnGap: s(7) }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", columnGap: s(7) }}>
         {[0, 1].map((row) => (
           <div key={row} style={{ display: "contents" }}>
+            {[0, 1, 2].map((i) => {
+              const g = gifts.slice(0, CUBBIES)[row * 3 + i];
+              return (
+                <div key={`c${i}`} data-cubby="" style={{ ...CUBBY, position: "relative", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+                  {g && (
+                    <button type="button" aria-label={`Gift from ${g.fromName}`} onClick={() => onOpenGift?.(g.id)} style={{ width: "100%", height: "100%", minHeight: 44, padding: `0 0 ${s(4)}`, border: 0, background: "none", display: "flex", alignItems: "flex-end", justifyContent: "center", cursor: "pointer" }}>
+                      {/* The gift's own front, a third of its size, leaning back in the cubby. */}
+                      <span style={{ display: "block", width: s(95), height: s(72), transform: `rotate(${(row * 3 + i) % 2 ? 2 : -2}deg)`, boxShadow: `0 ${s(3)} ${s(6)} rgba(74,44,20,.4)` }}>
+                        <MiniFront look={g.look} />
+                      </span>
+                    </button>
+                  )}
+                </div>
+              );
+            })}
             {[0, 1, 2].map((i) => (
-              <div key={`c${i}`} data-cubby="" style={CUBBY} />
-            ))}
-            {[0, 1, 2].map((i) => (
-              <div key={`l${i}`} style={LEDGE} />
+              <div key={`l${i}`} aria-hidden="true" style={LEDGE} />
             ))}
           </div>
         ))}
@@ -48,5 +69,16 @@ export function GiftShelf({ onSendGift }: { onSendGift?: () => void }) {
         </span>
       </button>
     </section>
+  );
+}
+
+/** The gift's front at a third of its size: the same frame and photo, scaled. */
+function MiniFront({ look }: { look: GiftCardLook }) {
+  return (
+    <span aria-hidden="true" style={{ display: "block", width: s(95), height: s(72), overflow: "hidden", borderRadius: s(2) }}>
+      <span style={{ display: "block", width: s(296), height: s(226), transform: "scale(.32)", transformOrigin: "0 0" }}>
+        <FramedPhoto src={look.src} picture={look.picture} alt="" frame={look.frame} stamp={look.stamp} written={look.written} monthCaption={look.monthCaption} />
+      </span>
+    </span>
   );
 }
