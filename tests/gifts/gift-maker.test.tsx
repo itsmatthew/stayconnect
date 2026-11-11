@@ -44,11 +44,20 @@ const renderMe = (data: AppData = demoData) =>
     />,
   );
 
-const tap = (name: string | RegExp) => fireEvent.click(screen.getByRole("button", { name }));
+/**
+ * The topmost sheet (the maker, or checkout or the sent screen over it), else the page. Role queries over the whole Me
+ * screen behind the maker are slow in jsdom, so taps look only where the user is.
+ */
+const top = () => {
+  const open = document.querySelectorAll<HTMLElement>("[role='dialog']");
+  return open.length ? open[open.length - 1] : document.body;
+};
+const tap = (name: string | RegExp) => fireEvent.click(within(top()).getByRole("button", { name }));
 const openMaker = async () => {
   tap("gifts");
   tap("send a gift");
-  await screen.findByRole("heading", { name: "Who's it for?" });
+  await waitFor(() => expect(top()).not.toBe(document.body));
+  await within(top()).findByRole("heading", { name: "Who's it for?" });
 };
 const saved = (): Gift[] => JSON.parse(localStorage.getItem(giftsKey(".demo")) ?? "[]");
 const next = (name: string) => tap(new RegExp(`^Next: ${name}`));
@@ -56,7 +65,7 @@ const toFrame = async () => {
   await openMaker();
   tap("Leo");
   next("photo");
-  fireEvent.click((await screen.findAllByRole("button", { name: /^Photo from / }))[0]);
+  fireEvent.click((await within(top()).findAllByRole("button", { name: /^Photo from / }))[0]);
   next("frame");
 };
 
@@ -300,7 +309,7 @@ describe("Note (GIFT-7)", () => {
     tap("Red ink");
     tap("Heart stamp");
     expect(saved()[0].note).toMatchObject({ hand: "pencil", ink: "red", stamp: "heart" });
-    for (const name of ["Pencil handwriting", "Red ink", "Heart stamp"]) expect(screen.getByRole("button", { name }).style.minHeight).toBe("44px");
+    for (const name of ["Pencil handwriting", "Red ink", "Heart stamp"]) expect(within(top()).getByRole("button", { name }).style.minHeight).toBe("44px");
   });
 });
 
