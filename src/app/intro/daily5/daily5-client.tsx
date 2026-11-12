@@ -5,7 +5,7 @@ import type { RecipientSections } from "@/components/daily5/types";
 import type { NavProps } from "@/components/home/main-nav";
 import type { TrackStoreWork } from "../app-client";
 import { useState } from "react";
-import { useGiftMaker, type GiftDeps } from "../gifts/use-gift-maker";
+import { noGiftDeps, useGiftMaker, type GiftDeps } from "../gifts/use-gift-maker";
 import { DropClient, type DropDeps } from "../mail/drop-client";
 import { ME, type ChatAction } from "../messages/conversations";
 import { formatPhotoDate, formatToday } from "./format";
@@ -33,7 +33,7 @@ export function Daily5Client({ store, track, now, hasFace, recipients, dispatch,
   const { state, addFiles } = useDaily5(store, now, hasFace, track);
   const [toast, setToast] = useState<string>();
   const [dropping, setDropping] = useState<string | null>(null);
-  const gift = useGiftMaker(gifts ?? NO_GIFTS, { now, nav, onSent: (name) => setToast(`Wrapped and on its way to ${name}`) });
+  const gift = useGiftMaker(gifts ?? noGiftDeps, { now, nav, onSent: (name) => setToast(`Wrapped and on its way to ${name}`) });
   const dropPhoto = state.photos.find((p) => p.id === dropping);
   const cards = state.photos.map((p) => {
     const dateLabel = formatPhotoDate(p.takenAt);
@@ -81,16 +81,3 @@ export function Daily5Client({ store, track, now, hasFace, recipients, dispatch,
     </>
   );
 }
-
-/** Without gift services the gift button isn't shown, so these are never used. */
-const NO_GIFTS: GiftDeps = {
-  store: { load: async () => [], save: async () => {} },
-  events: { record: async () => {} },
-  photos: null,
-  placements: {},
-  groups: [],
-  friends: [],
-  senderName: "",
-  payment: { product: async (sku) => ({ sku, displayPrice: "", free: true }), balance: async () => ({ credits: 0 }), pay: async () => ({ status: "failed" }), find: async () => undefined },
-  delivery: { deliver: async () => {} },
-};

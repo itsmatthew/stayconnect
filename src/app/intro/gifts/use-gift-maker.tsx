@@ -6,7 +6,8 @@ import type { CircleGroup, Friend } from "@/components/home/types";
 import type { Placements } from "../circle/rings";
 import type { PhotoStore } from "../daily5/photo-store";
 import { ME } from "../messages/conversations";
-import { dayKey, type GiftPhoto } from "./gift";
+import type { MonthDay } from "../mail/birthdays";
+import { dayKey, type Gift, type GiftPhoto } from "./gift";
 import type { GiftDelivery } from "./gift-delivery";
 import type { GiftEvents } from "./gift-events";
 import { GiftMakerClient } from "./gift-maker-client";
@@ -31,6 +32,23 @@ export type GiftDeps = {
   keepOwn?: (g: ReceivedGift) => void;
   /** After Done on a group gift that opens now: show your shelf, with it landing (GIFT-23). */
   onLanded?: (id: string) => void;
+  /** Friend id → birthday ("MM-DD"), for the badge on who it's for and "on a day" (GIFT-24). */
+  birthdays?: Readonly<Record<string, MonthDay>>;
+  /** Every gift sent, wherever from: the mailbox notes birthday gifts (MAILBOX-12). */
+  onSentGift?: (g: Gift) => void;
+};
+
+/** Without gift services there's no way into the maker, so these are never used. */
+export const noGiftDeps: GiftDeps = {
+  store: { load: async () => [], save: async () => {} },
+  events: { record: async () => {} },
+  photos: null,
+  placements: {},
+  groups: [],
+  friends: [],
+  senderName: "",
+  payment: { product: async (sku) => ({ sku, displayPrice: "", free: true }), balance: async () => ({ credits: 0 }), pay: async () => ({ status: "failed" }), find: async () => undefined },
+  delivery: { deliver: async () => {} },
 };
 
 /** A photo to start from: Daily 5's "send as a gift" (GIFT-17). */
@@ -58,6 +76,7 @@ export function useGiftMaker(deps: GiftDeps, { now, nav, onSent }: { now: () => 
   const send = async () => {
     const result = await draft.send();
     const g = result?.gift;
+    if (result?.kind === "sent" && g) deps.onSentGift?.(g);
     if (result?.kind === "sent" && result.own && g) {
       const group = g.to?.kind === "group" ? deps.groups.find((x) => x.id === g.to?.id) : undefined;
       // TODO(server): kept on this device only; the server should keep it for the sender's other devices, never deliver it wrapped.
@@ -82,6 +101,7 @@ export function useGiftMaker(deps: GiftDeps, { now, nav, onSent }: { now: () => 
       placements={deps.placements}
       photos={deps.photos}
       senderName={deps.senderName}
+      birthdays={deps.birthdays}
       now={now}
       onSend={send}
       priceOf={(sku) => deps.payment.product(sku)}
@@ -93,5 +113,5 @@ export function useGiftMaker(deps: GiftDeps, { now, nav, onSent }: { now: () => 
       }}
     />
   );
-  return { open: draft.open, start: draft.start, maker };
+  return { open: draft.open, start: draft.start, startFor: draft.startFor, maker };
 }

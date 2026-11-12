@@ -36,6 +36,8 @@ import { localGiftStore } from "./gifts/local-gift-store";
 import { localReceived } from "./gifts/local-received";
 import type { ReceivedGiftStore } from "./gifts/received";
 import { useGiftPopups } from "./gifts/received-client";
+import { birthdayFor } from "./mail/birthdays";
+import { dayKey } from "./gifts/gift";
 import { useReceived } from "./gifts/use-received";
 import { AppShown } from "./app-shown";
 import { validateGroupName, withGroupNames, type GroupNameStore } from "./group-names/group-names";
@@ -186,6 +188,8 @@ export function AppClient({
   // Waiting gifts pop up as the app opens, over whatever it opens on (GIFT-19).
   const popups = useGiftPopups({ shown: useContext(AppShown), loaded: gifts.loaded, list: gifts.list, open: gifts.open, viewerName: data.senderName, now, onDone: () => showShelf() });
   const [goalSeed] = useState(() => data.goals(now()));
+  /** Friend id → birthday. TODO(server/onboarding): asked when people join (MAILBOX-11). */
+  const [birthdays] = useState(() => data.birthdays(now()));
   const [goals, dispatchGoal] = useGoals(goalSeed, data.storageSuffix);
   /** A thread for Messages to open on arrival (CIRCLE-6). */
   const [openThread, setOpenThread] = useState<string | null>(null);
@@ -231,6 +235,14 @@ export function AppClient({
   /** Everything a gift needs, for Me and Daily 5 (docs/specs/gifts.md). */
   const giftDeps: GiftDeps = { store: giftStore(data.storageSuffix), events: giftEvents(data.storageSuffix), photos: store, placements: circle.placements, groups: homeGroups, friends: viewerData.friends, senderName: data.senderName, payment: paymentService, delivery: giftDelivery(data.storageSuffix),
     keepOwn: gifts.receive,
+    birthdays,
+    // A gift opening on someone's birthday, sent from anywhere, marks their reminder (MAILBOX-12).
+    onSentGift: (g) => {
+      if (g.to?.kind !== "person") return;
+      const today = dayKey(now());
+      const day = birthdayFor(birthdays[g.to.id], g.opens.kind === "on" ? g.opens.day : today, today);
+      if (day) inboxDispatch({ type: "birthdayGift", personId: g.to.id, day });
+    },
     onLanded: (id) => {
       setLanding(id);
       showShelf();
@@ -276,6 +288,7 @@ export function AppClient({
           onRename={renameGroup}
           countdowns={countdowns}
           mail={{ state: inboxState, dispatch: inboxDispatch, recipientName: data.senderName || undefined }}
+          giftMaker={giftDeps}
         />
       );
     case "Daily 5":

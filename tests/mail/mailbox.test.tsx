@@ -17,7 +17,9 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-const renderApp = (data: AppData = demoData) => {
+/** The demo without birthdays: these tests are about photos (birthdays: mailbox-birthday.test.tsx). */
+const noBirthdays: AppData = { ...demoData, birthdays: () => ({}) };
+const renderApp = (data: AppData = noBirthdays) => {
   const id = ++n;
   return render(
     <AppClient data={data} now={() => NOW} openStore={() => openPhotoStore(`mb-photos-${id}`)} openArchive={() => openArchiveStore(`mb-archive-${id}`)} hasFace={async () => true} />,

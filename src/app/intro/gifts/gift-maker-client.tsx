@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import type { Placements } from "../circle/rings";
 import { formatPhotoDate } from "../daily5/format";
 import type { PhotoStore, StoredPhoto } from "../daily5/photo-store";
+import { conversationId } from "../messages/conversations";
 import { usePhotoUrls } from "../messages/use-photo-urls";
 import { friendParty, groupParty } from "../parties";
 import { CheckoutSheet } from "@/components/gifts/checkout-sheet";
 import { GiftMaker, type GiftChip } from "@/components/gifts/gift-maker";
 import { SentScreen } from "@/components/gifts/sent-screen";
 import { FrameStep, NoteStep, PhotoStep, ToStep, WrapStep } from "@/components/gifts/gift-steps";
+import { birthdayShort, upcomingBirthdays, type MonthDay } from "../mail/birthdays";
 import type { GiftCardLook } from "@/components/gifts/gift-card";
 import type { CircleGroup, Friend, Party } from "@/components/home/types";
 import type { SendResult } from "./gift-flow";
@@ -32,6 +34,8 @@ type GiftMakerClientProps = {
   photos: PhotoStore | null;
   /** How the postcard is signed. */
   senderName: string;
+  /** Friend id → birthday ("MM-DD"): a badge on who it's for, and "on a day" picks it (GIFT-24). */
+  birthdays?: Readonly<Record<string, MonthDay>>;
   now: () => number;
   onDaily5: () => void;
   /** After Done on the sent screen: who it went to (GIFT-17's toast). */
@@ -79,7 +83,7 @@ function usePhotoList(store: PhotoStore | null) {
 }
 
 /** The gift maker, wired (docs/specs/gifts.md). Rules are in `gift.ts`; this only connects them to the views. */
-export function GiftMakerClient({ gift, dispatch, onClose, friends, groups, placements, photos, senderName, now, onDaily5, onSend, onSent, priceOf, onDevFail }: GiftMakerClientProps) {
+export function GiftMakerClient({ gift, dispatch, onClose, friends, groups, placements, photos, senderName, birthdays = {}, now, onDaily5, onSend, onSent, priceOf, onDevFail }: GiftMakerClientProps) {
   const [checkout, setCheckout] = useState<Checkout | null>(null);
   const [product, setProduct] = useState<Product | null>(null);
   const [sent, setSent] = useState(false);
@@ -97,6 +101,13 @@ export function GiftMakerClient({ gift, dispatch, onClose, friends, groups, plac
 
   const today = dayKey(now());
   const recipient = recipientParty(gift, friends, groups);
+  // Birthdays this week, by tile: "bday Fri" (GIFT-24).
+  const soon = upcomingBirthdays(birthdays, friends.map((f) => f.id), today);
+  const badges = Object.fromEntries(
+    soon.map((u) => [conversationId("friend", u.personId), u.daysAway === 0 ? { short: "bday today", long: "birthday today" } : { short: `bday ${birthdayShort(u.day)}`, long: `birthday ${dayLabel(u.day)}` }]),
+  );
+  /** Their birthday, if it's coming up and still ahead: "on a day" picks it. */
+  const theirBirthday = gift.to?.kind === "person" ? soon.find((u) => u.personId === gift.to?.id && u.daysAway > 0)?.day : undefined;
   const sections = giftRecipients({ friends, groups, placements }, query);
   const stamp = gift.frame.dateStamp && gift.takenAt !== undefined ? { code: stampCode(gift.takenAt), written: writtenDate(gift.takenAt) } : undefined;
   const name = recipient?.name ?? "";
@@ -172,6 +183,7 @@ export function GiftMakerClient({ gift, dispatch, onClose, friends, groups, plac
           query={query}
           onQuery={setQuery}
           picked={recipient?.id}
+          badges={badges}
           onPick={(p) => dispatch({ type: "to", to: { kind: p.kind === "group" ? "group" : "person", id: p.id.slice(p.id.indexOf(":") + 1) } })}
         />
       )}
@@ -214,9 +226,9 @@ export function GiftMakerClient({ gift, dispatch, onClose, friends, groups, plac
           ribbon={gift.wrap.ribbon}
           onRibbon={(id) => dispatch({ type: "ribbon", id })}
           day={gift.opens.kind === "on" ? gift.opens.day : undefined}
-          dayLabel={gift.opens.kind === "on" && gift.opens.day ? dayLabel(gift.opens.day) : undefined}
+          dayLabel={gift.opens.kind === "on" && gift.opens.day ? `${dayLabel(gift.opens.day)}${gift.opens.day === theirBirthday ? " · their birthday" : ""}` : undefined}
           minDay={dayAfter(today)}
-          onOpens={(day) => dispatch({ type: "opens", opens: day === undefined ? { kind: "now" } : { kind: "on", day } })}
+          onOpens={(day) => dispatch({ type: "opens", opens: day === undefined ? { kind: "now" } : { kind: "on", day: day || theirBirthday || "" } })}
         />
       )}
     </GiftMaker>

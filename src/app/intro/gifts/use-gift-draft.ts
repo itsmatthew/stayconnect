@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { giftReducer, newGift, newestDraft, startWithPhoto, type Gift, type GiftAction, type GiftPhoto } from "./gift";
+import { dayKey, giftReducer, newGift, newestDraft, startForBirthday, startWithPhoto, type Gift, type GiftAction, type GiftPhoto } from "./gift";
 import type { GiftDelivery } from "./gift-delivery";
 import type { GiftEvents } from "./gift-events";
 import { sendGift, settlePaying, type SendResult } from "./gift-flow";
@@ -52,6 +52,19 @@ export function useGiftDraft(options: GiftDraftOptions) {
     [makeId, from, now, show],
   );
 
+  /** A gift for someone's birthday, from the mailbox (MAILBOX-12). */
+  const startFor = useCallback(
+    (personId: string, day: string) => {
+      const g = startForBirthday({ id: makeId(), from, now: now(), personId, day, today: dayKey(now()) });
+      show(g);
+      // A person is picked, so it's made and saved at once (GIFT-9, GIFT-11).
+      made.current = true;
+      void events.record({ type: "made", giftId: g.id, at: now() });
+      store.save(g).catch(() => {});
+    },
+    [makeId, from, now, show, events, store],
+  );
+
   const dispatch = useCallback(
     (action: GiftAction) => {
       if (!current.current) return;
@@ -81,5 +94,5 @@ export function useGiftDraft(options: GiftDraftOptions) {
     show(null);
   }, [events, now, show]);
 
-  return { gift, open, start, dispatch, send, close };
+  return { gift, open, start, startFor, dispatch, send, close };
 }

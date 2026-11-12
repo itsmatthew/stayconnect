@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { canContinue, canOpenStep, giftCharge, giftCopies, giftSteps, clampNote, dateStampAllowed, dayKey, dayLabel, giftReducer, newGift, noteLength, NOTE_MAX, previousStep, nextStep, stampCode, startWithPhoto, STEPS, writtenDate, type Gift } from "@/app/intro/gifts/gift";
+import { canContinue, canOpenStep, giftCharge, giftCopies, giftSteps, clampNote, dateStampAllowed, dayKey, dayLabel, giftReducer, newGift, noteLength, NOTE_MAX, previousStep, nextStep, stampCode, startForBirthday, startWithPhoto, STEPS, writtenDate, type Gift } from "@/app/intro/gifts/gift";
 import { FRAMES, HANDS, INKS, RIBBONS, STAMPS, WRAPS, isAvailable } from "@/app/intro/gifts/gift-catalog";
 import { giftRecipients } from "@/app/intro/gifts/gift-recipients";
 
@@ -262,3 +262,16 @@ describe("portable (GIFT-12)", () => {
     expect(source).not.toMatch(/\b(window|document|localStorage|sessionStorage|indexedDB|navigator)\b/);
   });
 });
+
+describe("a gift for a birthday (MAILBOX-12)", () => {
+  it("starts addressed to them, opening on their birthday, at the photo", () => {
+    const g = startForBirthday({ id: "g3", from: "me", now: NOW, personId: "leo", day: "2026-11-13", today: "2026-11-10" });
+    expect(g).toMatchObject({ to: { kind: "person", id: "leo" }, opens: { kind: "on", day: "2026-11-13" }, step: "photo", status: "draft" });
+  });
+
+  it("on the day itself, it opens right away", () => {
+    const g = startForBirthday({ id: "g3", from: "me", now: NOW, personId: "leo", day: "2026-11-10", today: "2026-11-10" });
+    expect(g.opens).toEqual({ kind: "now" });
+  });
+});
+

@@ -1,13 +1,15 @@
 import { useId, type CSSProperties } from "react";
 import { CAVEAT, FRAUNCES, KARLA, NAVY, s } from "../home/units";
 import { MailPicture } from "./mail-picture";
-import type { EnvelopeView, MailItemView } from "./mail-types";
+import { BirthdayCard } from "./birthday-card";
+import type { EnvelopeView, MailItemView, MailPiece } from "./mail-types";
 import "./mail.css";
 
 type MailViewerProps = {
   /** "4 new". */
   subtitle: string;
-  envelopes: readonly EnvelopeView[];
+  /** Birthday cards first, then envelopes (MAILBOX-11). */
+  pieces: readonly MailPiece[];
   index: number;
   /** The envelope at `index` is open, showing `photoIndex`. */
   opened: boolean;
@@ -21,6 +23,8 @@ type MailViewerProps = {
   onDone: () => void;
   onZoom: (item: MailItemView) => void;
   onMenu: (item: MailItemView) => void;
+  /** "Schedule a gift" on a birthday card (MAILBOX-12). */
+  onSchedule: () => void;
   onClose: () => void;
 };
 
@@ -29,12 +33,14 @@ const roundButton = { width: 44, height: 44, padding: 0, borderRadius: "50%", bo
 
 /**
  * New mail (docs/specs/mailbox.md, MAILBOX-2 to MAILBOX-4), from MailOpen.dc.html: a dark sky, "Your mailbox", one big
- * envelope at a time with arrows between people. Opened, the photo slides up as a polaroid; Done keeps it. A stack
+ * envelope at a time with arrows between people; birthdays coming up come first, as cards (MAILBOX-11). Opened, the photo slides up as a polaroid; Done keeps it. A stack
  * opens one photo at a time. Scaled from the design's 390×844.
  */
 export function MailViewer(p: MailViewerProps) {
   const titleId = useId();
-  const env = p.envelopes[p.index];
+  const piece = p.pieces[p.index];
+  const card = piece?.kind === "birthday" ? piece : undefined;
+  const env = piece && piece.kind !== "birthday" ? piece : undefined;
   const item = env?.items[p.photoIndex];
   const last = env && p.photoIndex >= env.items.length - 1;
   return (
@@ -51,6 +57,11 @@ export function MailViewer(p: MailViewerProps) {
           <Cross />
         </button>
 
+        {card && (
+          <div key={card.key} style={{ position: "absolute", left: 0, top: s(140), width: s(390), height: s(580) }}>
+            <BirthdayCard card={card} onAction={p.onSchedule} />
+          </div>
+        )}
         {env && (
           <div key={`${env.key}-${p.opened}-${p.photoIndex}`} style={{ position: "absolute", left: 0, top: s(140), width: s(390), height: s(580) }}>
             {!p.opened ? (
@@ -101,15 +112,15 @@ export function MailViewer(p: MailViewerProps) {
           </button>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: s(6) }}>
             <div aria-hidden="true" style={{ display: "flex", gap: s(7) }}>
-              {p.envelopes.map((e, i) => (
+              {p.pieces.map((e, i) => (
                 <span key={e.key} style={{ width: s(9), height: s(9), borderRadius: "50%", background: i === p.index ? CREAM : "rgba(255,246,218,.3)" }} />
               ))}
             </div>
             <span style={{ fontSize: s(12.5), fontWeight: 800, color: "#E8D9A8" }}>
-              {p.index + 1} of {p.envelopes.length}
+              {p.index + 1} of {p.pieces.length}
             </span>
           </div>
-          <button type="button" aria-label="Next piece of mail" disabled={p.index >= p.envelopes.length - 1} onClick={p.onNext} style={{ ...roundButton, background: "none", opacity: p.index >= p.envelopes.length - 1 ? 0.3 : 1 }}>
+          <button type="button" aria-label="Next piece of mail" disabled={p.index >= p.pieces.length - 1} onClick={p.onNext} style={{ ...roundButton, background: "none", opacity: p.index >= p.pieces.length - 1 ? 0.3 : 1 }}>
             <Chevron d="M9 5l7 7-7 7" />
           </button>
         </div>

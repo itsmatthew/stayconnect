@@ -31,7 +31,9 @@ const seedPhotos = async (count = 3, fileDated = false) => {
   for (let i = 0; i < count; i++) await store.add({ pool: "mine", fileKey: `m${i}`, takenAt: OLD + i, image: new Blob([`m${i}`]), ...(fileDated ? { fileDated: true } : {}) });
   store.close();
 };
-const renderMe = (data: AppData = demoData) =>
+/** The demo without birthdays: these tests are about the maker (birthdays: tests/mail/mailbox-birthday.test.tsx). */
+const noBirthdays: AppData = { ...demoData, birthdays: () => ({}) };
+const renderMe = (data: AppData = noBirthdays) =>
   render(
     <AppClient
       initialTab="Me"

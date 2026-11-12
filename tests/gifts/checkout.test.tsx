@@ -17,6 +17,8 @@ import { localPayment } from "@/app/intro/gifts/local-payment";
 import { openOrnamentStore } from "@/app/intro/ornaments/ornament-store";
 
 const NOW = new Date(2026, 10, 9, 12).getTime();
+/** The demo without birthdays: these tests are about checkout (birthdays: tests/mail/mailbox-birthday.test.tsx). */
+const noBirthdays = { ...demoData, birthdays: () => ({}) };
 const OLD = new Date(2021, 4, 1).getTime();
 let n = 0;
 let dbName = "";
@@ -37,7 +39,7 @@ const renderMe = (payment: PaymentService = localPayment({ wait: async () => {} 
   render(
     <AppClient
       initialTab="Me"
-      data={demoData}
+      data={noBirthdays}
       now={() => NOW}
       openStore={() => openPhotoStore(`${dbName}-photos`)}
       openArchive={() => openArchiveStore(`${dbName}-archive`)}

@@ -71,6 +71,13 @@ export function startWithPhoto({ id, from, now, ...photo }: { id: string; from: 
   return { ...giftReducer(newGift({ id, from, now }), { type: "photo", ...photo }), photoFixed: true };
 }
 
+/** A gift for someone's birthday (MAILBOX-12): addressed to them, opening that day (right away on the day itself), at the photo. */
+export function startForBirthday({ id, from, now, personId, day, today }: { id: string; from: string; now: number; personId: string; day: string; today: string }): Gift {
+  const to = giftReducer(newGift({ id, from, now }), { type: "to", to: { kind: "person", id: personId } });
+  const opens = giftReducer(to, { type: "opens", opens: day > today ? { kind: "on", day } : { kind: "now" } });
+  return giftReducer(opens, { type: "step", step: "photo" });
+}
+
 /** Counts code points, so an emoji is one. */
 export const noteLength = (text: string) => [...text].length;
 export const clampNote = (text: string) => [...text].slice(0, NOTE_MAX).join("");

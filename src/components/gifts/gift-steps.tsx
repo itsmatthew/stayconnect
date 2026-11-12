@@ -49,9 +49,17 @@ function Section({ id, title, children }: { id: string; title: string; children:
   );
 }
 
-function PartyTile({ party, picked, onPick }: { party: Party; picked: boolean; onPick: (p: Party) => void }) {
+/** A birthday this week on someone's tile (GIFT-24): "bday Fri", and "birthday Fri, Nov 13" for screen readers. */
+export type TileBadge = { short: string; long: string };
+
+function PartyTile({ party, picked, onPick, badge }: { party: Party; picked: boolean; onPick: (p: Party) => void; badge?: TileBadge }) {
   return (
-    <button type="button" aria-label={party.name} aria-pressed={picked} onClick={() => onPick(party)} style={{ ...bare, flex: "none", width: s(62), minHeight: s(76), flexDirection: "column", justifyContent: "flex-start", gap: s(4) }}>
+    <button type="button" aria-label={badge ? `${party.name}, ${badge.long}` : party.name} aria-pressed={picked} onClick={() => onPick(party)} style={{ ...bare, position: "relative", flex: "none", width: s(62), minHeight: s(76), flexDirection: "column", justifyContent: "flex-start", gap: s(4) }}>
+      {badge && (
+        <span aria-hidden="true" style={{ position: "absolute", right: s(-2), top: s(-4), zIndex: 1, height: s(18), boxSizing: "border-box", padding: `0 ${s(6)}`, borderRadius: s(9), background: "#F7CB4D", border: `${s(1.5)} solid ${NAVY}`, fontSize: s(9.5), fontWeight: 800, lineHeight: s(15), whiteSpace: "nowrap" }}>
+          {badge.short}
+        </span>
+      )}
       <span data-picked={picked || undefined} style={{ width: s(48), height: s(48), boxSizing: "border-box", borderRadius: "50%", border: `${s(2)} solid ${NAVY}`, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: picked ? `0 0 0 ${s(2)} ${PAPER_PANEL}, 0 0 0 ${s(5)} ${RED}` : "none" }}>
         <PartyAvatar party={party} size={46} />
       </span>
@@ -78,16 +86,18 @@ type ToStepProps = {
   /** The chosen party's id. */
   picked?: string;
   onPick: (party: Party) => void;
+  /** Party id → a birthday this week (GIFT-24). */
+  badges?: Readonly<Record<string, TileBadge>>;
 };
 
 /** Who's it for? (GIFT-4): groups first, then the rings, each one row. Search sits behind the magnifier. */
-export function ToStep({ sections, query, onQuery, picked, onPick }: ToStepProps) {
+export function ToStep({ sections, query, onQuery, picked, onPick, badges = {} }: ToStepProps) {
   const [showAll, setShowAll] = useState(false);
   const [searching, setSearching] = useState(false);
   const { groups, nest, branches, everyone } = sections;
   const nobody = !groups.length && !nest.length && !branches.length && !everyone.length;
   const filtering = !!query.trim();
-  const tiles = (list: readonly Party[]) => list.map((p) => <PartyTile key={p.id} party={p} picked={p.id === picked} onPick={onPick} />);
+  const tiles = (list: readonly Party[]) => list.map((p) => <PartyTile key={p.id} party={p} picked={p.id === picked} onPick={onPick} badge={badges[p.id]} />);
   const everyoneShown = filtering || showAll;
   const more = everyone.length > 0 && !everyoneShown ? <Everyone count={everyone.length} onClick={() => setShowAll(true)} /> : null;
   return (

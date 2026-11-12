@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { emptyInbox, envelopes, inboxReducer, keptGroups, mailboxLabel, newCount, type InboxState, type Letter } from "@/app/intro/mail/inbox";
+import { emptyInbox, envelopes, hasBirthdayGift, inboxReducer, keptGroups, mailboxLabel, newCount, newReminders, withInboxDefaults, type InboxState, type Letter } from "@/app/intro/mail/inbox";
 
 const DAY = 86_400_000;
 const NOW = new Date(2026, 10, 10, 12).getTime();
@@ -84,3 +84,51 @@ describe("kept mail (MAILBOX-5)", () => {
     expect(groups[1].letters.map((l) => l.id)).toEqual([oct21.id, oct3.id]);
   });
 });
+
+describe("birthday reminders (MAILBOX-11 to MAILBOX-13)", () => {
+  const leoBday = { personId: "leo", day: "2026-11-13", daysAway: 3 };
+  const momBday = { personId: "mom", day: "2026-11-15", daysAway: 5 };
+
+  it("a coming birthday is new mail until you've seen it, once per birthday", () => {
+    let s = emptyInbox;
+    expect(newReminders([leoBday, momBday], s).map((u) => u.personId)).toEqual(["leo", "mom"]);
+    s = inboxReducer(s, { type: "seeReminder", personId: "leo", day: "2026-11-13", at: NOW });
+    s = inboxReducer(s, { type: "seeReminder", personId: "leo", day: "2026-11-13", at: NOW + 5 });
+    expect(newReminders([leoBday, momBday], s).map((u) => u.personId)).toEqual(["mom"]);
+    expect(s.seen).toEqual([{ id: "bday-leo-2026-11-13", personId: "leo", day: "2026-11-13", at: NOW }]);
+    // Next year's is a new one.
+    expect(newReminders([{ ...leoBday, day: "2027-11-13" }], s)).toHaveLength(1);
+  });
+
+  it("the mailbox says what's new: photos and birthdays", () => {
+    expect(mailboxLabel(2, 1)).toBe("Your mailbox, 2 new photos and 1 birthday");
+    expect(mailboxLabel(0, 2)).toBe("Your mailbox, 2 birthdays coming up");
+    expect(mailboxLabel(0, 1)).toBe("Your mailbox, 1 birthday coming up");
+  });
+
+  it("knows when you've sent someone a gift for their birthday, from anywhere", () => {
+    let s = emptyInbox;
+    expect(hasBirthdayGift(s, "leo", "2026-11-13")).toBe(false);
+    s = inboxReducer(s, { type: "birthdayGift", personId: "leo", day: "2026-11-13" });
+    s = inboxReducer(s, { type: "birthdayGift", personId: "leo", day: "2026-11-13" });
+    expect(hasBirthdayGift(s, "leo", "2026-11-13")).toBe(true);
+    expect(hasBirthdayGift(s, "leo", "2027-11-13")).toBe(false);
+    expect(s.birthdayGifts).toHaveLength(1);
+  });
+
+  it("a seen reminder is kept with your photos, by when you saw it", () => {
+    const kept = letter(kate, NOW - 2 * DAY, "kept");
+    let s = withLetters(kept);
+    s = inboxReducer(s, { type: "seeReminder", personId: "leo", day: "2026-11-13", at: NOW - DAY });
+    const groups = keptGroups(s, NOW);
+    expect(groups.map((g) => g.label)).toEqual(["this week"]);
+    expect(groups[0].letters.map((l) => l.id)).toEqual([kept.id]);
+    expect(groups[0].reminders.map((r) => r.id)).toEqual(["bday-leo-2026-11-13"]);
+  });
+
+  it("mail saved before birthdays existed still loads", () => {
+    const old = { letters: [], blocked: [], reports: [] } as unknown as InboxState;
+    expect(withInboxDefaults(old)).toEqual({ letters: [], blocked: [], reports: [], seen: [], birthdayGifts: [] });
+  });
+});
+

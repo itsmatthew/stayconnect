@@ -12,6 +12,7 @@ import type { ArchivePost } from "./archive/posts";
 import { groupPalette } from "./colors/palette";
 import type { DirectoryEntry } from "./mail/directory";
 import type { InboxState, Letter, MailSender } from "./mail/inbox";
+import type { MonthDay } from "./mail/birthdays";
 import { ME, type ChatMessage, type Conversation } from "./messages/conversations";
 import { localDay, type GoalState } from "./profile/goals";
 
@@ -401,5 +402,19 @@ export function placeholderMail(now: number): InboxState {
     ],
     blocked: [],
     reports: [],
+    seen: [],
+    birthdayGifts: [],
   };
+}
+
+/**
+ * Some of the demo user's circle have birthdays (docs/specs/mailbox.md, MAILBOX-11), timed from `now`: Leo's is 3 days
+ * away, so his reminder is waiting; Grandma's is a few weeks off. TODO(server/onboarding): everyone answers this when they join.
+ */
+export function placeholderBirthdays(now: number): Record<string, MonthDay> {
+  const md = (daysAway: number) => {
+    const d = new Date(now + daysAway * 86_400_000);
+    return `${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
+  return { leo: md(3), grandma: md(24), priya: md(150) };
 }

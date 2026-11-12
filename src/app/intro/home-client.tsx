@@ -11,12 +11,14 @@ import type { CircleGroup, Friend } from "@/components/home/types";
 import { initialCircleState, members, overGuide, type CircleAction, type CircleState } from "./circle/rings";
 import type { ReceivedGift } from "./gifts/received";
 import { dayKey } from "./gifts/gift";
+import { noGiftDeps, useGiftMaker, type GiftDeps } from "./gifts/use-gift-maker";
+import { upcomingBirthdays } from "./mail/birthdays";
 import { shelf as shelfOf } from "./gifts/received";
 import { testGift } from "./gifts/received-client";
 import { activity, isLit, suggestion } from "./circle/suggestions";
 import { openingCenter, rotate, visibleAround } from "./circle-carousel";
 import { RenameSheetClient } from "./group-names/rename-sheet-client";
-import type { InboxAction, InboxState, MailSender } from "./mail/inbox";
+import { emptyInbox, type InboxAction, type InboxState, type MailSender } from "./mail/inbox";
 import { useMailbox } from "./mail/mailbox-client";
 import { initialChatState, type ChatState } from "./messages/conversations";
 import { OrnamentSheetClient, noOrnaments, type OrnamentControls } from "./ornaments/ornament-sheet-client";
@@ -44,10 +46,12 @@ type HomeClientProps = {
   countdowns?: Readonly<Record<string, string>>;
   /** Your mailbox, by your circle's tree (docs/specs/mailbox.md). */
   mail?: { state: InboxState; dispatch: (a: InboxAction) => void; recipientName?: string };
+  /** The gift maker, for "Schedule a gift" on a birthday in your mailbox (MAILBOX-12). Birthdays come with it. */
+  giftMaker?: GiftDeps;
 };
 
 const noGiftActions = { receive: () => {}, onShowShelf: () => {} };
-const noMail = { state: { letters: [], blocked: [], reports: [] }, dispatch: () => {} };
+const noMail = { state: emptyInbox, dispatch: () => {} };
 
 const noChat = initialChatState([]);
 const noCircle = initialCircleState({});
@@ -69,10 +73,27 @@ export function HomeClient({
   onRename = async () => {},
   countdowns = {},
   mail = noMail,
+  giftMaker = noGiftDeps,
 }: HomeClientProps) {
   // Your circle is everyone you've placed or can place: the dev control sends as some of them (MAILBOX-8).
   const circleSenders: MailSender[] = friends.map((f) => ({ id: f.id, name: f.name, look: f.look, inCircle: true }));
-  const mailbox = useMailbox({ ...mail, now, circle: circleSenders });
+  // Birthdays coming up in your whole circle: reminders in your mailbox, and a gift for one (MAILBOX-11, MAILBOX-12).
+  const maker = useGiftMaker(giftMaker, { now, nav });
+  const byFriend = new Map(friends.map((f) => [f.id, f]));
+  const today = dayKey(now());
+  const inCircle = Object.entries(state.placements).flatMap(([id, ring]) => (ring && byFriend.has(id) ? [id] : []));
+  const mailbox = useMailbox({
+    ...mail,
+    now,
+    circle: circleSenders,
+    birthdays: {
+      upcoming: upcomingBirthdays(giftMaker.birthdays ?? {}, inCircle, today),
+      person: (id) => byFriend.get(id),
+      today,
+      onSchedule: maker.startFor,
+      making: !!maker.maker,
+    },
+  });
   const [testGifts, setTestGifts] = useState(0);
   const [center, setCenter] = useState(() => openingCenter(groups));
   const [sheet, setSheet] = useState<OpenSheet | null>(null);
@@ -112,8 +133,9 @@ export function HomeClient({
         nav={nav}
       />
       {mailbox.screens}
+      {maker.maker}
       {/* Dev only (Next inlines NODE_ENV, so production drops it): receive a gift to test opening one (GIFT-22). */}
-      {process.env.NODE_ENV !== "production" && (
+      {process.env.NODE_ENV !== "production" && !maker.maker && (
         <button
           type="button"
           onClick={() => {

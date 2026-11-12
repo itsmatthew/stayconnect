@@ -8,6 +8,7 @@ import type { ReceivedGift } from "./gifts/received";
 import type { Placements } from "./circle/rings";
 import { fakeMemberColors, type MemberColorSource } from "./colors/member-colors";
 import { fakeDirectory, type Directory } from "./mail/directory";
+import type { MonthDay } from "./mail/birthdays";
 import { emptyInbox, type InboxState } from "./mail/inbox";
 import { DEMO_DATA } from "./demo";
 import type { Conversation } from "./messages/conversations";
@@ -22,6 +23,7 @@ import {
   placeholderRings,
   placeholderDirectory,
   placeholderMail,
+  placeholderBirthdays,
   placeholderSenderName,
   placeholderUpTo,
   seedConversations,
@@ -53,6 +55,8 @@ export type AppData = {
   directory: Directory;
   /** Your mailbox to start from (docs/specs/mailbox.md). TODO(server): mail will arrive from the server. */
   mail: (now: number) => InboxState;
+  /** Friend id → their birthday's month and day (docs/specs/mailbox.md, MAILBOX-11). TODO(server/onboarding): asked when people join. */
+  birthdays: (now: number) => Readonly<Record<string, MonthDay>>;
   /** Appended to storage names so demo and real data never mix (DEMO-3). */
   storageSuffix: string;
 };
@@ -72,6 +76,7 @@ export const emptyData: AppData = {
   senderName: "",
   directory: fakeDirectory([]),
   mail: () => emptyInbox,
+  birthdays: () => ({}),
   storageSuffix: "",
 };
 
@@ -90,6 +95,7 @@ export const demoData: AppData = {
   senderName: placeholderSenderName,
   directory: fakeDirectory(placeholderDirectory),
   mail: placeholderMail,
+  birthdays: placeholderBirthdays,
   storageSuffix: ".demo",
 };
 

@@ -1,15 +1,16 @@
 import { useId } from "react";
 import { CAVEAT, FRAUNCES, KARLA, NAVY, s } from "../home/units";
 import { MailPicture } from "./mail-picture";
-import type { MailItemView } from "./mail-types";
+import { BirthdayTile } from "./birthday-card";
+import type { BirthdayTileView, MailItemView } from "./mail-types";
 import { Cross } from "./mail-viewer";
 import "./mail.css";
 
 /**
  * Nothing new: what you've kept (docs/specs/mailbox.md, MAILBOX-5), from MailOpen.dc.html. A sheet over your tree, kept
- * photos as small polaroids, two across, under "this week" and each month. Tap one to see it big.
+ * photos as small polaroids, two across, under "this week" and each month, with seen birthday reminders. Tap one to see it big.
  */
-export function KeptSheet({ groups, onZoom, onClose }: { groups: readonly { label: string; items: readonly MailItemView[] }[]; onZoom: (item: MailItemView) => void; onClose: () => void }) {
+export function KeptSheet({ groups, onZoom, onReminder, onClose }: { groups: readonly { label: string; items: readonly MailItemView[]; reminders?: readonly BirthdayTileView[] }[]; onZoom: (item: MailItemView) => void; onReminder?: (key: string) => void; onClose: () => void }) {
   const titleId = useId();
   return (
     <div role="dialog" aria-modal="true" aria-labelledby={titleId} className="fixed inset-0 z-50 overflow-hidden [--s:min(calc(100vw/390),calc(100dvh/844))]" style={{ fontFamily: KARLA, color: NAVY }}>
@@ -57,6 +58,8 @@ export function KeptSheet({ groups, onZoom, onClose }: { groups: readonly { labe
                     </span>
                   </button>
                 ))}
+                {/* Seen birthday reminders, after the photos (MAILBOX-13). */}
+                {g.reminders?.map((r) => <BirthdayTile key={r.key} tile={r} onOpen={() => onReminder?.(r.key)} />)}
               </div>
             </section>
           ))}

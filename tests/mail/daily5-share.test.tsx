@@ -74,7 +74,7 @@ describe("send as a gift (MAIL-8)", () => {
     renderTab("Daily 5");
     fireEvent.click(within(await firstCard()).getByRole("button", { name: "Send this photo as a gift" }));
     expect(await screen.findByRole("heading", { name: "Who's it for?" })).toBeTruthy();
-    tap("Leo");
+    tap(/^Leo(,|$)/);
     tap(/^Next: frame/);
     tap(/^Next: note/);
     tap(/^Next: wrap/);
@@ -97,7 +97,7 @@ describe("a Daily 5 gift keeps its photo (GIFT-17)", () => {
     fireEvent.click(within(await firstCard()).getByRole("button", { name: "Send this photo as a gift" }));
     await screen.findByRole("heading", { name: "Who's it for?" });
     expect(chipNames()).toEqual(["1To", "2Frame", "3Note", "4Wrap"]);
-    tap("Leo");
+    tap(/^Leo(,|$)/);
     tap(/^Next: frame/);
     expect(screen.queryAllByRole("button", { name: /^Photo from / })).toEqual([]);
     tap(/^Back/);
@@ -109,7 +109,7 @@ describe("a Daily 5 gift keeps its photo (GIFT-17)", () => {
     renderTab("Daily 5");
     fireEvent.click(within(await firstCard()).getByRole("button", { name: "Send this photo as a gift" }));
     await screen.findByRole("heading", { name: "Who's it for?" });
-    tap("Leo");
+    tap(/^Leo(,|$)/);
     tap(/^Cancel/);
     cleanup();
     renderTab("Me");
