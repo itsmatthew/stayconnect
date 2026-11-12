@@ -139,14 +139,20 @@ export function canOpenStep(gift: Gift, step: GiftStep, today: string): boolean 
 export const nextStep = (gift: Pick<Gift, "step" | "photoFixed">): GiftStep | undefined => giftSteps(gift)[giftSteps(gift).indexOf(gift.step) + 1];
 export const previousStep = (gift: Pick<Gift, "step" | "photoFixed">): GiftStep | undefined => giftSteps(gift)[giftSteps(gift).indexOf(gift.step) - 1];
 
-/** What one recipient receives. Each has their own id, so each is unwrapped and kept on its own. */
-export type GiftCopy = { id: string; giftId: string; to: string };
+/**
+ * What one recipient receives. Each has their own id, so each is unwrapped and kept on its own. `own` marks the sender's
+ * copy of a group gift: it's never delivered or unwrapped, it goes straight on their shelf (GIFT-23).
+ */
+export type GiftCopy = { id: string; giftId: string; to: string; own?: true };
 
-/** Everyone who gets a copy: the person, or each member of the group but the sender. Call it when sending, so later joiners get none (GIFT-13). */
+/**
+ * Everyone who gets a copy: the person, or each member of the group, the sender included as their own (GIFT-13,
+ * GIFT-23). A gift to one person gives the sender nothing. Call it when sending, so later joiners get none.
+ */
 export function giftCopies(gift: Gift, membersOf: (groupId: string) => readonly string[]): GiftCopy[] {
   if (!gift.to) return [];
-  const people = gift.to.kind === "person" ? [gift.to.id] : membersOf(gift.to.id);
-  return [...new Set(people)].filter((id) => id !== gift.from).map((to) => ({ id: `${gift.id}/${to}`, giftId: gift.id, to }));
+  const people = gift.to.kind === "person" ? [gift.to.id].filter((id) => id !== gift.from) : [...membersOf(gift.to.id), gift.from];
+  return [...new Set(people)].map((to) => ({ id: `${gift.id}/${to}`, giftId: gift.id, to, ...(to === gift.from ? { own: true as const } : {}) }));
 }
 
 /** One charge per gift, whoever it's for: a group gift costs the same as a gift to one person (GIFT-13). */
@@ -175,7 +181,8 @@ export function dayKey(t: number): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-const dayDate = (day: string) => {
+/** A local "YYYY-MM-DD" as the start of that day. */
+export const dayDate = (day: string) => {
   const [y, m, d] = day.split("-").map(Number);
   return new Date(y, m - 1, d);
 };
@@ -189,10 +196,11 @@ export const dayAfter = (day: string) => {
 /** "Thursday, Nov 12". */
 export const longDayLabel = (day: string) => dayDate(day).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
 
-/** The sent screen's line, as designed (GIFT-16). */
+/** The sent screen's line: when it pops up for them, and, for a group, that yours is on your shelf (GIFT-16, GIFT-23). */
 export function sentLine({ opens }: Pick<Gift, "opens">, name: string, group: boolean): string {
-  const tree = group ? `every tree in ${name}` : `${name}’s tree`;
-  return opens.kind === "on" ? `It’ll sit under ${tree}, wrapped, until ${longDayLabel(opens.day)}.` : `It’s under ${tree} now, shaking until they open it.`;
+  const who = group ? `everyone in ${name}` : name;
+  if (opens.kind === "on") return `It’ll stay wrapped until ${longDayLabel(opens.day)}, then pop up for ${who}.${group ? " Yours lands on your shelf that day." : ""}`;
+  return `It’ll pop up for ${who} next time they open the app.${group ? " Yours is on your shelf." : ""}`;
 }
 
 /** "Thu, Nov 12". */

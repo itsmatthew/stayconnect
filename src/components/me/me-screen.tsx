@@ -20,8 +20,8 @@ type MeScreenProps = {
   findMe?: { on: boolean; onChange: (on: boolean) => void };
   /** Which view to open on: the shelf, when you come from "your gifts" or a kept gift (GIFT-21). */
   initialView?: "posts" | "gifts";
-  /** Opened gifts on your shelf, newest first, and opening one big (GIFT-21). */
-  shelf?: { gifts: readonly ShelfGift[]; onOpenGift: (id: string) => void };
+  /** Gifts on your shelf, newest first, opening one big, and one just landing (GIFT-21, GIFT-23). */
+  shelf?: { gifts: readonly ShelfGift[]; onOpenGift: (id: string) => void; landing?: string };
   /** "Who can drop in my mailbox" (docs/specs/mail.md, MAIL-10). */
   mailbox?: { options: readonly { id: string; label: string }[]; value: string; onChange: (id: string) => void };
 };
@@ -47,7 +47,7 @@ export function MeScreen({ year, years, onYearChange, tiles, nav, onSendGift, fi
           <span style={{ ...pill, background: "#4F7A36", color: "#FFF6DA", boxShadow: view === "gifts" ? `0 ${s(3)} 0 ${NAVY}` : "none" }}>gifts</span>
         </button>
       </div>
-      {view === "posts" ? <SixtyFiveGrid year={year} tiles={tiles} onOpen={setOpenKey} /> : <GiftShelf onSendGift={onSendGift} gifts={shelf?.gifts} onOpenGift={shelf?.onOpenGift} />}
+      {view === "posts" ? <SixtyFiveGrid year={year} tiles={tiles} onOpen={setOpenKey} /> : <GiftShelf onSendGift={onSendGift} gifts={shelf?.gifts} onOpenGift={shelf?.onOpenGift} landing={shelf?.landing} />}
       {findMe && <FindMeRow {...findMe} />}
       {mailbox && <MailboxRow {...mailbox} />}
       {open?.photo && <TileViewer tile={{ ...open, photo: open.photo }} onClose={() => setOpenKey(null)} />}

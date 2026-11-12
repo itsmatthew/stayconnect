@@ -53,7 +53,7 @@ export function Postcard({ to, signature, note }: { to: string; signature: strin
             {to}
           </div>
           <div data-address-line="" style={{ borderBottom: `${s(1)} solid ${LINE}`, paddingBottom: s(2), fontSize: s(9), fontWeight: 700, color: "#6A604C" }}>
-            under their tree
+            wherever they are
           </div>
           <div data-address-line="" style={{ borderBottom: `${s(1)} solid ${LINE}`, height: s(10) }} />
         </div>

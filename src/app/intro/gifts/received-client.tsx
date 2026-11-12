@@ -24,12 +24,20 @@ function art(kind: string): ReactNode {
   );
 }
 
+/** Photo URLs by stored photo id: your own copies' photos are on this device (GIFT-23). */
+export type PhotoUrls = Readonly<Record<string, string>>;
+
+/** Stored photos to show on your shelf: your own copies' (TODO(server): received photos, once they're stored). */
+export const shelfPhotoIds = (list: readonly ReceivedGift[]) => list.flatMap((g) => (g.own && g.photo?.kind === "stored" ? [g.photo.photoId] : []));
+
 /** The gift as its sender made it, for the card: their frame, photo, note, handwriting, ink, stamp and wrapping (GIFT-18). */
-export function receivedLook(g: ReceivedGift, viewerName: string): GiftCardLook {
+export function receivedLook(g: ReceivedGift, viewerName: string, urls: PhotoUrls = {}): GiftCardLook {
   const ink = colorOf(INKS, g.note.ink);
   return {
-    to: viewerName || "you",
+    // A group gift is addressed to the group (GIFT-13).
+    to: g.toGroup ?? (viewerName || "you"),
     signature: g.from.name,
+    src: g.photo?.kind === "stored" ? urls[g.photo.photoId] : undefined,
     picture: g.photo?.kind === "art" ? art(g.photo.art) : undefined,
     alt: g.takenAt !== undefined ? `Photo from ${writtenDate(g.takenAt)}` : `Photo from ${g.from.name}`,
     frame: g.frame.id,
@@ -42,8 +50,12 @@ export function receivedLook(g: ReceivedGift, viewerName: string): GiftCardLook 
   };
 }
 
-/** Opened gifts for the shelf, newest first (GIFT-21). */
-export const shelfGifts = (list: readonly ReceivedGift[], viewerName: string): ShelfGift[] => shelf(list).map((g) => ({ id: g.id, fromName: g.from.name, look: receivedLook(g, viewerName) }));
+/** "Gift from Ana", or "Your gift to Madrid Crew" for your own copy (GIFT-23); big, "from Ana" or "to Madrid Crew". */
+export const shelfNames = (g: ReceivedGift) => (g.own ? { label: `Your gift to ${g.toGroup ?? "your group"}`, heading: `to ${g.toGroup ?? "your group"}` } : { label: `Gift from ${g.from.name}`, heading: `from ${g.from.name}` });
+
+/** Your shelf, newest first (GIFT-21, GIFT-23). `today` is a local "YYYY-MM-DD". */
+export const shelfGifts = (list: readonly ReceivedGift[], viewerName: string, today: string, urls: PhotoUrls = {}): ShelfGift[] =>
+  shelf(list, today).map((g) => ({ id: g.id, ...shelfNames(g), look: receivedLook(g, viewerName, urls) }));
 
 /** How long the gift takes to fly to the shelf before the shelf shows (GiftReceive.dc.html). */
 const FLY_MS = 950;
@@ -106,8 +118,8 @@ export function useGiftPopups({ shown, loaded, list, open, viewerName, now, onDo
 }
 
 /** A gift from your shelf, big (GIFT-21). */
-export function ShelfGiftScreen({ gift, viewerName, onClose }: { gift: ReceivedGift; viewerName: string; onClose: () => void }) {
-  return <ShelfGiftView fromName={gift.from.name} look={receivedLook(gift, viewerName)} onClose={onClose} />;
+export function ShelfGiftScreen({ gift, viewerName, urls, onClose }: { gift: ReceivedGift; viewerName: string; urls?: PhotoUrls; onClose: () => void }) {
+  return <ShelfGiftView {...shelfNames(gift)} look={receivedLook(gift, viewerName, urls)} onClose={onClose} />;
 }
 
 /** TODO(server): stands in for a sender until real gifts arrive. Shown only by the dev control (GIFT-22). */

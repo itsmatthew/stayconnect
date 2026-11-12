@@ -49,7 +49,8 @@ describe("postcard (GIFT-7)", () => {
   it("shows the note, signature, address and printed footer", () => {
     const { container } = render(<Postcard to="Maya" signature="Harry" note={look.note} />);
     const text = container.textContent!;
-    for (const part of ["Miss you guys.", "— Harry", "Maya", "under their tree", "Now & Then · Post card"]) expect(text).toContain(part);
+    for (const part of ["Miss you guys.", "— Harry", "Maya", "wherever they are", "Now & Then · Post card"]) expect(text).toContain(part);
+    expect(text).not.toContain("tree");
     expect(container.querySelector('[data-stamp="tree"]')).toBeTruthy();
   });
 

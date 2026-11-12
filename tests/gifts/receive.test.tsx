@@ -142,6 +142,19 @@ describe("the shelf (GIFT-21)", () => {
     await act(async () => {});
   });
 
+  it("scrolls to hold every gift: rows of three, past the first six", async () => {
+    const base = demoData.gifts(NOW)[2];
+    const many = (now: number) => Array.from({ length: 8 }, (_, i) => ({ ...base, id: `kept-${i}`, from: { id: `f${i}`, name: `Friend ${i}` }, openedAt: now - i * 1000 }));
+    renderApp({ ...demoData, gifts: many }, "Me");
+    fireEvent.click(screen.getByRole("button", { name: "gifts" }));
+    const shelf = screen.getByRole("region", { name: "Your shelf" });
+    expect(within(shelf).getAllByRole("button", { name: /^Gift from / })).toHaveLength(8);
+    // Three rows of three: the last cubby waits empty.
+    expect(shelf.querySelectorAll("[data-cubby]")).toHaveLength(9);
+    expect((shelf.querySelector("[data-shelf-rows]") as HTMLElement).style.overflowY).toBe("auto");
+    await act(async () => {});
+  });
+
   it("empty with no gifts", () => {
     renderApp(emptyData, "Me");
     fireEvent.click(screen.getByRole("button", { name: "gifts" }));

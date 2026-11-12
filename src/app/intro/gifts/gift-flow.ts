@@ -1,5 +1,5 @@
 // Sending a gift without ever losing it or charging twice (docs/specs/gifts.md, GIFT-15). Plain TypeScript.
-import { giftCharge, giftCopies, type Gift } from "./gift";
+import { giftCharge, giftCopies, type Gift, type GiftCopy } from "./gift";
 import type { GiftDelivery } from "./gift-delivery";
 import type { GiftEvents } from "./gift-events";
 import type { GiftStore } from "./gift-store";
@@ -15,7 +15,8 @@ export type SendDeps = {
   now: () => number;
 };
 
-export type SendResult = { kind: "sent" | "failed" | "cancelled" | "pending" | "deliveryFailed"; gift: Gift };
+/** `own`: once sent, the sender's own copy of a group gift, for their shelf (GIFT-23). */
+export type SendResult = { kind: "sent" | "failed" | "cancelled" | "pending" | "deliveryFailed"; gift: Gift; own?: GiftCopy };
 
 /**
  * Saved as paying before the charge, as paid before delivery, as sent after. A failed or cancelled payment puts it back
@@ -38,7 +39,10 @@ export async function sendGift(gift: Gift, d: SendDeps): Promise<SendResult> {
     }
     await save({ ...g, status: "paid", receiptId: result.receiptId });
   }
-  const copies = giftCopies(g, d.membersOf);
+  const all = giftCopies(g, d.membersOf);
+  // The sender's own copy isn't delivered: it goes straight on their shelf.
+  const copies = all.filter((c) => !c.own);
+  const own = all.find((c) => c.own);
   try {
     await d.delivery.deliver(g, copies);
   } catch {
@@ -46,7 +50,7 @@ export async function sendGift(gift: Gift, d: SendDeps): Promise<SendResult> {
   }
   await save({ ...g, status: "sent", sentAt: d.now() });
   void d.events.record({ type: "sent", giftId: g.id, at: d.now(), recipient: g.to?.kind ?? "person", copies: copies.length });
-  return { kind: "sent", gift: g };
+  return { kind: "sent", gift: g, ...(own ? { own } : {}) };
 }
 
 /** After the app closed mid-payment: a charged gift is paid, an uncharged one is a draft again. Others are untouched. */

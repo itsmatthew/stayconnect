@@ -216,7 +216,7 @@ describe("group gifts (GIFT-13)", () => {
   });
 
   it("gives each member their own copy, to unwrap and keep separately", () => {
-    const copies = giftCopies(toGroup, membersOf);
+    const copies = giftCopies(toGroup, membersOf).filter((c) => !c.own);
     expect(copies.map((c) => c.to)).toEqual(["sam", "jordan", "leo"]);
     expect(new Set(copies.map((c) => c.id)).size).toBe(3);
     for (const c of copies) expect(c.giftId).toBe("g1");
@@ -226,8 +226,19 @@ describe("group gifts (GIFT-13)", () => {
     expect(giftCopies(toPerson, membersOf).map((c) => c.to)).toEqual(["leo"]);
   });
 
-  it("never gives the sender a copy, or a member two", () => {
-    expect(giftCopies(toGroup, () => ["me", "sam", "sam"]).map((c) => c.to)).toEqual(["sam"]);
+  it("never gives a member two; the sender of a group gift gets their own, marked as theirs", () => {
+    expect(giftCopies(toGroup, () => ["me", "sam", "sam"]).map(({ to, own }) => ({ to, own }))).toEqual([
+      { to: "me", own: true },
+      { to: "sam", own: undefined },
+    ]);
+  });
+
+  it("the sender's own copy is there even if the group's list leaves them out", () => {
+    expect(giftCopies(toGroup, membersOf).filter((c) => c.own).map((c) => c.id)).toEqual(["g1/me"]);
+  });
+
+  it("a gift to one person gives the sender nothing", () => {
+    expect(giftCopies(toPerson, membersOf).some((c) => c.own || c.to === "me")).toBe(false);
   });
 
   it("has no copies before anyone is picked", () => {

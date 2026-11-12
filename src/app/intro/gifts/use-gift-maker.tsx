@@ -1,17 +1,18 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import type { NavProps } from "@/components/home/main-nav";
 import type { CircleGroup, Friend } from "@/components/home/types";
 import type { Placements } from "../circle/rings";
 import type { PhotoStore } from "../daily5/photo-store";
 import { ME } from "../messages/conversations";
-import type { GiftPhoto } from "./gift";
+import { dayKey, type GiftPhoto } from "./gift";
 import type { GiftDelivery } from "./gift-delivery";
 import type { GiftEvents } from "./gift-events";
 import { GiftMakerClient } from "./gift-maker-client";
 import type { GiftStore } from "./gift-store";
 import type { PaymentService } from "./payment";
+import { copyOf, type ReceivedGift } from "./received";
 import { useGiftDraft } from "./use-gift-draft";
 
 /** Everything a gift needs, gathered once by AppClient for Me and Daily 5 (docs/specs/gifts.md). */
@@ -26,6 +27,10 @@ export type GiftDeps = {
   senderName: string;
   payment: PaymentService;
   delivery: GiftDelivery;
+  /** Keeps your own copy of a group gift you sent, for your shelf (GIFT-23). */
+  keepOwn?: (g: ReceivedGift) => void;
+  /** After Done on a group gift that opens now: show your shelf, with it landing (GIFT-23). */
+  onLanded?: (id: string) => void;
 };
 
 /** A photo to start from: Daily 5's "send as a gift" (GIFT-17). */
@@ -48,19 +53,37 @@ export function useGiftMaker(deps: GiftDeps, { now, nav, onSent }: { now: () => 
     membersOf: (groupId) => deps.groups.find((g) => g.id === groupId)?.members ?? [],
   });
   const failNext = (deps.payment as { failNext?: () => void }).failNext;
+  /** Your own copy that just landed on your shelf, until Done. */
+  const landed = useRef<string | undefined>(undefined);
+  const send = async () => {
+    const result = await draft.send();
+    const g = result?.gift;
+    if (result?.kind === "sent" && result.own && g) {
+      const group = g.to?.kind === "group" ? deps.groups.find((x) => x.id === g.to?.id) : undefined;
+      // TODO(server): kept on this device only; the server should keep it for the sender's other devices, never deliver it wrapped.
+      deps.keepOwn?.(copyOf(g, result.own, { id: ME, name: deps.senderName }, g.sentAt ?? now(), group?.name));
+      landed.current = g.opens.kind === "now" || g.opens.day <= dayKey(now()) ? result.own.id : undefined;
+    }
+    return result;
+  };
   const maker: ReactNode = draft.gift && (
     <GiftMakerClient
       gift={draft.gift}
       dispatch={draft.dispatch}
       onClose={draft.close}
-      onSent={onSent}
+      onSent={(name) => {
+        onSent?.(name);
+        const id = landed.current;
+        landed.current = undefined;
+        if (id) deps.onLanded?.(id);
+      }}
       friends={deps.friends}
       groups={deps.groups}
       placements={deps.placements}
       photos={deps.photos}
       senderName={deps.senderName}
       now={now}
-      onSend={draft.send}
+      onSend={send}
       priceOf={(sku) => deps.payment.product(sku)}
       // Dev only (Next inlines NODE_ENV, so production drops it).
       onDevFail={process.env.NODE_ENV !== "production" && failNext ? failNext : undefined}

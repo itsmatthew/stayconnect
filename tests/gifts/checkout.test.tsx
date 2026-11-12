@@ -1,6 +1,6 @@
 import "fake-indexeddb/auto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { AppClient } from "@/app/intro/app-client";
@@ -10,6 +10,8 @@ import { openPhotoStore } from "@/app/intro/daily5/photo-store";
 import type { Gift } from "@/app/intro/gifts/gift";
 import type { GiftDelivery } from "@/app/intro/gifts/gift-delivery";
 import { giftsKey } from "@/app/intro/gifts/local-gift-store";
+import { receivedKey } from "@/app/intro/gifts/local-received";
+import type { ReceivedGift } from "@/app/intro/gifts/received";
 import { betaPayment, type PaymentService } from "@/app/intro/gifts/payment";
 import { localPayment } from "@/app/intro/gifts/local-payment";
 import { openOrnamentStore } from "@/app/intro/ornaments/ornament-store";
@@ -98,7 +100,7 @@ describe("checkout (GIFT-14)", () => {
     expect((busy as HTMLButtonElement).disabled).toBe(true);
     finish();
     expect(await screen.findByRole("heading", { name: "On its way to Leo" })).toBeTruthy();
-    expect(screen.getByText("It’s under Leo’s tree now, shaking until they open it.")).toBeTruthy();
+    expect(screen.getByText("It’ll pop up for Leo next time they open the app.")).toBeTruthy();
     expect(saved()[0].status).toBe("sent");
   });
 
@@ -143,13 +145,14 @@ describe("checkout (GIFT-14)", () => {
   });
 });
 
+const send = async (who = "Leo") => {
+  renderMe();
+  await toWrap(who);
+  tap(new RegExp(`^Send to ${who.split(" ")[0]}`));
+  fireEvent.click(await within(checkout()).findByRole("button", { name: /· \$0\.99$/ }));
+};
+
 describe("the sent screen (GIFT-16)", () => {
-  const send = async (who = "Leo") => {
-    renderMe();
-    await toWrap(who);
-    tap(new RegExp(`^Send to ${who.split(" ")[0]}`));
-    fireEvent.click(await within(checkout()).findByRole("button", { name: /· \$0\.99$/ }));
-  };
 
   it("says when a chosen day is coming", async () => {
     renderMe();
@@ -159,13 +162,13 @@ describe("the sent screen (GIFT-16)", () => {
     tap(/^Send to Leo/);
     expect(checkout().textContent).toContain("Thu, Nov 12");
     fireEvent.click(await within(checkout()).findByRole("button", { name: "Send to Leo · $0.99" }));
-    expect(await screen.findByText("It’ll sit under Leo’s tree, wrapped, until Thursday, Nov 12.")).toBeTruthy();
+    expect(await screen.findByText("It’ll stay wrapped until Thursday, Nov 12, then pop up for Leo.")).toBeTruthy();
   });
 
-  it("names the group, and every tree in it", async () => {
+  it("names the group, everyone in it, and yours on your shelf", async () => {
     await send("Hoops Since ’14");
     expect(await screen.findByRole("heading", { name: "On its way to Hoops Since ’14" })).toBeTruthy();
-    expect(screen.getByText("It’s under every tree in Hoops Since ’14 now, shaking until they open it.")).toBeTruthy();
+    expect(screen.getByText("It’ll pop up for everyone in Hoops Since ’14 next time they open the app. Yours is on your shelf.")).toBeTruthy();
   });
 
   it("flies the gift into the tree and shakes it there, all of it off under reduced motion", async () => {
@@ -188,3 +191,51 @@ describe("the sent screen (GIFT-16)", () => {
     expect(await screen.findByRole("heading", { name: "A gift" })).toBeTruthy();
   });
 });
+
+describe("your own copy of a group gift (GIFT-23)", () => {
+  const received = (): ReceivedGift[] => JSON.parse(localStorage.getItem(receivedKey(".demo")) ?? "[]");
+  const shelfButtons = () => within(screen.getByRole("region", { name: "Your shelf" })).getAllByRole("button", { name: /^(Gift from|Your gift to) / });
+
+  it("Done shows your shelf, with yours landing in the first cubby; it's never wrapped for you", async () => {
+    await send("Hoops Since ’14");
+    tap(await screen.findByRole("button", { name: "Done" }).then(() => "Done"));
+    const first = shelfButtons()[0];
+    expect(first.getAttribute("aria-label")).toBe("Your gift to Hoops Since ’14");
+    expect(first.closest("[data-cubby]")!.hasAttribute("data-landing")).toBe(true);
+    const mine = received().find((g) => g.own)!;
+    expect(mine).toMatchObject({ own: true, toGroup: "Hoops Since ’14", from: { name: demoData.senderName } });
+    expect(mine.openedAt).toBeUndefined();
+    // Your own photo, from this device.
+    await waitFor(() => expect(shelfButtons()[0].querySelector("img")?.getAttribute("src")).toBe("blob:x"));
+  });
+
+  it("opens big, addressed to the group", async () => {
+    await send("Hoops Since ’14");
+    tap(await screen.findByRole("button", { name: "Done" }).then(() => "Done"));
+    fireEvent.click(shelfButtons()[0]);
+    const big = screen.getByRole("dialog", { name: "Your gift to Hoops Since ’14" });
+    expect(within(big).getByRole("heading", { name: "to Hoops Since ’14" })).toBeTruthy();
+  });
+
+  it("a gift to one person doesn't go on your shelf", async () => {
+    await send();
+    tap(await screen.findByRole("button", { name: "Done" }).then(() => "Done"));
+    expect(received().some((g) => g.own)).toBe(false);
+    expect(shelfButtons().map((b) => b.getAttribute("aria-label"))).not.toContain("Your gift to Leo");
+  });
+
+  it("for a later day, it's kept but not on your shelf until then, and nothing lands", async () => {
+    renderMe();
+    await toWrap("Hoops Since ’14");
+    tap("on a day");
+    fireEvent.change(screen.getByLabelText("Opens on"), { target: { value: "2026-11-12" } });
+    tap(/^Send to Hoops/);
+    fireEvent.click(await within(checkout()).findByRole("button", { name: /^Send to Hoops Since ’14 · / }));
+    expect(await screen.findByText("It’ll stay wrapped until Thursday, Nov 12, then pop up for everyone in Hoops Since ’14. Yours lands on your shelf that day.")).toBeTruthy();
+    tap("Done");
+    expect(received().filter((g) => g.own)).toHaveLength(1);
+    expect(shelfButtons().map((b) => b.getAttribute("aria-label"))).not.toContain("Your gift to Hoops Since ’14");
+    expect(document.querySelector("[data-landing]")).toBeNull();
+  });
+});
+

@@ -8,8 +8,10 @@ import type { AppData } from "../app-data";
 import type { ArchiveStore } from "../archive/archive-store";
 import { periodFromKey, periodsOfYear, periodTitle } from "../archive/periods";
 import { photoView, useMyPosts } from "../archive/use-my-posts";
+import { dayKey } from "../gifts/gift";
 import type { ReceivedGift } from "../gifts/received";
-import { ShelfGiftScreen, shelfGifts } from "../gifts/received-client";
+import { ShelfGiftScreen, shelfGifts, shelfPhotoIds } from "../gifts/received-client";
+import { usePhotoUrls } from "../messages/use-photo-urls";
 import { useGiftMaker, type GiftDeps } from "../gifts/use-gift-maker";
 import type { FindMeSetting } from "../mail/find-me";
 import { DEFAULT_WHO_CAN_DROP, isWhoCanDrop, type MailboxSetting, type WhoCanDrop } from "../mail/mailbox-setting";
@@ -32,6 +34,8 @@ type MeClientProps = {
   received?: readonly ReceivedGift[];
   /** Open on the shelf: you came from "your gifts" or just kept a gift. */
   startOnShelf?: boolean;
+  /** Your own copy of a group gift you just sent, landing on your shelf (GIFT-23). */
+  landing?: string;
 };
 
 const MAILBOX_OPTIONS: readonly { id: WhoCanDrop; label: string }[] = [
@@ -41,10 +45,11 @@ const MAILBOX_OPTIONS: readonly { id: WhoCanDrop; label: string }[] = [
 ];
 
 /** Your own 65 for the chosen year (docs/specs/me.md). Other people's posts never fill your slots. */
-export function MeClient({ data, now, store, nav, gifts, findMe, mailboxSetting, received = [], startOnShelf = false }: MeClientProps) {
+export function MeClient({ data, now, store, nav, gifts, findMe, mailboxSetting, received = [], startOnShelf = false, landing }: MeClientProps) {
   const [looking, setLooking] = useState<string | null>(null);
   const lookingAt = looking ? received.find((g) => g.id === looking) : undefined;
   const gift = useGiftMaker(gifts, { now, nav });
+  const shelfUrls = usePhotoUrls(gifts.photos, shelfPhotoIds(received));
   const [findable, setFindable] = useFindMe(findMe);
   const [mailboxFrom, setMailboxFrom] = useSavedSetting(mailboxSetting, DEFAULT_WHO_CAN_DROP);
   const [seeded] = useState(() => data.posts(now()).filter((p) => p.author === ME));
@@ -62,8 +67,8 @@ export function MeClient({ data, now, store, nav, gifts, findMe, mailboxSetting,
 
   return (
     <>
-      <MeScreen year={year} years={years} onYearChange={setYear} tiles={tiles} nav={nav} onSendGift={() => void gift.open()} findMe={{ on: findable, onChange: setFindable }} mailbox={{ options: MAILBOX_OPTIONS, value: mailboxFrom, onChange: (id) => isWhoCanDrop(id) && setMailboxFrom(id) }} initialView={startOnShelf ? "gifts" : "posts"} shelf={{ gifts: shelfGifts(received, data.senderName), onOpenGift: setLooking }} />
-      {lookingAt && <ShelfGiftScreen gift={lookingAt} viewerName={data.senderName} onClose={() => setLooking(null)} />}
+      <MeScreen year={year} years={years} onYearChange={setYear} tiles={tiles} nav={nav} onSendGift={() => void gift.open()} findMe={{ on: findable, onChange: setFindable }} mailbox={{ options: MAILBOX_OPTIONS, value: mailboxFrom, onChange: (id) => isWhoCanDrop(id) && setMailboxFrom(id) }} initialView={startOnShelf ? "gifts" : "posts"} shelf={{ gifts: shelfGifts(received, data.senderName, dayKey(now()), shelfUrls), onOpenGift: setLooking, landing }} />
+      {lookingAt && <ShelfGiftScreen gift={lookingAt} viewerName={data.senderName} urls={shelfUrls} onClose={() => setLooking(null)} />}
       {gift.maker}
     </>
   );

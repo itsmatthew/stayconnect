@@ -181,6 +181,8 @@ export function AppClient({
   const gifts = useReceived(received(data.storageSuffix), () => data.gifts(now()), now);
   /** Me opens on the shelf when you come from "your gifts" or a kept gift (GIFT-21). */
   const [meOnShelf, setMeOnShelf] = useState(false);
+  /** Your own copy of a group gift, landing on your shelf after Done (GIFT-23). */
+  const [landing, setLanding] = useState<string>();
   // Waiting gifts pop up as the app opens, over whatever it opens on (GIFT-19).
   const popups = useGiftPopups({ shown: useContext(AppShown), loaded: gifts.loaded, list: gifts.list, open: gifts.open, viewerName: data.senderName, now, onDone: () => showShelf() });
   const [goalSeed] = useState(() => data.goals(now()));
@@ -191,6 +193,7 @@ export function AppClient({
   const navigate = (to: NavLabel) => {
     setOpenThread(null);
     setMeOnShelf(false);
+    setLanding(undefined);
     setTab(to);
   };
   const showShelf = () => {
@@ -226,7 +229,13 @@ export function AppClient({
     dispatch({ type: "rename", id: crypto.randomUUID(), conversationId: conversationId("group", groupId), by: ME, name: check.name, at: now() });
   };
   /** Everything a gift needs, for Me and Daily 5 (docs/specs/gifts.md). */
-  const giftDeps: GiftDeps = { store: giftStore(data.storageSuffix), events: giftEvents(data.storageSuffix), photos: store, placements: circle.placements, groups: homeGroups, friends: viewerData.friends, senderName: data.senderName, payment: paymentService, delivery: giftDelivery(data.storageSuffix) };
+  const giftDeps: GiftDeps = { store: giftStore(data.storageSuffix), events: giftEvents(data.storageSuffix), photos: store, placements: circle.placements, groups: homeGroups, friends: viewerData.friends, senderName: data.senderName, payment: paymentService, delivery: giftDelivery(data.storageSuffix),
+    keepOwn: gifts.receive,
+    onLanded: (id) => {
+      setLanding(id);
+      showShelf();
+    },
+  };
   /** The next time together on Home's trees (HOME-19). */
   const countdowns = Object.fromEntries(
     homeGroups.flatMap((g) => {
@@ -318,7 +327,7 @@ export function AppClient({
         />
       );
     case "Me":
-      return <MeClient data={viewerData} now={now} store={archive} nav={nav} gifts={giftDeps} findMe={findMeSetting} mailboxSetting={mailboxFrom} received={gifts.list} startOnShelf={meOnShelf} />;
+      return <MeClient data={viewerData} now={now} store={archive} nav={nav} gifts={giftDeps} findMe={findMeSetting} mailboxSetting={mailboxFrom} received={gifts.list} startOnShelf={meOnShelf} landing={landing} />;
   }
   }
 }

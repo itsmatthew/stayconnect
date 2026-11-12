@@ -8,19 +8,21 @@ import { FRAUNCES, s } from "../home/units";
 const CUBBY = { height: s(112), borderRadius: s(4), background: "linear-gradient(#C9AF74, #D9C28C 22%, #EBDDB4)" } as const;
 const LEDGE = { height: s(25), borderTop: `${s(1)} solid rgba(255,214,160,.35)` } as const;
 
-/** A gift on the shelf: who it's from, and how it looks. */
-export type ShelfGift = { id: string; fromName: string; look: GiftCardLook };
+/** A gift on the shelf: its name ("Gift from Ana", "Your gift to Madrid Crew"), its heading big ("from Ana"), and how it looks. */
+export type ShelfGift = { id: string; label: string; heading: string; look: GiftCardLook };
 
-const CUBBIES = 6;
+/** Two rows show at once, as designed; more scroll. */
+const ROW = 137;
+const SHOWN_ROWS = 2;
 
 /**
  * Your gift cabinet on Me (docs/specs/gifts.md, GIFT-1, GIFT-21), as in design-ref/project/MeGifts.dc.html: two rows
- * of three cubbies, and a drawer underneath. Opened gifts stand in the cubbies, newest first, each in the frame its
- * sender chose; tapping one shows it big. Pulling the drawer starts a gift.
- * TODO(re-evaluate when someone keeps more than 6 gifts): the shelf shows the newest 6; older ones need a way in.
- * Inset shadows don't port to React Native, so the cubbies' depth is a gradient.
+ * of three cubbies, and a drawer underneath. Gifts stand in the cubbies, newest first, each in the frame its sender
+ * chose; past six, more rows scroll. Tapping one shows it big. `landing` drops one into its cubby (GIFT-23).
+ * Pulling the drawer starts a gift. Inset shadows don't port to React Native, so the cubbies' depth is a gradient.
  */
-export function GiftShelf({ onSendGift, gifts = [], onOpenGift }: { onSendGift?: () => void; gifts?: readonly ShelfGift[]; onOpenGift?: (id: string) => void }) {
+export function GiftShelf({ onSendGift, gifts = [], onOpenGift, landing }: { onSendGift?: () => void; gifts?: readonly ShelfGift[]; onOpenGift?: (id: string) => void; landing?: string }) {
+  const rows = Math.max(SHOWN_ROWS, Math.ceil(gifts.length / 3));
   const [pulled, setPulled] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
@@ -33,15 +35,16 @@ export function GiftShelf({ onSendGift, gifts = [], onOpenGift }: { onSendGift?:
   };
   return (
     <section aria-label="Your shelf" style={{ position: "relative", width: s(370), height: s(336), margin: `0 auto`, boxSizing: "border-box", padding: `${s(9)} ${s(9)} 0`, borderRadius: `${s(10)} ${s(10)} ${s(4)} ${s(4)}`, background: "linear-gradient(90deg, #7E4224, #A35E35 18%, #94522D 50%, #A35E35 82%, #7E4224)", border: `${s(2)} solid #4F2713`, boxShadow: `0 ${s(8)} ${s(14)} -${s(4)} rgba(74,44,20,.5)` }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", columnGap: s(7) }}>
-        {[0, 1].map((row) => (
+      <div data-shelf-rows="" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", columnGap: s(7), height: s(ROW * SHOWN_ROWS), overflowY: "auto", overscrollBehavior: "contain" }}>
+        {Array.from({ length: rows }, (_, row) => (
           <div key={row} style={{ display: "contents" }}>
             {[0, 1, 2].map((i) => {
-              const g = gifts.slice(0, CUBBIES)[row * 3 + i];
+              const g = gifts[row * 3 + i];
+              const lands = !!g && g.id === landing;
               return (
-                <div key={`c${i}`} data-cubby="" style={{ ...CUBBY, position: "relative", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+                <div key={`c${i}`} data-cubby="" data-landing={lands ? "" : undefined} style={{ ...CUBBY, position: "relative", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
                   {g && (
-                    <button type="button" aria-label={`Gift from ${g.fromName}`} onClick={() => onOpenGift?.(g.id)} style={{ width: "100%", height: "100%", minHeight: 44, padding: `0 0 ${s(4)}`, border: 0, background: "none", display: "flex", alignItems: "flex-end", justifyContent: "center", cursor: "pointer" }}>
+                    <button type="button" aria-label={g.label} className={lands ? "gf-land" : undefined} onClick={() => onOpenGift?.(g.id)} style={{ width: "100%", height: "100%", minHeight: 44, padding: `0 0 ${s(4)}`, border: 0, background: "none", display: "flex", alignItems: "flex-end", justifyContent: "center", cursor: "pointer" }}>
                       {/* The gift's own front, a third of its size, leaning back in the cubby. */}
                       <span style={{ display: "block", width: s(95), height: s(72), transform: `rotate(${(row * 3 + i) % 2 ? 2 : -2}deg)`, boxShadow: `0 ${s(3)} ${s(6)} rgba(74,44,20,.4)` }}>
                         <MiniFront look={g.look} />

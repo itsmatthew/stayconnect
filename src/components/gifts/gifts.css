@@ -35,6 +35,10 @@
 @keyframes gf-pull { 0% { transform: none; } 40% { transform: translateY(5px) scale(1.03); } 100% { transform: translateY(3px) scale(1.02); } }
 .gf-pull { animation: gf-pull 0.25s ease-out both; }
 
+/* Your own copy of a group gift dropping into its cubby (GIFT-23). */
+@keyframes gf-land { 0% { transform: translateY(-60px) scale(.9); opacity: 0; } 55% { transform: translateY(4px) scale(1.02); opacity: 1; } 75% { transform: translateY(-3px); } 100% { transform: none; opacity: 1; } }
+.gf-land { animation: gf-land 0.6s cubic-bezier(.3, .7, .4, 1) 0.15s both; }
+
 /* Sideways rows in the To step: a horizontal list on mobile. */
 .gf-row { scrollbar-width: none; }
 .gf-row::-webkit-scrollbar { display: none; }
@@ -50,7 +54,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .gf-flip { transition: none; }
-  .gf-float, .gf-paper-l, .gf-paper-r, .gf-ribbon-v, .gf-ribbon-h, .gf-bow, .gf-tag, .gf-sheet, .gf-sheet-out, .gf-pull { animation: none; }
+  .gf-float, .gf-paper-l, .gf-paper-r, .gf-ribbon-v, .gf-ribbon-h, .gf-bow, .gf-tag, .gf-sheet, .gf-sheet-out, .gf-pull, .gf-land { animation: none; }
 }
 
 /* Checkout sheet rises from the bottom. */

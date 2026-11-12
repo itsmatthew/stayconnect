@@ -10,6 +10,7 @@ import type { NavProps } from "@/components/home/main-nav";
 import type { CircleGroup, Friend } from "@/components/home/types";
 import { initialCircleState, members, overGuide, type CircleAction, type CircleState } from "./circle/rings";
 import type { ReceivedGift } from "./gifts/received";
+import { dayKey } from "./gifts/gift";
 import { shelf as shelfOf } from "./gifts/received";
 import { testGift } from "./gifts/received-client";
 import { activity, isLit, suggestion } from "./circle/suggestions";
@@ -99,7 +100,7 @@ export function HomeClient({
       <CircleScreen
         mailbox={mailbox.tree}
         people={people}
-        shelf={{ count: shelfOf(gifts).length, onOpen: giftActions.onShowShelf }}
+        shelf={{ count: shelfOf(gifts, dayKey(now())).length, onOpen: giftActions.onShowShelf }}
         crowded={RINGS.filter((r) => overGuide(r, placed.filter((p) => p.ring === r).length))}
         suggestion={next && name ? { name, to: next.to } : undefined}
         onAcceptSuggestion={() => next && dispatch({ type: "place", friendId: next.friendId, ring: next.to })}

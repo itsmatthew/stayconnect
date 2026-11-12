@@ -93,14 +93,20 @@ describe("sending a gift (GIFT-14, GIFT-15)", () => {
     expect(payment.calls()).toBe(1);
   });
 
-  it("charges once for a group, and delivers a copy to each member but the sender", async () => {
+  it("charges once for a group, delivers a copy to each member but the sender, and hands back the sender's own", async () => {
     const payment = scripted(["paid"]);
     const delivered: string[][] = [];
     const { d, events } = deps(payment, { deliver: async (_g, copies) => void delivered.push(copies.map((c) => c.to)) });
-    await sendGift(ready({ kind: "group", id: "hoops" }), d);
+    const result = await sendGift(ready({ kind: "group", id: "hoops" }), d);
     expect(payment.charges()).toBe(1);
     expect(delivered).toEqual([["sam", "jordan"]]);
     expect(events[0]).toMatchObject({ recipient: "group", copies: 2 });
+    expect(result.own).toEqual({ id: "g1/me", giftId: "g1", to: "me", own: true });
+  });
+
+  it("a gift to one person hands back no copy of the sender's own", async () => {
+    const { d } = deps(scripted(["paid"]));
+    expect((await sendGift(ready(), d)).own).toBeUndefined();
   });
 
   it("asks for the single-gift product", async () => {
@@ -136,10 +142,13 @@ describe("free during beta (GIFT-14)", () => {
 });
 
 describe("the sent line (GIFT-16)", () => {
-  it("reads as designed, for now, a chosen day, and a group", () => {
-    expect(sentLine({ opens: { kind: "now" } }, "Maya", false)).toBe("It’s under Maya’s tree now, shaking until they open it.");
-    expect(sentLine({ opens: { kind: "on", day: "2026-11-12" } }, "Maya", false)).toBe("It’ll sit under Maya’s tree, wrapped, until Thursday, Nov 12.");
-    expect(sentLine({ opens: { kind: "now" } }, "Hoops", true)).toBe("It’s under every tree in Hoops now, shaking until they open it.");
-    expect(sentLine({ opens: { kind: "on", day: "2026-11-12" } }, "Hoops", true)).toBe("It’ll sit under every tree in Hoops, wrapped, until Thursday, Nov 12.");
+  it("says when it pops up: next time they open the app, or on the chosen day", () => {
+    expect(sentLine({ opens: { kind: "now" } }, "Maya", false)).toBe("It’ll pop up for Maya next time they open the app.");
+    expect(sentLine({ opens: { kind: "on", day: "2026-11-12" } }, "Maya", false)).toBe("It’ll stay wrapped until Thursday, Nov 12, then pop up for Maya.");
+  });
+
+  it("for a group, everyone in it, and yours on your shelf", () => {
+    expect(sentLine({ opens: { kind: "now" } }, "Hoops", true)).toBe("It’ll pop up for everyone in Hoops next time they open the app. Yours is on your shelf.");
+    expect(sentLine({ opens: { kind: "on", day: "2026-11-12" } }, "Hoops", true)).toBe("It’ll stay wrapped until Thursday, Nov 12, then pop up for everyone in Hoops. Yours lands on your shelf that day.");
   });
 });
