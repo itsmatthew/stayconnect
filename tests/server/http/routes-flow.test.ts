@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createGroup } from "../../../src/server/groups";
+import { createInvite } from "../../../src/server/invites";
 import { addMember, newTestDb } from "../helpers";
 import type { Deps } from "../../../src/server/http/kit";
 
@@ -48,5 +49,27 @@ describe("memory routes, end to end (API-10 to API-15)", () => {
 
     user = "bea";
     expect((await one(json("GET", `/${id}`), idCtx(id))).status).toBe(404);
+  });
+});
+
+describe("invite routes, end to end (API-19, API-20)", () => {
+  it("a friend previews, joins, and then receives what the owner sends", async () => {
+    const { GET: info } = await import("../../../src/app/api/invites/[token]/route");
+    const { POST: join } = await import("../../../src/app/api/invites/[token]/join/route");
+    const { POST: send } = await import("../../../src/app/api/memories/route");
+    const { GET: inbox } = await import("../../../src/app/api/memories/inbox/route");
+    const { token } = await createInvite(current.db, "alice", groupId);
+    const ctx = { params: Promise.resolve({ token }) };
+
+    user = "carol";
+    const preview = await info(new Request(url("").replace("/memories", `/invites/${token}`)), ctx);
+    expect(await preview.json()).toMatchObject({ groupName: "Sorority", alreadyMember: false });
+    const joined = await join(new Request(url("").replace("/memories", `/invites/${token}/join`), { method: "POST" }), ctx);
+    expect(await joined.json()).toMatchObject({ groupId, joined: true });
+
+    user = "alice";
+    expect((await send(json("POST", "", { groupId, caption: "welcome" }))).status).toBe(201);
+    user = "carol";
+    expect((await (await inbox(json("GET", "/inbox"))).json()).memories[0].caption).toBe("welcome");
   });
 });

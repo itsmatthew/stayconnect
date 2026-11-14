@@ -1,6 +1,6 @@
 import type { z } from "zod";
 import type { Db } from "../db";
-import { NoRecipientsError, NotFoundError } from "../errors";
+import { GroupFullError, NoRecipientsError, NotFoundError, RateLimitedError } from "../errors";
 
 /** What a handler needs from the outside world. Wiring (`src/app/api`) supplies the real ones, tests supply fakes. */
 export interface Deps {
@@ -75,6 +75,8 @@ function errorResponse(err: unknown): Response {
   }
   if (err instanceof NotFoundError) return json({ error: "not_found" }, 404);
   if (err instanceof NoRecipientsError) return json({ error: "no_recipients" }, 409);
+  if (err instanceof GroupFullError) return json({ error: "group_full" }, 409);
+  if (err instanceof RateLimitedError) return json({ error: "rate_limited" }, 429);
   // Name and message only: the request body and headers may hold a caption or a token.
   const e = err instanceof Error ? err : new Error(String(err));
   console.error(`api error: ${e.name}: ${e.message}`);
