@@ -51,3 +51,13 @@ describe("memory routes wiring (API-1)", () => {
     );
   });
 });
+
+describe("invite routes wiring (API-1)", () => {
+  it("API-1: preview and join with no session are 401", async () => {
+    const { GET: info } = await import("../../../src/app/api/invites/[token]/route");
+    const { POST: join } = await import("../../../src/app/api/invites/[token]/join/route");
+    const ctx = { params: Promise.resolve({ token: "A".repeat(43) }) };
+    expect((await info(new Request("http://localhost/api/invites/x"), ctx)).status).toBe(401);
+    expect((await join(new Request("http://localhost/api/invites/x/join", { method: "POST" }), ctx)).status).toBe(401);
+  });
+});

@@ -12,7 +12,7 @@ Checks run in this order, and the first to fail answers.
 - **API-2** A request that changes data (`POST`, `PUT`, `PATCH`, `DELETE`) with an `Origin` header that does not match the request host gets `403`. A missing `Origin` is allowed (non-browser clients).
 - **API-3** A request with a body must be `application/json`, otherwise `415`.
 - **API-4** Input is validated before any data access. Invalid input gets `400` with `{ "error": "invalid_request" }` and a list of field names that failed. The body never contains SQL, stack traces, or the submitted values.
-- **API-5** `NotFoundError` is `404` with `{ "error": "not_found" }`. `NoRecipientsError` is `409` with `{ "error": "no_recipients" }`.
+- **API-5** `NotFoundError` is `404` with `{ "error": "not_found" }`. `NoRecipientsError` is `409` with `{ "error": "no_recipients" }`. `GroupFullError` is `409` with `{ "error": "group_full" }`. `RateLimitedError` is `429` with `{ "error": "rate_limited" }`.
 - **API-6** Any other error is `500` with `{ "error": "internal" }`. The log line has the error name and message only: never the request body or headers.
 - **API-7** Every response, including errors, carries `Cache-Control: private, no-store`.
 
@@ -36,3 +36,13 @@ Data rules are in `docs/specs/memories-backend.md` (BE-8, BE-10 to BE-13). Every
 - **API-13** `POST /api/memories/{id}/reply` records the caller's reply and returns `200` with `{ replied: true }`. It needs no body. Only a current recipient may reply; the sender, a stranger, a former member, and a missing or dead memory get `404` and nothing is stored (BE-10). Replying again returns `200` and changes nothing (BE-11). A reply unseals the memory for its sender (API-12, API-14).
 - **API-14** `GET /api/memories/sent` returns `200` with `{ memories: [{ id, groupId, senderId, caption, createdAt, replies: [{ userId, createdAt }] }] }`: the caller's own memories that at least one current member has replied to, newest first (BE-8). A memory with no reply is absent from the list, not hidden in it. Replies from people who have left the group are not listed.
 - **API-15** `DELETE /api/memories/{id}` deletes the caller's own memory and returns `200` with `{ deleted: true }`. It disappears from every inbox, the sent list, and `GET /api/memories/{id}` (BE-12). Anyone but the sender, including a recipient, gets `404` and the memory is unchanged. A sender who has left the group can still delete (BE-13). Deleting an already deleted memory is `404`.
+
+## Joining a group with an invite
+
+Data rules are in `docs/specs/group-invites-backend.md` (INV-6 to INV-11). The token is the last URL segment. A friend must be signed in first (API-1), so a signed-out friend signs up and is sent back to the same link by the front end.
+
+- **API-19** `GET /api/invites/{token}` returns `200` with `{ groupName, inviterId, memberCount, alreadyMember }` for a usable token. It adds nobody and uses no use. A malformed, unknown, expired, revoked, or used-up token all return the same `404` with the same body (INV-7).
+- **API-20** `POST /api/invites/{token}/join` returns `200` with `{ groupId, groupName, joined }`, where `joined` is `false` for someone who was already a member. It needs no body. A bad token is the same `404` as above. A group at its member limit is `409` `group_full` (INV-10). After too many failed lookups by the same user the answer is `429` `rate_limited`, before the token is looked up (INV-11). A cross-origin `POST` is `403`.
+- **API-21** The token travels in the URL, so hosting request logs will contain it. What limits the harm: only its hash is stored, it expires, it can be revoked, and it has a use cap. Our own error logs and every response body never contain the token.
+
+Tracking: #31.
