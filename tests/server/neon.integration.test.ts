@@ -1,7 +1,9 @@
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
+import { neon } from "@neondatabase/serverless";
 import { afterAll, describe, expect, it } from "vitest";
 import { getDb } from "../../src/server/db";
+import { NotFoundError } from "../../src/server/errors";
 import { createGroup } from "../../src/server/groups";
 import { createInvite, joinWithInvite, previewInvite } from "../../src/server/invites";
 import { deleteMemory, getMemory, listInbox, listSent, replyToMemory, sendMemory } from "../../src/server/memories";
@@ -64,14 +66,38 @@ describe.skipIf(!enabled)("Neon (real driver, throwaway branch)", () => {
     expect(await joinWithInvite(db, racers[0], invite.token)).toMatchObject({ joined: false });
   }, 60_000);
 
-  it("INV-8: six joins racing for the last use admit exactly one (real concurrency)", async () => {
+  it("INV-8: six joins fired together for the last use admit exactly one (smoke: requests rarely truly overlap)", async () => {
     const db = getDb();
     const group = await createGroup(db, alice, "Race");
     const { token, id } = await createInvite(db, alice, group.id, { maxUses: 1 });
     const results = await Promise.allSettled(racers.map((user) => joinWithInvite(db, user, token)));
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    // The losers must fail cleanly (not found), not with a raw constraint error. Note this test passes even with the
+    // re-check removed, because the statements finish in milliseconds and arrive one after another. The next test
+    // forces the overlap and is the one that proves the re-check.
+    for (const r of results) if (r.status === "rejected") expect(r.reason).toBeInstanceOf(NotFoundError);
     const members = await db.query<{ n: string }>("select count(*) n from group_members where group_id = $1", [group.id]);
     expect(Number(members[0].n)).toBe(2); // alice and the one winner
+    const uses = await db.query<{ use_count: number }>("select use_count from group_invites where id = $1", [id]);
+    expect(uses[0].use_count).toBe(1);
+  }, 60_000);
+
+  it("INV-8: a join that waits on another join's row lock re-checks the last use (forced overlap)", async () => {
+    const db = getDb();
+    const group = await createGroup(db, alice, "Forced race");
+    const { token, id } = await createInvite(db, alice, group.id, { maxUses: 1 });
+    // A takes the last use and keeps the row locked, uncommitted, for 3 seconds.
+    const holder = neon(process.env.DATABASE_URL!).transaction((txn) => [
+      txn`update group_invites set use_count = use_count + 1 where id = ${id}`,
+      txn`select pg_sleep(3)`,
+    ]);
+    await new Promise((resolve) => setTimeout(resolve, 1500)); // let A start and take the lock
+    // B's snapshot still sees an unused invite, so it gets as far as the update, waits for A, then must re-check.
+    const outcome = await joinWithInvite(db, racers[1], token).catch((e: unknown) => e);
+    await holder; // fails loudly if A did not win, which would mean the timing assumption broke
+    expect(outcome).toBeInstanceOf(NotFoundError); // not a raw check-constraint error
+    const members = await db.query<{ n: string }>("select count(*) n from group_members where group_id = $1", [group.id]);
+    expect(Number(members[0].n)).toBe(1); // alice only; B was not added
     const uses = await db.query<{ use_count: number }>("select use_count from group_invites where id = $1", [id]);
     expect(uses[0].use_count).toBe(1);
   }, 60_000);
