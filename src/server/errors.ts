@@ -16,3 +16,19 @@ export class NoRecipientsError extends Error {
     this.name = "NoRecipientsError";
   }
 }
+
+/** The group is at its member limit (INV-10). The HTTP layer maps this to 409. */
+export class GroupFullError extends Error {
+  constructor() {
+    super("The group is full");
+    this.name = "GroupFullError";
+  }
+}
+
+/** Too many failed invite lookups recently (INV-11). The HTTP layer maps this to 429. */
+export class RateLimitedError extends Error {
+  constructor() {
+    super("Too many attempts");
+    this.name = "RateLimitedError";
+  }
+}
