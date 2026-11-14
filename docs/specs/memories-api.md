@@ -37,6 +37,16 @@ Data rules are in `docs/specs/memories-backend.md` (BE-8, BE-10 to BE-13). Every
 - **API-14** `GET /api/memories/sent` returns `200` with `{ memories: [{ id, groupId, senderId, caption, createdAt, replies: [{ userId, createdAt }] }] }`: the caller's own memories that at least one current member has replied to, newest first (BE-8). A memory with no reply is absent from the list, not hidden in it. Replies from people who have left the group are not listed.
 - **API-15** `DELETE /api/memories/{id}` deletes the caller's own memory and returns `200` with `{ deleted: true }`. It disappears from every inbox, the sent list, and `GET /api/memories/{id}` (BE-12). Anyone but the sender, including a recipient, gets `404` and the memory is unchanged. A sender who has left the group can still delete (BE-13). Deleting an already deleted memory is `404`.
 
+## Managing invites (group owner)
+
+Data rules are in `docs/specs/group-invites-backend.md` (INV-1 to INV-5). A non-owner, a non-member, an unknown group, and a malformed group id all return the same `404` with the same body.
+
+- **API-16** `POST /api/groups/{id}/invites` with an optional JSON body `{ expiresInDays, maxUses }` creates an invite and returns `201` with `{ id, token, expiresAt, maxUses }`. With no body the defaults apply (7 days, 10 uses). `expiresInDays` is a whole number from 1 to 30 and `maxUses` from 1 to 50; anything else is `400` and nothing is stored. Unknown fields are ignored. The token appears in this response and nowhere else: the server keeps only its hash.
+- **API-17** `GET /api/groups/{id}/invites` returns `200` with `{ invites: [{ id, createdAt, expiresAt, maxUses, useCount }] }`: the group's active invites (not revoked, not expired), newest first. It never contains a token or hash.
+- **API-18** `DELETE /api/groups/{id}/invites/{inviteId}` revokes an invite and returns `200` with `{ revoked: true }`. The link stops working at once for anyone who has not joined; people who already joined stay. An invite of another group, an unknown or malformed invite id, and an already revoked invite are the same `404`.
+
+Tracking: #30.
+
 ## Joining a group with an invite
 
 Data rules are in `docs/specs/group-invites-backend.md` (INV-6 to INV-11). The token is the last URL segment. A friend must be signed in first (API-1), so a signed-out friend signs up and is sent back to the same link by the front end.

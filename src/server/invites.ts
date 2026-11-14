@@ -8,6 +8,8 @@ import { ensureUser, requireOwner } from "./groups";
 
 export const DEFAULT_EXPIRES_IN_DAYS = 7;
 export const DEFAULT_MAX_USES = 10;
+export const MAX_EXPIRES_IN_DAYS = 30;
+export const MAX_USES_PER_INVITE = 50;
 export const MAX_GROUP_MEMBERS = 30;
 /** INV-11: this many failed lookups in the past hour and the user is blocked. */
 export const MAX_FAILED_LOOKUPS = 10;
@@ -47,8 +49,8 @@ export async function createInvite(
   options: InviteOptions = {},
 ): Promise<{ id: string; token: string; expiresAt: Date; maxUses: number }> {
   await requireOwner(db, userId, groupId);
-  const days = wholeNumberBetween(options.expiresInDays ?? DEFAULT_EXPIRES_IN_DAYS, 1, 30, "expiresInDays");
-  const maxUses = wholeNumberBetween(options.maxUses ?? DEFAULT_MAX_USES, 1, 50, "maxUses");
+  const days = wholeNumberBetween(options.expiresInDays ?? DEFAULT_EXPIRES_IN_DAYS, 1, MAX_EXPIRES_IN_DAYS, "expiresInDays");
+  const maxUses = wholeNumberBetween(options.maxUses ?? DEFAULT_MAX_USES, 1, MAX_USES_PER_INVITE, "maxUses");
   const token = randomBytes(32).toString("base64url");
   const rows = await db.query<{ id: string; expires_at: Date | string }>(
     `insert into group_invites (group_id, token_hash, created_by, expires_at, max_uses)

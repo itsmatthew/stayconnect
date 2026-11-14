@@ -73,3 +73,32 @@ describe("invite routes, end to end (API-19, API-20)", () => {
     expect((await (await inbox(json("GET", "/inbox"))).json()).memories[0].caption).toBe("welcome");
   });
 });
+
+describe("owner invite routes, end to end (API-16 to API-18)", () => {
+  it("owner makes a link, a friend joins with it, the owner sees the use and revokes, and the next friend is turned away", async () => {
+    const { POST: createInvite, GET: listInvites } = await import("../../../src/app/api/groups/[id]/invites/route");
+    const { DELETE: revokeInvite } = await import("../../../src/app/api/groups/[id]/invites/[inviteId]/route");
+    const { POST: join } = await import("../../../src/app/api/invites/[token]/join/route");
+    const gurl = (rest = "") => `http://localhost/api/groups/${groupId}/invites${rest}`;
+    const gctx = { params: Promise.resolve({ id: groupId }) };
+
+    user = "alice";
+    const created = await createInvite(new Request(gurl(), { method: "POST" }), gctx);
+    expect(created.status).toBe(201);
+    const { id, token } = await created.json();
+
+    user = "carol";
+    const tctx = { params: Promise.resolve({ token }) };
+    const joined = await join(new Request(`http://localhost/api/invites/${token}/join`, { method: "POST" }), tctx);
+    expect(await joined.json()).toMatchObject({ groupId, joined: true });
+
+    user = "alice";
+    const listed = await (await listInvites(new Request(gurl()), gctx)).json();
+    expect(listed.invites).toMatchObject([{ id, useCount: 1 }]);
+    const revoked = await revokeInvite(new Request(gurl(`/${id}`), { method: "DELETE" }), { params: Promise.resolve({ id: groupId, inviteId: id }) });
+    expect(await revoked.json()).toEqual({ revoked: true });
+
+    user = "dee";
+    expect((await join(new Request(`http://localhost/api/invites/${token}/join`, { method: "POST" }), tctx)).status).toBe(404);
+  });
+});

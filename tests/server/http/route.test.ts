@@ -61,3 +61,16 @@ describe("invite routes wiring (API-1)", () => {
     expect((await join(new Request("http://localhost/api/invites/x/join", { method: "POST" }), ctx)).status).toBe(401);
   });
 });
+
+describe("owner invite routes wiring (API-1)", () => {
+  it("API-1: create, list, and revoke with no session are 401", async () => {
+    const { POST: create, GET: list } = await import("../../../src/app/api/groups/[id]/invites/route");
+    const { DELETE: revoke } = await import("../../../src/app/api/groups/[id]/invites/[inviteId]/route");
+    const gid = "00000000-0000-4000-8000-000000000000";
+    const ctx = { params: Promise.resolve({ id: gid }) };
+    const ctx2 = { params: Promise.resolve({ id: gid, inviteId: gid }) };
+    expect((await create(new Request(`http://localhost/api/groups/${gid}/invites`, { method: "POST" }), ctx)).status).toBe(401);
+    expect((await list(new Request(`http://localhost/api/groups/${gid}/invites`), ctx)).status).toBe(401);
+    expect((await revoke(new Request(`http://localhost/api/groups/${gid}/invites/${gid}`, { method: "DELETE" }), ctx2)).status).toBe(401);
+  });
+});
