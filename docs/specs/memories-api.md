@@ -12,7 +12,7 @@ Checks run in this order, and the first to fail answers.
 - **API-2** A request that changes data (`POST`, `PUT`, `PATCH`, `DELETE`) with an `Origin` header that does not match the request host gets `403`. A missing `Origin` is allowed (non-browser clients).
 - **API-3** A request with a body must be `application/json`, otherwise `415`.
 - **API-4** Input is validated before any data access. Invalid input gets `400` with `{ "error": "invalid_request" }` and a list of field names that failed. The body never contains SQL, stack traces, or the submitted values.
-- **API-5** `NotFoundError` is `404` with `{ "error": "not_found" }`. `NoRecipientsError` is `409` with `{ "error": "no_recipients" }`. `GroupFullError` is `409` with `{ "error": "group_full" }`. `RateLimitedError` is `429` with `{ "error": "rate_limited" }`.
+- **API-5** `NotFoundError` is `404` with `{ "error": "not_found" }`. `NoRecipientsError` is `409` with `{ "error": "no_recipients" }`. `GroupFullError` is `409` with `{ "error": "group_full" }`. `RateLimitedError` is `429` with `{ "error": "rate_limited" }`. `LastOwnerError` is `409` with `{ "error": "last_owner" }`.
 - **API-6** Any other error is `500` with `{ "error": "internal" }`. The log line has the error name and message only: never the request body or headers.
 - **API-7** Every response, including errors, carries `Cache-Control: private, no-store`.
 
@@ -56,3 +56,11 @@ Data rules are in `docs/specs/group-invites-backend.md` (INV-6 to INV-11). The t
 - **API-21** The token travels in the URL, so hosting request logs will contain it. What limits the harm: only its hash is stored, it expires, it can be revoked, and it has a use cap. Our own error logs and every response body never contain the token.
 
 Tracking: #31.
+
+## Leaving and removing members
+
+Data rules are in `docs/specs/group-membership.md` (GM-1 to GM-5).
+
+- **API-22** `DELETE /api/groups/{id}/members/{userId}` removes `{userId}` from the group and returns `200` with `{ removed: true }`. The owner can remove anyone else, and any member can remove themself. A member removing someone else, a non-member, an unknown or malformed group id, a target who is not in the group, and an owner of another group all return the same `404`. The last owner gets `409` with `{ "error": "last_owner" }`. `{userId}` is a Clerk user id: a string of 1 to 255 characters, otherwise `400`. A cross-origin request is `403`.
+
+Tracking: #32.
