@@ -1,6 +1,6 @@
 # 0001. Privacy and storage model
 
-Status: Proposed
+Status: Accepted
 
 ## Context
 
