@@ -12,3 +12,4 @@ HTTP adapter for the API (`docs/specs/memories-api.md`). Pure handlers `(req, de
 - Dynamic ids come from the route's awaited `params` and are passed to the handler as an argument. A malformed id is a 404, not a 400, so it answers like an unknown id.
 - Invite tokens arrive as the last URL segment (`join.ts`), so they appear in hosting request logs. Never log one, never put one in a response, and never put one in an error message.
 - `invites.ts` (owner management): the only response that ever contains a token is the one from creating it. List and revoke never do. A POST with no body means defaults, so check `req.body === null` before parsing.
+- `members.ts`: `DELETE` is both leave and remove, so the handler only checks the target id length (400) and leaves who-may-do-what to the data layer. `LastOwnerError` maps to 409 `last_owner` in `kit.ts`.

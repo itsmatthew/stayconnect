@@ -32,3 +32,11 @@ export class RateLimitedError extends Error {
     this.name = "RateLimitedError";
   }
 }
+
+/** The last owner can't leave or be removed (GM-4). The HTTP layer maps this to 409. */
+export class LastOwnerError extends Error {
+  constructor() {
+    super("A group needs an owner");
+    this.name = "LastOwnerError";
+  }
+}

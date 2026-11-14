@@ -102,3 +102,26 @@ describe("owner invite routes, end to end (API-16 to API-18)", () => {
     expect((await join(new Request(`http://localhost/api/invites/${token}/join`, { method: "POST" }), tctx)).status).toBe(404);
   });
 });
+
+describe("member route, end to end (API-22)", () => {
+  it("a member leaves through the route and the inbox is empty afterwards; the last owner cannot leave", async () => {
+    const { DELETE: removeMember } = await import("../../../src/app/api/groups/[id]/members/[userId]/route");
+    const { POST: send } = await import("../../../src/app/api/memories/route");
+    const { GET: inbox } = await import("../../../src/app/api/memories/inbox/route");
+    const leave = (who: string) =>
+      removeMember(json("DELETE", ""), { params: Promise.resolve({ id: groupId, userId: who }) });
+
+    expect((await send(json("POST", "", { groupId, caption: "hello" }))).status).toBe(201);
+    user = "bea";
+    expect((await (await inbox(json("GET", "/inbox"))).json()).memories).toHaveLength(1);
+    const left = await leave("bea");
+    expect(left.status).toBe(200);
+    expect(await left.json()).toEqual({ removed: true });
+    expect((await (await inbox(json("GET", "/inbox"))).json()).memories).toHaveLength(0);
+
+    user = "alice";
+    const blocked = await leave("alice");
+    expect(blocked.status).toBe(409);
+    expect(await blocked.json()).toEqual({ error: "last_owner" });
+  });
+});

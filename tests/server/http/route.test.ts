@@ -74,3 +74,12 @@ describe("owner invite routes wiring (API-1)", () => {
     expect((await revoke(new Request(`http://localhost/api/groups/${gid}/invites/${gid}`, { method: "DELETE" }), ctx2)).status).toBe(401);
   });
 });
+
+describe("member route wiring (API-1)", () => {
+  it("API-1: removing a member with no session is 401", async () => {
+    const { DELETE: removeMember } = await import("../../../src/app/api/groups/[id]/members/[userId]/route");
+    const gid = "00000000-0000-4000-8000-000000000000";
+    const ctx = { params: Promise.resolve({ id: gid, userId: "bea" }) };
+    expect((await removeMember(new Request(`http://localhost/api/groups/${gid}/members/bea`, { method: "DELETE" }), ctx)).status).toBe(401);
+  });
+});
