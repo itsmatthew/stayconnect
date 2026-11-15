@@ -2,6 +2,8 @@ name: CI
 
 on:
   pull_request:
+    # edited fires when a PR's base branch changes, which stacked PRs do each time their parent merges.
+    types: [opened, synchronize, reopened, edited]
   push:
     branches: [main]
 
