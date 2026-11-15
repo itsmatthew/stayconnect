@@ -38,7 +38,7 @@ export function IntroCrossfadeView({ phase, fast, onSkip, videoRef, backdropRef,
         playsInline
         autoPlay
         preload="auto"
-        className={`absolute inset-0 hidden h-full w-full scale-125 object-cover blur-2xl brightness-50 md:block ${fade} ${done ? "opacity-0" : "opacity-100"}`}
+        className={`absolute inset-0 hidden h-full w-full scale-125 object-cover blur-2xl brightness-50 md:block ${fade} ${done ? "pointer-events-none opacity-0" : "opacity-100"}`}
       />
 
       <video
@@ -48,7 +48,7 @@ export function IntroCrossfadeView({ phase, fast, onSkip, videoRef, backdropRef,
         playsInline
         autoPlay
         preload="auto"
-        className={`absolute inset-0 h-full w-full object-cover md:left-1/2 md:right-auto md:aspect-[1170/2532] md:w-auto md:-translate-x-1/2 ${fade} ${done ? "opacity-0" : "opacity-100"}`}
+        className={`absolute inset-0 h-full w-full object-cover md:left-1/2 md:right-auto md:aspect-[1170/2532] md:w-auto md:-translate-x-1/2 ${fade} ${done ? "pointer-events-none opacity-0" : "opacity-100"}`}
       />
 
       {!done && (

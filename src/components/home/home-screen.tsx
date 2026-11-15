@@ -7,10 +7,12 @@ import { CountBadge } from "./count-badge";
 import { DottedRing } from "./dotted-ring";
 import { GroupCard } from "./group-card";
 import { HeaderActions, Wordmark } from "./header-actions";
-import { BottomNav, TopNav } from "./main-nav";
-import { Scenery, useSceneIds, WIDE_SCENE, type SceneIds, type Zone } from "./scenery/scenery";
+import { BottomNav, TopNav, type NavProps } from "./main-nav";
+import { Scenery, useSceneIds, type SceneIds, type Zone } from "./scenery/scenery";
 import type { CircleGroup } from "./types";
 import { FRAUNCES, INK, KARLA, s } from "./units";
+import { riverZones, WideRiver, wideRiver } from "./wide-river";
+import { toSceneZone, WIDE_CENTER_SLOT, WIDE_PAINT, WIDE_SLOTS, wideLabelBox } from "./wide-row";
 
 type HomeScreenProps = {
   /** Center ±1, for phones. */
@@ -21,6 +23,7 @@ type HomeScreenProps = {
   onViewChange: (v: CirclesView) => void;
   onPrevious: () => void;
   onNext: () => void;
+  nav: NavProps;
 };
 
 /** Home — Your Circles (docs/specs/home.md). Phone below 768px, wide at 768px and up. */
@@ -82,7 +85,7 @@ const PHONE_BADGES: Record<TreeSlot, { left: number; top: number; size: number; 
 };
 const SLOTS: readonly TreeSlot[] = ["left", "center", "right"];
 
-function PhoneLayout({ phone, view, onViewChange, onPrevious, onNext }: HomeScreenProps) {
+function PhoneLayout({ phone, view, onViewChange, onPrevious, onNext, nav }: HomeScreenProps) {
   const ids = useSceneIds();
   const bySlot = { left: phone[0], center: phone[1], right: phone[2] };
   const tree = (slot: TreeSlot) => (
@@ -167,7 +170,7 @@ function PhoneLayout({ phone, view, onViewChange, onPrevious, onNext }: HomeScre
           <GroupCard group={phone[1]} />
         </div>
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2" style={{ width: s(390), height: s(78) }}>
-          <BottomNav />
+          <BottomNav {...nav} />
         </div>
       </div>
     </div>
@@ -176,42 +179,18 @@ function PhoneLayout({ phone, view, onViewChange, onPrevious, onNext }: HomeScre
 
 // ─── Wide: the desktop mockup's 1312×816 canvas, centered and scaled to fit ─────────────────────
 
-type WideSlot = { cx: number; cy: number; r: number; bottom: number; shadowRy: number; slot: TreeSlot; badge: [number, number] };
-const SIDE = { cy: 452, r: 88, bottom: 584, shadowRy: 10.7 };
-const WIDE_TREES: readonly WideSlot[] = [
-  { ...SIDE, cx: 216, slot: "left", badge: [0.53, 1.06] },
-  { ...SIDE, cx: 431, slot: "left", badge: [0.53, 1.06] },
-  { cx: 656, cy: 432, r: 135, bottom: 613, shadowRy: 15, slot: "center", badge: [0.71, 0.98] },
-  { ...SIDE, cx: 881, slot: "right", badge: [0.44, 1.06] },
-  { ...SIDE, cx: 1096, slot: "right", badge: [0.44, 1.06] },
-];
-/** Paint order: outer trees first, center last. */
-const WIDE_PAINT = [0, 4, 1, 3, 2];
-
-/** Each tree's name label box in canvas px: centered over the canopy, one line tall. */
-function wideLabelBox(t: WideSlot) {
-  const center = t.slot === "center";
-  const width = center ? 420 : 180;
-  const fontSize = center ? 27 : 18;
-  return { left: t.cx - width / 2, top: t.cy - t.r - (center ? 42 : 36), width, fontSize, height: fontSize * 1.3 };
-}
-
-/**
- * Label boxes in the wide scene's units (the scene shares the canvas's frame: same height, same center),
- * padded, so the scenery keeps its small trees out from behind label text.
- */
+/** Label boxes in the wide scene's units, padded, so the scenery keeps its small trees out from behind label text. */
 export function wideLabelZones(pad = 6): Zone[] {
-  const k = WIDE_SCENE.height / 816;
-  const x = (X: number) => WIDE_SCENE.centerX + (X - 656) * k;
-  const y = (Y: number) => WIDE_SCENE.top + Y * k;
-  return WIDE_TREES.map((t) => {
+  return WIDE_SLOTS.map((t) => {
     const b = wideLabelBox(t);
-    return { x0: x(b.left - pad), x1: x(b.left + b.width + pad), y0: y(b.top - pad), y1: y(b.top + b.height + pad) };
+    return toSceneZone({ x0: b.left - pad, x1: b.left + b.width + pad, y0: b.top - pad, y1: b.top + b.height + pad });
   });
 }
-const WIDE_LABEL_ZONES = wideLabelZones();
+const CENTER = WIDE_SLOTS[WIDE_CENTER_SLOT];
+/** Small trees stay off the labels and off the river, which follows the center tree. */
+const WIDE_CLEAR_ZONES = [...wideLabelZones(), ...riverZones(wideRiver(CENTER).points).map(toSceneZone)];
 
-function WideLayout({ wide, view, onViewChange, onPrevious, onNext }: HomeScreenProps) {
+function WideLayout({ wide, view, onViewChange, onPrevious, onNext, nav }: HomeScreenProps) {
   const ids = useSceneIds();
   return (
     <div
@@ -231,27 +210,20 @@ function WideLayout({ wide, view, onViewChange, onPrevious, onNext }: HomeScreen
         />
         {/* The scene shares the canvas's frame (and scale) vertically and spans the full width. */}
         <div className="absolute inset-x-0" style={{ top: "calc(50% - 408 * var(--d))", height: s(816) }}>
-          <Scenery variant="wide" ids={ids} clearZones={WIDE_LABEL_ZONES} />
+          <Scenery variant="wide" ids={ids} clearZones={WIDE_CLEAR_ZONES} />
         </div>
 
         <svg viewBox="0 0 1312 816" preserveAspectRatio="xMidYMid meet" aria-hidden="true" className="absolute inset-0 h-full w-full">
-          <DottedRing cx={656} cy={607} rx={165} ry={34} />
+          <WideRiver center={CENTER} />
+          <DottedRing cx={CENTER.cx} cy={607} rx={165} ry={34} />
           {WIDE_PAINT.map((i) => {
-            const { cx, cy, r, bottom, shadowRy, slot } = WIDE_TREES[i];
-            return (
-              <CircleTree
-                key={wide[i].id}
-                group={wide[i]}
-                slot={slot}
-                defs={treeDefs(ids)}
-                {...{ cx, cy, r, bottom, shadowRy }}
-              />
-            );
+            const { cx, cy, r, bottom, shadowRy, slot } = WIDE_SLOTS[i];
+            return <CircleTree key={wide[i].id} group={wide[i]} slot={slot} defs={treeDefs(ids)} {...{ cx, cy, r, bottom, shadowRy }} />;
           })}
         </svg>
 
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{ width: s(1312), height: s(816) }}>
-          {WIDE_TREES.map((t, i) => {
+          {WIDE_SLOTS.map((t, i) => {
             const b = wideLabelBox(t);
             return (
               <Label
@@ -263,7 +235,7 @@ function WideLayout({ wide, view, onViewChange, onPrevious, onNext }: HomeScreen
               />
             );
           })}
-          {WIDE_TREES.map((t, i) => {
+          {WIDE_SLOTS.map((t, i) => {
             const center = t.slot === "center";
             return (
               <div key={`badge-${i}`} style={abs(t.cx + t.badge[0] * t.r, t.cy + t.badge[1] * t.r)}>
@@ -291,7 +263,7 @@ function WideLayout({ wide, view, onViewChange, onPrevious, onNext }: HomeScreen
             className="absolute left-1/2 -translate-x-1/2"
             style={{ bottom: s(16), "--s": "calc(1.32 * var(--d))" } as CSSProperties}
           >
-            <GroupCard group={wide[2]} />
+            <GroupCard group={wide[WIDE_CENTER_SLOT]} />
           </div>
         </div>
 
@@ -304,7 +276,7 @@ function WideLayout({ wide, view, onViewChange, onPrevious, onNext }: HomeScreen
           }}
         >
           <Wordmark size={34} />
-          <TopNav />
+          <TopNav {...nav} />
           <div style={{ justifySelf: "end" }}>
             <HeaderActions avatarSize={50} iconSize={24} color={INK} />
           </div>

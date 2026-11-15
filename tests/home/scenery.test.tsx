@@ -65,8 +65,9 @@ describe("Scenery", () => {
     const root = wideRoot();
     const spires = root.querySelectorAll("path[d='M259 318L271 286L283 318Z']");
     expect(spires).toHaveLength(1);
-    // the tower (x 259–283, center 271) is moved to the scene's center line, x 195
-    expect(spires[0].closest("[data-church]")!.getAttribute("transform")).toBe("translate(-76 0)");
+    // the tower (x 259–283, center 271) is moved to the scene's center line, x 195, and lowered so the
+    // spire sits under the center tree's name (HOME-8)
+    expect(spires[0].closest("[data-church]")!.getAttribute("transform")).toBe("translate(-76 25)");
     expect(root.querySelectorAll("use[data-repeat='houses']").length).toBeGreaterThanOrEqual(4);
     expect(root.querySelectorAll("use[data-repeat='town']")).toHaveLength(0);
     for (const use of Array.from(root.querySelectorAll("use"))) {
@@ -82,6 +83,13 @@ describe("Scenery", () => {
     const scales = new Set(clouds.map((c) => c.getAttribute("data-scale")));
     expect(ys.size).toBeGreaterThanOrEqual(clouds.length / 2);
     expect(scales.size).toBeGreaterThanOrEqual(3);
+  });
+
+  it("wide variant leaves the river to the tree row (HOME-11)", () => {
+    // The shared <defs> still carry the river's gradient and clip; nothing draws with them.
+    const root = wideRoot();
+    expect(root.querySelector("path[fill$='hRiver)']")).toBeNull();
+    expect(root.querySelector("[style*='hm-flow']")).toBeNull();
   });
 
   it("wide variant keeps small trees out of clear zones (HOME-8)", () => {

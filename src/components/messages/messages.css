@@ -1,0 +1,8 @@
+/* The "something new" glow from the Messages reference. Elements opt in with class "ms-anim". */
+@keyframes ms-halo {
+  0%, 100% { box-shadow: 0 0 0 calc(8 * var(--s)) #FFD23F, 0 0 calc(16 * var(--s)) calc(12 * var(--s)) rgba(255, 170, 20, 0.8); }
+  50% { box-shadow: 0 0 0 calc(10 * var(--s)) #FFDE66, 0 0 calc(28 * var(--s)) calc(20 * var(--s)) rgba(255, 170, 20, 1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ms-anim { animation: none !important; }
+}

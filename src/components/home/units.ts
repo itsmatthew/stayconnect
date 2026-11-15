@@ -7,3 +7,8 @@ export const KARLA = "var(--font-karla), system-ui, sans-serif";
 
 export const INK = "#27305A";
 export const CREAM = "#FFF8EC";
+export const CAVEAT = "var(--font-caveat), 'Comic Sans MS', cursive";
+
+/** The cream-paper screens' ink and paper, from the Daily 5 and Messages references. */
+export const NAVY = "#2B3350";
+export const PAPER = "#F7EFD6";
