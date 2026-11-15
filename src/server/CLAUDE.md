@@ -1,0 +1,13 @@
+# src/server
+
+Data-access layer for groups and memories (`docs/specs/memories-backend.md`, ADR `docs/adr/0001-privacy-and-storage-model.md`).
+
+- Every function takes `(db, userId, ...)`. `userId` is the verified Clerk id from the session, never from a request body or URL.
+- Every group-scoped call starts with `requireMember` or joins `group_members` for the caller. Deny by default.
+- Unknown ids and ids you may not see throw the same `NotFoundError`. Don't add a distinct "forbidden" error: it leaks which ids exist.
+- A write that touches several tables is one SQL statement (CTE). Neon's HTTP driver can't hold a transaction across separate queries.
+- Only this folder talks to the database. Pages, components, and route handlers call these functions.
+- Migrations live in `db/migrations`, must be idempotent, and run in numeric order (`npm run db:migrate`).
+- Invites (`invites.ts`, `docs/specs/group-invites-backend.md`): owner-only via `requireOwner`; a plain member and a non-member both get `NotFoundError`. The token's plaintext exists only in `createInvite`'s return value, and only `hashToken(token)` is stored. Never select, log, or return `token_hash`.
+- Members (`members.ts`, `docs/specs/group-membership.md`): one function covers leave and remove. A member may remove themself; an owner may remove anyone; everyone else gets `NotFoundError`. The last owner cannot be removed (`LastOwnerError`, checked inside the same statement as the delete). Removal is not a ban: a still-valid invite lets the person rejoin, so revoke the link first.
+- Joining (`previewInvite`, `joinWithInvite`): every bad token is the same `NotFoundError` and counts toward the rate limit (`RateLimitedError`); a full group is `GroupFullError`. The join is one statement whose use-count update re-checks `use_count < max_uses`, which is what stops two people taking the last use. Don't split it into check-then-write. PGlite can't test that race; the opt-in Neon test does.
