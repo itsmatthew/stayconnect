@@ -1,7 +1,14 @@
 # Me
 
 Your own 65 Archive posts for a year, built from the designer's Me reference (phone, 390×844).
-Profile ornaments, name and bio from the reference come later (TODO). Tests: `tests/me/`.
+Tests: `tests/me/`.
+
+> **TODO: profile (not built).** The plan for the future profile build. Nothing here exists in the app yet, there are no tests for it, and these items carry no spec IDs. When the build starts, each item becomes a numbered `ME-` row with a failing test, in the same PR as its implementation.
+>
+> - **Self-defining memories** are the profile's main section: 3 ornaments, each a photo with a short caption. The picker's copy reads "a memory that made you who you are".
+> - **Who sees each one.** Each self-defining memory is shown either to everyone in your circles or only to your nest.
+> - **Q&A prompts** stay, as an optional, lighter section below the memories.
+> - Name and bio from the reference come with this build.
 
 | ID | Behaviour |
 |----|-----------|

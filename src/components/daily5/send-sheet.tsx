@@ -18,9 +18,10 @@ const SECTIONS = [
   ["people", "people"],
 ] as const;
 
-/** Step 1–2 of the reference: choose who (one circle, group or person), add a message, send. */
+/** Step 1–2 of the reference: choose who (one circle, group or person), say what you remember (D5-11), send. */
 export function SendSheet({ photo, recipients, onCancel, onSend }: SendSheetProps) {
   const titleId = useId();
+  const noteId = useId();
   const [query, setQuery] = useState("");
   const [picked, setPicked] = useState<string | null>(null);
   const [note, setNote] = useState("");
@@ -146,24 +147,29 @@ export function SendSheet({ photo, recipients, onCancel, onSend }: SendSheetProp
             e.preventDefault();
             if (picked) onSend(picked, note.trim());
           }}
-          style={{ display: "flex", alignItems: "center", gap: s(8), marginTop: s(4) }}
+          style={{ display: "flex", flexDirection: "column", gap: s(8), marginTop: s(4) }}
         >
-          <input
-            type="text"
-            aria-label="add a message"
-            placeholder="add a message"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            style={{ flex: 1, minWidth: 0, height: s(46), boxSizing: "border-box", padding: `0 ${s(16)}`, borderRadius: s(23), border: `${s(2)} solid ${NAVY}`, background: "#FFF8EC", font: "inherit", fontSize: s(15.5), fontWeight: 700, color: NAVY, outline: 0 }}
-          />
-          <button
-            type="submit"
-            aria-label="Send"
-            disabled={!picked}
-            style={{ flex: "none", width: s(48), height: s(48), borderRadius: "50%", border: `${s(2)} solid ${NAVY}`, background: picked ? "#C8432B" : "#E2D3A8", color: picked ? "#FFF6DA" : "#6B6A66", padding: `0 ${s(2)} 0 0`, display: "flex", alignItems: "center", justifyContent: "center", cursor: picked ? "pointer" : "default" }}
-          >
-            <SendIcon size={s(20)} />
-          </button>
+          <label htmlFor={noteId} style={{ padding: `0 ${s(4)}`, fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 700, fontSize: s(15), lineHeight: 1.3, color: NAVY }}>
+            What’s something specific you remember from this moment or era?
+          </label>
+          <div style={{ display: "flex", alignItems: "center", gap: s(8) }}>
+            <input
+              id={noteId}
+              type="text"
+              placeholder="the night we…"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              style={{ flex: 1, minWidth: 0, height: s(46), boxSizing: "border-box", padding: `0 ${s(16)}`, borderRadius: s(23), border: `${s(2)} solid ${NAVY}`, background: "#FFF8EC", font: "inherit", fontSize: s(15.5), fontWeight: 700, color: NAVY, outline: 0 }}
+            />
+            <button
+              type="submit"
+              aria-label="Send"
+              disabled={!picked}
+              style={{ flex: "none", width: s(48), height: s(48), borderRadius: "50%", border: `${s(2)} solid ${NAVY}`, background: picked ? "#C8432B" : "#E2D3A8", color: picked ? "#FFF6DA" : "#6B6A66", padding: `0 ${s(2)} 0 0`, display: "flex", alignItems: "center", justifyContent: "center", cursor: picked ? "pointer" : "default" }}
+            >
+              <SendIcon size={s(20)} />
+            </button>
+          </div>
         </form>
         <div style={{ textAlign: "center", fontSize: s(12), fontWeight: 700, color: "#3F4664", minHeight: s(15) }}>
           {picked ? "tap the arrow to send" : "pick a circle or a person"}

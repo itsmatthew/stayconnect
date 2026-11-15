@@ -62,10 +62,20 @@ describe("send sheet (D5-11)", () => {
     expect(uni.getAttribute("aria-pressed")).toBe("true");
   });
 
-  it("sends the picked recipient and the message", () => {
+  it("asks for something specific about the moment, as a visible label above the field (D5-11)", () => {
+    const { sheet } = renderSheet();
+    const prompt = "What’s something specific you remember from this moment or era?";
+    const field = within(sheet).getByRole("textbox", { name: prompt }) as HTMLInputElement;
+    expect(field.placeholder).toBe("the night we…");
+    const label = within(sheet).getByText(prompt);
+    expect(label.tagName).toBe("LABEL");
+    expect(label.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("sends the picked recipient and the answer (D5-11)", () => {
     const { sheet, onSend } = renderSheet();
     fireEvent.click(within(sheet).getByRole("button", { name: `Send to ${friends[0].name}` }));
-    fireEvent.change(within(sheet).getByRole("textbox", { name: "add a message" }), { target: { value: "remember this?" } });
+    fireEvent.change(within(sheet).getByRole("textbox", { name: /something specific you remember/ }), { target: { value: "remember this?" } });
     fireEvent.click(sendButton(sheet));
     expect(onSend).toHaveBeenCalledWith(`friend:${friends[0].id}`, "remember this?");
   });
