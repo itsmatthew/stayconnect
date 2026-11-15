@@ -1,11 +1,20 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 
+// Two projects: the server tests need real Node globals (the in-memory Postgres fails under jsdom), the UI tests need a DOM.
 export default defineConfig({
   plugins: [react()],
   resolve: { tsconfigPaths: true },
   test: {
-    environment: "jsdom",
-    include: ["tests/**/*.test.{ts,tsx}"],
+    projects: [
+      {
+        extends: true,
+        test: { name: "server", environment: "node", include: ["tests/server/**/*.test.ts"] },
+      },
+      {
+        extends: true,
+        test: { name: "ui", environment: "jsdom", include: ["tests/**/*.test.{ts,tsx}"], exclude: ["tests/server/**"] },
+      },
+    ],
   },
 });
