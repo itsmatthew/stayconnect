@@ -10,7 +10,8 @@
     "start": "next start",
     "lint": "eslint",
     "db:migrate": "node --env-file=.env.local scripts/migrate.mjs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage --coverage.include='src/server/**/*.ts' --coverage.thresholds.statements=94 --coverage.thresholds.branches=95 --coverage.thresholds.functions=88 --coverage.thresholds.lines=94"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.8.3",
@@ -21,15 +22,18 @@
     "next": "16.3.3",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "react-easy-crop": "6.2.4"
+    "react-easy-crop": "6.2.4",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.11",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^4.1.12",
     "@vitejs/plugin-react": "^6.1.2",
     "eslint": "^9",
     "eslint-config-next": "16.3.3",
@@ -37,6 +41,6 @@
     "jsdom": "^30.1.2",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.12"
   }
 }
