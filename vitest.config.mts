@@ -6,6 +6,8 @@ export default defineConfig({
   plugins: [react()],
   resolve: { tsconfigPaths: true },
   test: {
+    // jsdom renders of whole tabs take ~1–2s alone and several times that with files running in parallel on a small machine.
+    testTimeout: 15_000,
     projects: [
       {
         extends: true,

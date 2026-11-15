@@ -15,8 +15,6 @@ function renderWide(groups = placeholderGroups) {
   return { ...utils, wide };
 }
 const trees = (wide: HTMLElement) => Array.from(wide.querySelectorAll<SVGGElement>("[data-tree]"));
-const cardName = (wide: HTMLElement) =>
-  within(within(wide).getByRole("region", { name: "Selected circle" })).getByRole("heading").textContent;
 const centerCx = (wide: HTMLElement) => Number(trees(wide).find((t) => t.dataset.slot === "center")!.dataset.cx);
 const next = (wide: HTMLElement) => fireEvent.click(within(wide).getByRole("button", { name: "Next circle" }));
 

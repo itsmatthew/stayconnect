@@ -1,12 +1,12 @@
 // Adding a folder or a pick of photos to a pool (docs/specs/daily5.md, D5-2/3).
 // Files are handled one at a time so a 10,000-photo folder doesn't hold every image in memory.
 
+import { downscale } from "../photo-file";
 import type { PoolId } from "./daily-pick";
 import { photoDate } from "./photo-date";
 import type { PhotoStore } from "./photo-store";
 
 const IMAGE_EXT = /\.(jpe?g|png|gif|webp|heic|heif|avif|bmp|tiff?)$/i;
-const MAX_EDGE = 1600;
 
 /** Same name, size and modified date: the same file. */
 export function fileKey(f: File): string {
@@ -48,16 +48,4 @@ export async function importPhotos(
     onProgress?.({ done: i + 1, total: images.length });
   }
   return result;
-}
-
-/** At most 1600px on the long edge, JPEG 0.85. Browser only. */
-async function downscale(f: File): Promise<Blob> {
-  const bitmap = await createImageBitmap(f);
-  const k = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
-  const w = Math.round(bitmap.width * k);
-  const h = Math.round(bitmap.height * k);
-  const canvas = new OffscreenCanvas(w, h);
-  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, w, h);
-  bitmap.close();
-  return canvas.convertToBlob({ type: "image/jpeg", quality: 0.85 });
 }

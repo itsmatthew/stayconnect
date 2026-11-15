@@ -9,7 +9,6 @@ import type { ChatRow, ThreadHeaderArt, ThreadMessage } from "@/components/messa
 import type { PhotoStore } from "../daily5/photo-store";
 import { formatPhotoDate } from "../daily5/format";
 import { friendParty, groupParty } from "../parties";
-import { placeholderReplies } from "../placeholder-data";
 import {
   hasNew,
   lastActivity,
@@ -31,10 +30,12 @@ type MessagesClientProps = {
   store: PhotoStore | null;
   groups: readonly CircleGroup[];
   friends: readonly Friend[];
+  /** What a recipient says when "simulate reply" fires (MSG-6). */
+  replies: readonly string[];
   nav: NavProps;
 };
 
-export function MessagesClient({ chat, dispatch, now, store, groups, friends, nav }: MessagesClientProps) {
+export function MessagesClient({ chat, dispatch, now, store, groups, friends, replies, nav }: MessagesClientProps) {
   const [openId, setOpenId] = useState<string | null>(null);
   const parties = useMemo(() => new Map<string, Party>([...groups.map(groupParty), ...friends.map(friendParty)].map((p) => [p.id, p])), [groups, friends]);
   const friendById = useMemo(() => new Map(friends.map((f) => [f.id, f])), [friends]);
@@ -79,7 +80,7 @@ export function MessagesClient({ chat, dispatch, now, store, groups, friends, na
       id: crypto.randomUUID(),
       conversationId,
       from: members[n % members.length] ?? id,
-      text: placeholderReplies[n % placeholderReplies.length],
+      text: replies.length ? replies[n % replies.length] : "…",
       at: now(),
     });
   };

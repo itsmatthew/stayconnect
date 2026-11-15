@@ -62,6 +62,13 @@ export function MessagesScreen({ pinnedCircles, pinnedPeople, list, onOpen, seal
 
       {onSimulateReply && sealed.length > 0 && <DevSealedPanel sealed={sealed} onSimulateReply={onSimulateReply} />}
 
+      {!pinnedCircles.length && !pinnedPeople.length && !list.length && (
+        // MSG-8: nobody to talk to yet.
+        <p style={{ margin: `${s(48)} ${s(32)} 0`, textAlign: "center", fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 600, fontSize: s(17), lineHeight: 1.35 }}>
+          No messages yet. Send a memory to start one.
+        </p>
+      )}
+
       <OrnamentRow name="closest circles" rows={pinnedCircles.filter(match)} onOpen={onOpen} />
       <OrnamentRow name="closest people" rows={pinnedPeople.filter(match)} onOpen={onOpen} />
 

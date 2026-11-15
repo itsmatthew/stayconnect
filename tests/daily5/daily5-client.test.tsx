@@ -3,7 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { AppClient } from "@/app/intro/app-client";
 import { openPhotoStore, type PhotoStore } from "@/app/intro/daily5/photo-store";
-import { CHAT_STORAGE_KEY } from "@/app/intro/messages/use-chat";
+import { chatStorageKey } from "@/app/intro/messages/use-chat";
+import { demoData } from "@/app/intro/app-data";
 import type { ChatState } from "@/app/intro/messages/conversations";
 
 const NOW = new Date(2026, 9, 14, 12).getTime();
@@ -28,7 +29,7 @@ afterEach(() => {
 });
 
 const renderDaily5 = (now = NOW) =>
-  render(<AppClient initialTab="Daily 5" now={() => now} openStore={() => openPhotoStore(dbName)} hasFace={async () => true} />);
+  render(<AppClient initialTab="Daily 5" data={demoData} now={() => now} openStore={() => openPhotoStore(dbName)} hasFace={async () => true} />);
 
 describe("Daily 5, wired (D5-6/8/12, MSG-4)", () => {
   it("shows today's five and saves them for the day", async () => {
@@ -59,7 +60,7 @@ describe("Daily 5, wired (D5-6/8/12, MSG-4)", () => {
     fireEvent.click(within(sheet).getByRole("button", { name: "Send" }));
     expect(screen.getByRole("status").textContent).toBe("Sent ✓");
 
-    const saved = JSON.parse(localStorage.getItem(CHAT_STORAGE_KEY)!) as ChatState;
+    const saved = JSON.parse(localStorage.getItem(chatStorageKey(demoData.storageSuffix))!) as ChatState;
     expect(saved.sealed).toHaveLength(1);
     expect(saved.sealed[0].conversationId).toBe("group:work-mates");
 

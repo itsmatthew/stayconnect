@@ -1,4 +1,3 @@
-// TODO(re-evaluate when Archive and Me exist): those two report taps but the app ignores them.
 import type { ReactNode } from "react";
 import { ArchiveIcon, CirclesIcon, DailyIcon, MeIcon, MessagesIcon } from "./icons";
 import { CREAM, KARLA, s } from "./units";

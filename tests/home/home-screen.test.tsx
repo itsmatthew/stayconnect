@@ -7,7 +7,7 @@ import { wideLabelZones } from "@/components/home/home-screen";
 afterEach(cleanup);
 
 function renderHome() {
-  const utils = render(<HomeClient />);
+  const utils = render(<HomeClient groups={placeholderGroups} />);
   const phone = utils.container.querySelector("[data-layout='phone']") as HTMLElement;
   const wide = utils.container.querySelector("[data-layout='wide']") as HTMLElement;
   return { ...utils, phone, wide };

@@ -19,6 +19,8 @@ export type CircleGroup = {
   closest: boolean;
   /** Friend ids. */
   members: readonly string[];
+  /** Members who see everyone's Archive posts without posting (docs/specs/archive.md, ARC-5). */
+  viewers?: readonly string[];
   friendCount: number;
   memories: readonly [Memory, Memory, Memory];
   lastMemory: string;
