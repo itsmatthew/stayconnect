@@ -13,6 +13,8 @@ type ChatThreadProps = {
   delivered: boolean;
   onBack: () => void;
   onSendText: (text: string) => void;
+  /** Groups only: tapping the header logo changes it (docs/specs/group-logo.md, LOGO-4). */
+  onChangeLogo?: () => void;
 };
 
 const roundButton: CSSProperties = {
@@ -32,7 +34,7 @@ const theirBubble: CSSProperties = { padding: `${s(9)} ${s(13)}`, borderRadius: 
 const myBubble: CSSProperties = { padding: `${s(9)} ${s(13)}`, borderRadius: `${s(18)} ${s(18)} ${s(5)} ${s(18)}`, background: "#C8432B", color: "#FFF6DA", fontSize: s(15), lineHeight: 1.25 };
 
 /** One chat (docs/specs/messages.md, MSG-3): now/then header, bubbles, composer. */
-export function ChatThread({ party, headerArt, messages, delivered, onBack, onSendText }: ChatThreadProps) {
+export function ChatThread({ party, headerArt, messages, delivered, onBack, onSendText, onChangeLogo }: ChatThreadProps) {
   const [draft, setDraft] = useState("");
   const group = party.kind === "group";
 
@@ -58,7 +60,18 @@ export function ChatThread({ party, headerArt, messages, delivered, onBack, onSe
             </svg>
           </button>
           <div style={{ position: "absolute", left: "50%", top: s(140), translate: "-50% 0", width: s(72), height: s(72), borderRadius: "50%", background: PAPER, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 ${s(4)} ${s(10)} rgba(27,31,52,.4)` }}>
-            <PartyAvatar party={party} size={58} />
+            {onChangeLogo ? (
+              <button
+                type="button"
+                aria-label={`Change ${party.name} logo`}
+                onClick={onChangeLogo}
+                style={{ padding: 0, border: 0, borderRadius: "50%", background: "none", cursor: "pointer" }}
+              >
+                <PartyAvatar party={party} size={58} />
+              </button>
+            ) : (
+              <PartyAvatar party={party} size={58} />
+            )}
           </div>
           <h1 style={{ position: "absolute", left: 0, right: 0, top: s(214), margin: 0, textAlign: "center", fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(15) }}>{party.name}</h1>
         </div>

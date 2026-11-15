@@ -14,11 +14,11 @@ import { MeClient } from "./me/me-client";
 import { conversationId, ME } from "./messages/conversations";
 import { MessagesClient } from "./messages/messages-client";
 import { ORNAMENT_DB, openOrnamentStore, type OrnamentStore } from "./ornaments/ornament-store";
-import { canUndo, changedLine, ornamentKey, withOrnaments } from "./ornaments/ornaments";
+import { LOGO, canUndo, changedLine, ornamentKey, withOrnaments } from "./ornaments/ornaments";
 import { useOrnaments } from "./ornaments/use-ornaments";
 import { useChat } from "./messages/use-chat";
 import { recipientSections } from "./parties";
-import { captureDate, downscale } from "./photo-file";
+import { captureDate, cropSquare, downscale, type CropArea } from "./photo-file";
 
 type AppClientProps = {
   initialTab?: NavLabel;
@@ -31,6 +31,8 @@ type AppClientProps = {
   hasFace?: (image: Blob) => Promise<boolean>;
   readCapture?: (f: File) => Promise<number | undefined>;
   decode?: (f: File) => Promise<Blob>;
+  /** Cuts a cropped square out of a photo (docs/specs/group-logo.md, LOGO-7). */
+  crop?: (image: Blob, area: CropArea | undefined, max: number) => Promise<Blob>;
 };
 
 /** Opens a store once, closes it on unmount (or if it arrives after unmount). */
@@ -66,6 +68,7 @@ export function AppClient({
   hasFace = detectFaces,
   readCapture = captureDate,
   decode = downscale,
+  crop = cropSquare,
 }: AppClientProps) {
   const [tab, setTab] = useState<NavLabel>(initialTab);
   const store = useStore(openStore);
@@ -75,7 +78,8 @@ export function AppClient({
   const ornaments = useOrnaments(openOrnamentsNamed);
   const homeGroups = useMemo(() => withOrnaments(data.groups, ornaments.state, ornaments.urls), [data.groups, ornaments.state, ornaments.urls]);
   const [chat, dispatch] = useChat(now, data.seedConversations, data.storageSuffix);
-  const [recipients] = useState(() => recipientSections(data.groups, data.friends));
+  const recipients = useMemo(() => recipientSections(homeGroups, data.friends), [homeGroups, data.friends]);
+  const nameOf = (id: string) => data.friends.find((f) => f.id === id)?.name;
   const [circle, circleDispatch] = useCircle(data.rings, data.storageSuffix);
   const [gifts] = useState(() => data.gifts(now()));
   /** A thread for Messages to open on arrival (CIRCLE-6). */
@@ -109,12 +113,13 @@ export function AppClient({
           ornaments={{
             lineOf: (groupId, index) => {
               const v = ornaments.state[ornamentKey(groupId, index)]?.current;
-              return v && changedLine(v, (id) => data.friends.find((f) => f.id === id)?.name, now());
+              return v && changedLine(v, nameOf, now());
             },
             canUndo: (groupId, index) => canUndo(ornaments.state, groupId, index),
             onSave: (groupId, index, edit) => void ornaments.change(groupId, index, edit, ME, now()),
             onUndo: (groupId, index) => void ornaments.undo(groupId, index),
             decode,
+            crop,
           }}
         />
       );
@@ -123,7 +128,30 @@ export function AppClient({
     case "Archive":
       return <ArchiveClient data={data} now={now} store={archive} readCapture={readCapture} decode={decode} nav={nav} />;
     case "Messages":
-      return <MessagesClient chat={chat} dispatch={dispatch} now={now} store={store} groups={data.groups} friends={data.friends} replies={data.replies} initialOpenId={openThread} nav={nav} />;
+      return (
+        <MessagesClient
+          chat={chat}
+          dispatch={dispatch}
+          now={now}
+          store={store}
+          groups={homeGroups}
+          friends={data.friends}
+          replies={data.replies}
+          initialOpenId={openThread}
+          nav={nav}
+          logos={{
+            lineOf: (groupId) => {
+              const v = ornaments.state[ornamentKey(groupId, LOGO)]?.current;
+              return v && changedLine(v, nameOf, now(), "the logo");
+            },
+            canUndo: (groupId) => canUndo(ornaments.state, groupId, LOGO),
+            onSave: (groupId, image) => void ornaments.change(groupId, LOGO, { image, caption: "" }, ME, now()),
+            onUndo: (groupId) => void ornaments.undo(groupId, LOGO),
+            decode,
+            crop,
+          }}
+        />
+      );
     case "Me":
       return <MeClient data={data} now={now} store={archive} nav={nav} />;
   }

@@ -4,11 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import type { NavProps } from "@/components/home/main-nav";
 import type { CircleGroup, Friend, Party } from "@/components/home/types";
 import { ChatThread } from "@/components/messages/chat-thread";
+import { LogoSheet } from "@/components/messages/logo-sheet";
 import { MessagesScreen } from "@/components/messages/messages-screen";
 import type { ChatRow, ThreadHeaderArt, ThreadMessage } from "@/components/messages/types";
 import type { PhotoStore } from "../daily5/photo-store";
 import { formatPhotoDate } from "../daily5/format";
 import { friendParty, groupParty } from "../parties";
+import type { CropArea } from "../photo-file";
+import { usePickedPhoto } from "../use-picked-photo";
 import {
   hasNew,
   lastActivity,
@@ -35,9 +38,28 @@ type MessagesClientProps = {
   /** A thread to open straight away, e.g. tapping someone in Your circle (docs/specs/circle.md, CIRCLE-6). */
   initialOpenId?: string | null;
   nav: NavProps;
+  logos?: LogoControls;
 };
 
-export function MessagesClient({ chat, dispatch, now, store, groups, friends, replies, initialOpenId = null, nav }: MessagesClientProps) {
+/** Changing a group's logo (docs/specs/group-logo.md, LOGO-4/5). `groups` already carry the changed logos. */
+export type LogoControls = {
+  lineOf: (groupId: string) => string | undefined;
+  canUndo: (groupId: string) => boolean;
+  onSave: (groupId: string, image: Blob) => void;
+  onUndo: (groupId: string) => void;
+  /** Downscales a picked photo before it's cropped. */
+  decode: (f: File) => Promise<Blob>;
+  /** Cuts the cropper's square out of the downscaled photo (LOGO-7). */
+  crop: (image: Blob, area: CropArea | undefined, max: number) => Promise<Blob>;
+};
+
+/** Saved logos are at most this big (LOGO-4). */
+const LOGO_MAX = 512;
+const noLogos: LogoControls = { lineOf: () => undefined, canUndo: () => false, onSave: () => {}, onUndo: () => {}, decode: async (f) => f, crop: async (image) => image };
+
+export function MessagesClient({ chat, dispatch, now, store, groups, friends, replies, initialOpenId = null, nav, logos = noLogos }: MessagesClientProps) {
+  const [logoOpen, setLogoOpen] = useState(false);
+  const picked = usePickedPhoto(logos.decode);
   const [openId, setOpenId] = useState<string | null>(initialOpenId);
   const parties = useMemo(() => new Map<string, Party>([...groups.map(groupParty), ...friends.map(friendParty)].map((p) => [p.id, p])), [groups, friends]);
   const friendById = useMemo(() => new Map(friends.map((f) => [f.id, f])), [friends]);
@@ -89,23 +111,48 @@ export function MessagesClient({ chat, dispatch, now, store, groups, friends, re
 
   const party = openId ? parties.get(openId) : undefined;
   if (openId && party) {
+    const group = party.kind === "group" ? party : undefined;
+    const groupId = group?.id.slice("group:".length);
+    const closeLogo = () => {
+      picked.drop();
+      setLogoOpen(false);
+    };
     return (
-      <Thread
-        party={party}
-        headerArt={headerArt(party, groupById)}
-        messages={visibleMessages(chat, openId)}
-        delivered={showsDelivered(chat, openId)}
-        store={store}
-        senderOf={(from) => {
-          const f = friendById.get(from);
-          return f && { name: f.name, look: f.look };
-        }}
-        onBack={() => {
-          dispatch({ type: "open", conversationId: openId, at: now() });
-          setOpenId(null);
-        }}
-        onSendText={(text) => dispatch({ type: "sendText", id: crypto.randomUUID(), conversationId: openId, text, at: now() })}
-      />
+      <>
+        <Thread
+          party={party}
+          headerArt={headerArt(party, groupById)}
+          messages={visibleMessages(chat, openId)}
+          delivered={showsDelivered(chat, openId)}
+          store={store}
+          senderOf={(from) => {
+            const f = friendById.get(from);
+            return f && { name: f.name, look: f.look };
+          }}
+          onBack={() => {
+            dispatch({ type: "open", conversationId: openId, at: now() });
+            setOpenId(null);
+          }}
+          onSendText={(text) => dispatch({ type: "sendText", id: crypto.randomUUID(), conversationId: openId, text, at: now() })}
+          onChangeLogo={group ? () => setLogoOpen(true) : undefined}
+        />
+        {logoOpen && group && groupId && (
+          <LogoSheet
+            group={group}
+            line={logos.lineOf(groupId)}
+            canUndo={logos.canUndo(groupId)}
+            preview={picked.pending?.url}
+            onPickFile={picked.choose}
+            onSave={async (area) => {
+              const image = picked.pending?.image;
+              closeLogo();
+              if (image) logos.onSave(groupId, await logos.crop(image, area, LOGO_MAX));
+            }}
+            onUndo={() => logos.onUndo(groupId)}
+            onCancel={closeLogo}
+          />
+        )}
+      </>
     );
   }
 
@@ -138,6 +185,7 @@ type ThreadProps = {
   senderOf: (from: string) => ThreadMessage["sender"];
   onBack: () => void;
   onSendText: (text: string) => void;
+  onChangeLogo?: () => void;
 };
 
 function Thread({ messages, store, senderOf, ...rest }: ThreadProps) {

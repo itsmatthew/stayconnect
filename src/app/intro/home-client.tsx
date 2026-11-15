@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { CircleScreen } from "@/components/circle/circle-screen";
 import { RINGS, type CirclePerson } from "@/components/circle/types";
 import type { CirclesView } from "@/components/home/circle-toggle";
@@ -16,6 +16,8 @@ import { openingCenter, rotate, visibleAround } from "./circle-carousel";
 import { initialChatState, type ChatState } from "./messages/conversations";
 import { CAPTION_MAX } from "./ornaments/ornaments";
 import type { OrnamentEdit } from "./ornaments/use-ornaments";
+import type { CropArea } from "./photo-file";
+import { usePickedPhoto } from "./use-picked-photo";
 
 /** Changing a group's ornaments (docs/specs/home.md, HOME-14–17). `groups` already carry the changes. */
 export type OrnamentControls = {
@@ -23,9 +25,14 @@ export type OrnamentControls = {
   canUndo: (groupId: string, index: number) => boolean;
   onSave: (groupId: string, index: number, edit: OrnamentEdit) => void;
   onUndo: (groupId: string, index: number) => void;
-  /** Downscales a picked photo before it's previewed and saved. */
+  /** Downscales a picked photo before it's previewed and cropped. */
   decode: (f: File) => Promise<Blob>;
+  /** Cuts the cropper's square out of the downscaled photo (docs/specs/group-logo.md, LOGO-7). */
+  crop: (image: Blob, area: CropArea | undefined, max: number) => Promise<Blob>;
 };
+
+/** Saved ornament photos are at most this big (HOME-14). */
+const ORNAMENT_MAX = 1024;
 
 type HomeClientProps = {
   groups: readonly CircleGroup[];
@@ -49,28 +56,16 @@ const noOrnaments: OrnamentControls = {
   onSave: () => {},
   onUndo: () => {},
   decode: async (f) => f,
+  crop: async (image) => image,
 };
 
-type Pending = { image: Blob; url: string };
-
-/** The open ornament sheet and the photo picked in it, not yet saved. The preview URL is revoked when it's dropped. */
+/** The open ornament sheet and the photo picked in it, not yet saved. */
 function useOrnamentSheet(decode: OrnamentControls["decode"]) {
   const [open, setOpen] = useState<{ groupId: string; index: number } | null>(null);
-  const [pending, setPending] = useState<Pending | null>(null);
-  // A pick that finishes decoding after the sheet moved on is dropped.
-  const pick = useRef(0);
-  useEffect(() => () => {
-    if (pending) URL.revokeObjectURL(pending.url);
-  }, [pending]);
+  const { pending, choose, drop } = usePickedPhoto(decode);
   const show = (next: { groupId: string; index: number } | null) => {
-    pick.current++;
-    setPending(null);
+    drop();
     setOpen(next);
-  };
-  const choose = async (file: File) => {
-    const mine = ++pick.current;
-    const image = await decode(file);
-    if (mine === pick.current) setPending({ image, url: URL.createObjectURL(image) });
   };
   return { open, pending, show, choose };
 }
@@ -156,9 +151,12 @@ export function HomeClient({
           captionMax={CAPTION_MAX}
           onSelect={(index) => sheet.show({ groupId: open.id, index })}
           onPickFile={sheet.choose}
-          onSave={(caption) => {
-            ornaments.onSave(open.id, sheet.open!.index, { image: sheet.pending?.image, caption });
+          onSave={async (caption, area) => {
+            const { index } = sheet.open!;
+            const picked = sheet.pending?.image;
             sheet.show(null);
+            const image = picked && (await ornaments.crop(picked, area, ORNAMENT_MAX));
+            ornaments.onSave(open.id, index, { image, caption });
           }}
           onUndo={() => {
             ornaments.onUndo(open.id, sheet.open!.index);

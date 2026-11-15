@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { OrnamentStore } from "./ornament-store";
-import { ornamentReducer, unreachableImages, type OrnamentAction, type OrnamentState } from "./ornaments";
+import { ornamentReducer, unreachableImages, type OrnamentAction, type OrnamentState, type Slot } from "./ornaments";
 
 export type OrnamentEdit = { image?: Blob; caption: string };
 
@@ -10,8 +10,8 @@ type Ornaments = {
   state: OrnamentState;
   /** Object URLs for the photos the state can show, by photo id. */
   urls: Record<string, string>;
-  change(groupId: string, index: number, edit: OrnamentEdit, by: string, at: number): Promise<void>;
-  undo(groupId: string, index: number): Promise<void>;
+  change(groupId: string, index: Slot, edit: OrnamentEdit, by: string, at: number): Promise<void>;
+  undo(groupId: string, index: Slot): Promise<void>;
 };
 
 /**

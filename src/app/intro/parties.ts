@@ -1,6 +1,7 @@
 // Groups and friends as chat/send parties. A party's id is its conversation id.
 import type { RecipientSections } from "@/components/daily5/types";
 import type { CircleGroup, Friend, Party } from "@/components/home/types";
+import { logoInitials } from "./logos/initials";
 import { conversationId } from "./messages/conversations";
 
 export const groupParty = (g: CircleGroup): Party => ({
@@ -9,6 +10,8 @@ export const groupParty = (g: CircleGroup): Party => ({
   name: g.name,
   closest: g.closest,
   palette: g.palette,
+  initials: logoInitials(g.name),
+  ...(g.logo ? { logo: g.logo } : {}),
 });
 
 export const friendParty = (f: Friend): Party => ({

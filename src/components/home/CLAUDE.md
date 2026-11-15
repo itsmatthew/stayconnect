@@ -9,4 +9,4 @@ Home — Your Circles, as pure view components (spec: `docs/specs/home.md`). Eve
 - Wide row geometry is pure in `wide-row.ts`: always five trees in the mockup's fixed slots, the center tree at canvas x 656 (the screen's center). Label boxes and clear zones come from there too.
 - No river on wide screens (HOME-11): neither the wide scenery nor the tree row draws one. The phone scenery keeps the generated river.
 - Ornaments (HOME-13): the tree SVG stays `aria-hidden`, so each bauble gets a round HTML `<button>` overlay placed with `ornamentSpots` from `circle-tree.tsx` (the same fractions the drawing uses). A `Memory` with `src` shows that photo (`MemoryPicture` in `memory-art.tsx`), otherwise its art.
-- `ornament-sheet.tsx` is pure: the app passes each ornament's memory, attribution line and `canUndo`, plus the picked photo's preview URL. It never decodes files or knows the rules.
+- `ornament-sheet.tsx` is pure: the app passes each ornament's memory, attribution line and `canUndo`, plus the picked photo's preview URL. It never decodes files or knows the rules. Its frame, picker and cropper come from `../shared/`; Save hands back the cropper's area.

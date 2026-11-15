@@ -25,6 +25,8 @@ export type CircleGroup = {
   friendCount: number;
   memories: readonly [Memory, Memory, Memory];
   lastMemory: string;
+  /** A logo image a member chose (docs/specs/group-logo.md, LOGO-4); without one, the logo is the initials. */
+  logo?: string;
 };
 
 /** A placeholder face, drawn as layered radial gradients like the reference's avatars. */
@@ -34,5 +36,5 @@ export type Friend = { id: string; name: string; closest: boolean; look: FriendL
 
 /** Someone you can chat with or send a memory to: a group or a single friend. `id` is the conversation id. */
 export type Party =
-  | { kind: "group"; id: string; name: string; closest: boolean; palette: Palette }
+  | { kind: "group"; id: string; name: string; closest: boolean; palette: Palette; /** LOGO-1 */ initials: string; logo?: string }
   | { kind: "friend"; id: string; name: string; closest: boolean; look: FriendLook };
