@@ -1,0 +1,16 @@
+/* Scene animations from the reference. Elements opt in with class "hm-anim" + an inline animation. */
+@keyframes hm-flow {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: 100; }
+}
+@keyframes hm-fog {
+  from { transform: translateX(-36px); }
+  to { transform: translateX(36px); }
+}
+@keyframes hm-ring {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hm-anim { animation: none !important; }
+}
