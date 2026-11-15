@@ -1,4 +1,4 @@
-import type { Party } from "../home/types";
+import type { FriendLook, Party } from "../home/types";
 import { FRAUNCES, s } from "../home/units";
 
 const initials = (name: string) =>
@@ -10,19 +10,22 @@ const initials = (name: string) =>
     .map((w) => w[0])
     .join("");
 
+/** A friend's face as layered radial gradients, like the reference's avatars. */
+export const faceGradient = ({ skin, hair, shirt, bg }: FriendLook) =>
+  `radial-gradient(circle at 50% 44%, ${skin} 0 25%, transparent 27%), radial-gradient(circle at 50% 36%, ${hair} 0 34%, transparent 36%), radial-gradient(ellipse at 50% 108%, ${shirt} 0 42%, transparent 44%), ${bg}`;
+
 /** A circle's logo (its canopy colour and initials) or a friend's face, ringed like the reference's avatars. */
 export function PartyAvatar({ party, size }: { party: Party; size: number }) {
   const common = { display: "block", width: s(size), height: s(size), borderRadius: "50%", flex: "none" } as const;
   if (party.kind === "friend") {
-    const { skin, hair, shirt, bg, ring } = party.look;
     return (
       <span
         role="img"
         aria-label={party.name}
         style={{
           ...common,
-          background: `radial-gradient(circle at 50% 44%, ${skin} 0 25%, transparent 27%), radial-gradient(circle at 50% 36%, ${hair} 0 34%, transparent 36%), radial-gradient(ellipse at 50% 108%, ${shirt} 0 42%, transparent 44%), ${bg}`,
-          boxShadow: `0 0 0 ${s(2.5)} #F6ECCD, 0 0 0 ${s(5)} ${ring}`,
+          background: faceGradient(party.look),
+          boxShadow: `0 0 0 ${s(2.5)} #F6ECCD, 0 0 0 ${s(5)} ${party.look.ring}`,
         }}
       />
     );

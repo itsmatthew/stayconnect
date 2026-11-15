@@ -32,11 +32,13 @@ type MessagesClientProps = {
   friends: readonly Friend[];
   /** What a recipient says when "simulate reply" fires (MSG-6). */
   replies: readonly string[];
+  /** A thread to open straight away, e.g. tapping someone in Your circle (docs/specs/circle.md, CIRCLE-6). */
+  initialOpenId?: string | null;
   nav: NavProps;
 };
 
-export function MessagesClient({ chat, dispatch, now, store, groups, friends, replies, nav }: MessagesClientProps) {
-  const [openId, setOpenId] = useState<string | null>(null);
+export function MessagesClient({ chat, dispatch, now, store, groups, friends, replies, initialOpenId = null, nav }: MessagesClientProps) {
+  const [openId, setOpenId] = useState<string | null>(initialOpenId);
   const parties = useMemo(() => new Map<string, Party>([...groups.map(groupParty), ...friends.map(friendParty)].map((p) => [p.id, p])), [groups, friends]);
   const friendById = useMemo(() => new Map(friends.map((f) => [f.id, f])), [friends]);
   const groupById = useMemo(() => new Map(groups.map((g) => [g.id, g])), [groups]);
