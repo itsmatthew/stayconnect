@@ -3,6 +3,7 @@
 import { Daily5Screen } from "@/components/daily5/daily5-screen";
 import type { RecipientSections } from "@/components/daily5/types";
 import type { NavProps } from "@/components/home/main-nav";
+import type { TrackStoreWork } from "../app-client";
 import type { ChatAction } from "../messages/conversations";
 import { formatPhotoDate, formatToday } from "./format";
 import type { PhotoStore } from "./photo-store";
@@ -10,6 +11,8 @@ import { useDaily5 } from "./use-daily5";
 
 type Daily5ClientProps = {
   store: PhotoStore | null;
+  /** Keeps the store open until a pick or import in flight has finished writing. */
+  track?: TrackStoreWork;
   now: () => number;
   hasFace: (image: Blob) => Promise<boolean>;
   recipients: RecipientSections;
@@ -19,8 +22,8 @@ type Daily5ClientProps = {
 
 const POOL_LABELS = { mine: "My photos", family: "Family computer" } as const;
 
-export function Daily5Client({ store, now, hasFace, recipients, dispatch, nav }: Daily5ClientProps) {
-  const { state, addFiles } = useDaily5(store, now, hasFace);
+export function Daily5Client({ store, track, now, hasFace, recipients, dispatch, nav }: Daily5ClientProps) {
+  const { state, addFiles } = useDaily5(store, now, hasFace, track);
   const cards = state.photos.map((p) => {
     const dateLabel = formatPhotoDate(p.takenAt);
     return { id: p.id, src: p.src, alt: `Photo from ${dateLabel}`, dateLabel };
@@ -38,7 +41,16 @@ export function Daily5Client({ store, now, hasFace, recipients, dispatch, nav }:
         const photo = state.photos.find((p) => p.id === cardId);
         if (!photo) return;
         // Sealed until a reply (docs/specs/messages.md, MSG-4).
-        dispatch({ type: "sendMemory", id: crypto.randomUUID(), conversationId: recipientId, photoId: cardId, takenAt: photo.takenAt, note, at: now() });
+        dispatch({
+          type: "sendMemory",
+          id: crypto.randomUUID(),
+          conversationId: recipientId,
+          photoId: cardId,
+          takenAt: photo.takenAt,
+          ...(photo.fileDated ? { fileDated: photo.fileDated } : {}),
+          note,
+          at: now(),
+        });
       }}
       nav={nav}
     />

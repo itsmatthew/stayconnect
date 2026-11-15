@@ -8,6 +8,9 @@ export default defineConfig({
   test: {
     // jsdom renders of whole tabs take ~1–2s alone and several times that with files running in parallel on a small machine.
     testTimeout: 15_000,
+    // On fanless 4-core laptops, full parallelism overheats the CPU and tests time out (failures at 302s);
+    // with 2 workers the suite went 414/414 in 180s.
+    maxWorkers: 2,
     projects: [
       {
         extends: true,
@@ -15,7 +18,13 @@ export default defineConfig({
       },
       {
         extends: true,
-        test: { name: "ui", environment: "jsdom", include: ["tests/**/*.test.{ts,tsx}"], exclude: ["tests/server/**"] },
+        test: {
+          name: "ui",
+          environment: "jsdom",
+          include: ["tests/**/*.test.{ts,tsx}"],
+          exclude: ["tests/server/**"],
+          setupFiles: ["tests/setup.ts"],
+        },
       },
     ],
   },

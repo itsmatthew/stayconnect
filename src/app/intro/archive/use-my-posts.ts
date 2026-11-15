@@ -2,14 +2,16 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { PhotoView } from "@/components/archive/types";
+import type { TrackStoreWork } from "../app-client";
 import type { ArchiveStore, NewPost } from "./archive-store";
 import type { ArchivePost } from "./posts";
 
 /**
  * Your own Archive posts: the demo's (if any) plus the ones in this browser's Archive store,
- * with object URLs for the stored images, revoked when the tab closes.
+ * with object URLs for the stored images, revoked when the tab closes. A post goes through `track`, so the store's
+ * owner closes it only after the post has saved.
  */
-export function useMyPosts(store: ArchiveStore | null, seeded: readonly ArchivePost[]) {
+export function useMyPosts(store: ArchiveStore | null, seeded: readonly ArchivePost[], track: TrackStoreWork = (work) => work) {
   const [stored, setStored] = useState<ArchivePost[]>([]);
 
   useEffect(() => {
@@ -25,11 +27,11 @@ export function useMyPosts(store: ArchiveStore | null, seeded: readonly ArchiveP
   const add = useCallback(
     async (post: NewPost) => {
       if (!store) throw new Error("The Archive store isn't open yet");
-      const p = await store.add(post);
+      const p = await track(store.add(post));
       setStored((s) => [...s, p]);
       return p;
     },
-    [store],
+    [store, track],
   );
 
   return { mine: [...seeded, ...stored], urls, add };

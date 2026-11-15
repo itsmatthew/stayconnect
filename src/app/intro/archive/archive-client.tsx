@@ -12,6 +12,7 @@ import { CAPTION_MAX, captionPlaceholder, cleanCaption, lockedText, pickerTitle,
 import { postTime } from "./format";
 import { circleTags, feedSections, outlineColors, sharedCircles, type FeedSection } from "./gate";
 import { isOpen, openSlots, periodFromKey, periodTitle, rangeLabel } from "./periods";
+import type { TrackStoreWork } from "../app-client";
 import { photoView, useMyPosts } from "./use-my-posts";
 
 // One-time, per browser (ARC-11).
@@ -30,6 +31,8 @@ type ArchiveClientProps = {
   data: AppData;
   now: () => number;
   store: ArchiveStore | null;
+  /** Keeps the store open until a post started before the app closed has saved. */
+  track?: TrackStoreWork;
   /** The EXIF capture date, or undefined (ARC-4). Browser only, so injected. */
   readCapture: (f: File) => Promise<number | undefined>;
   /** A JPEG copy, at most 1600px. Browser only, so injected. */
@@ -39,10 +42,10 @@ type ArchiveClientProps = {
 
 type Picking = { key: string; error?: string; preview?: string; pending?: { image: Blob; takenAt: number }; busy: boolean };
 
-export function ArchiveClient({ data, now, store, readCapture, decode, nav }: ArchiveClientProps) {
+export function ArchiveClient({ data, now, store, track, readCapture, decode, nav }: ArchiveClientProps) {
   const [placeholder] = useState(() => data.posts(now()));
   const seededMine = useMemo(() => placeholder.filter((p) => p.author === ME), [placeholder]);
-  const { mine, urls, add } = useMyPosts(store, seededMine);
+  const { mine, urls, add } = useMyPosts(store, seededMine, track);
   const [picking, setPicking] = useState<Picking | null>(null);
   // Read after hydration; the server renders it as seen.
   const seen = useSyncExternalStore(noSubscription, explainerSeen, () => true);

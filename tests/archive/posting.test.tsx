@@ -2,7 +2,7 @@ import "fake-indexeddb/auto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { AppClient } from "@/app/intro/app-client";
-import { openArchiveStore } from "@/app/intro/archive/archive-store";
+import { openArchiveStore, type ArchiveStore } from "@/app/intro/archive/archive-store";
 import { openPhotoStore } from "@/app/intro/daily5/photo-store";
 import { at, fixtureData, post } from "./fixtures";
 
@@ -26,14 +26,14 @@ const captureDates: Record<string, number | undefined> = {
 };
 const photo = (name: string) => new File(["x"], name, { type: "image/jpeg", lastModified: NOW });
 
-function renderArchive() {
+function renderArchive(openArchive: () => Promise<ArchiveStore> = () => openArchiveStore(dbName)) {
   return render(
     <AppClient
       initialTab="Archive"
       data={fixtureData([post("leo", "2026-W43")])}
       now={() => NOW}
       openStore={() => openPhotoStore(`${dbName}-photos`)}
-      openArchive={() => openArchiveStore(dbName)}
+      openArchive={openArchive}
       readCapture={async (f) => captureDates[f.name]}
       decode={async () => new Blob(["jpeg"], { type: "image/jpeg" })}
       hasFace={async () => true}
@@ -100,6 +100,40 @@ describe("posting (ARC-3, ARC-4, ARC-12)", () => {
     renderArchive();
     const again = await screen.findByRole("region", { name: "Photo of the week" });
     expect(await within(again).findByText("unlocked ✓")).toBeTruthy();
+  });
+
+  it("is kept when the app closes while the post is still saving", async () => {
+    let release: (() => void) | null = null;
+    let close = vi.fn();
+    // The save is held before it reaches IndexedDB, as a slow device would.
+    const held = async () => {
+      const s = await openArchiveStore(dbName);
+      close = vi.fn(s.close);
+      return {
+        ...s,
+        close,
+        add: async (p: Parameters<ArchiveStore["add"]>[0]) => {
+          await new Promise<void>((r) => (release = r));
+          return s.add(p);
+        },
+      };
+    };
+    const first = renderArchive(held);
+    const dialog = await openPicker();
+    choose(dialog, photo("in-week.jpg"));
+    await within(dialog).findByText("Once it's posted, it can't be replaced or edited.");
+    // Posting waits for the store to open.
+    const post = within(dialog).getByRole("button", { name: "Post" }) as HTMLButtonElement;
+    await waitFor(() => expect(post.disabled).toBe(false));
+    fireEvent.click(post);
+    await waitFor(() => expect(release).not.toBeNull());
+    first.unmount();
+    release!();
+    await waitFor(() => expect(close).toHaveBeenCalled());
+
+    const store = await openArchiveStore(dbName);
+    await waitFor(async () => expect((await store.posts()).map((p) => p.period)).toEqual(["2026-W43"]));
+    store.close();
   });
 
   it("the store refuses a second post for the same period (ARC-3)", async () => {

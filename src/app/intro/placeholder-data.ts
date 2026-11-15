@@ -1,14 +1,16 @@
 // TODO(re-evaluate when groups come from the database): swap this file for real data.
 // Every placeholder in the app lives here: groups (docs/specs/home.md, HOME-1), friends,
-// their rings and gifts in Your circle (docs/specs/circle.md), seed conversations, the replies "simulate reply" uses (docs/specs/messages.md) and Archive posts
-// (docs/specs/archive.md). Only app-data.ts imports it, behind the demo switch (docs/specs/demo.md).
+// their rings and gifts in Your circle (docs/specs/circle.md), seed conversations, the replies "simulate reply" uses (docs/specs/messages.md), Archive posts
+// (docs/specs/archive.md), and next-time-together goals and up-to rows (docs/specs/group-profile.md). Only app-data.ts imports it, behind the demo switch (docs/specs/demo.md).
 
 import type { ArtKind, CircleGroup, Friend, Palette } from "@/components/home/types";
+import type { UpToRow } from "@/components/profile/types";
 import type { ReceivedGift } from "./circle/gifts";
 import type { Placements } from "./circle/rings";
-import { isOpen, periodsOfYear } from "./archive/periods";
+import { isOpen, isoWeek, periodsOfYear } from "./archive/periods";
 import type { ArchivePost } from "./archive/posts";
 import { ME, type ChatMessage, type Conversation } from "./messages/conversations";
+import { localDay, type GoalState } from "./profile/goals";
 
 const red: Palette = { canopy: "#C8432B", shade: "#93281A", highlight: "#F3A088", rim: "#FFD2C4" };
 const green: Palette = { canopy: "#5E8068", shade: "#3F5F4C", highlight: "#B8D2BE", rim: "#D6F0DC" };
@@ -59,6 +61,9 @@ export const placeholderGroups: readonly CircleGroup[] = [
       { id: "madrid-3", art: "faces", caption: "wrong line,\ntwice" },
     ],
     lastMemory: "last memory 2 days ago",
+    // Header photos (GP-12), drawn as art with their capture dates.
+    firstPhoto: { art: "faces", takenAt: new Date(2014, 5, 14).getTime() },
+    lastPhoto: { art: "city", takenAt: new Date(2026, 7, 9).getTime() },
   },
   {
     id: "hoops-since-14",
@@ -73,6 +78,9 @@ export const placeholderGroups: readonly CircleGroup[] = [
       { id: "hoops-3", art: "people", caption: "post-game\ntacos" },
     ],
     lastMemory: "last memory yesterday",
+    // Header photos (GP-12), drawn as art with their capture dates.
+    firstPhoto: { art: "basketball", takenAt: new Date(2014, 2, 3).getTime() },
+    lastPhoto: { art: "people", takenAt: new Date(2026, 8, 27).getTime() },
   },
   {
     id: "apt-4b",
@@ -87,6 +95,9 @@ export const placeholderGroups: readonly CircleGroup[] = [
       { id: "apt-3", art: "sunset", caption: "move-in\nday" },
     ],
     lastMemory: "last memory 5 days ago",
+    // Header photos (GP-12), drawn as art with their capture dates.
+    firstPhoto: { art: "cookie", takenAt: new Date(2019, 8, 1).getTime() },
+    lastPhoto: { art: "sunset", takenAt: new Date(2026, 4, 30).getTime() },
   },
   {
     id: "family",
@@ -103,6 +114,9 @@ export const placeholderGroups: readonly CircleGroup[] = [
       { id: "family-3", art: "faces", caption: "the ski\ntrip" },
     ],
     lastMemory: "last memory 4 days ago",
+    // Header photos (GP-12), drawn as art with their capture dates.
+    firstPhoto: { art: "people", takenAt: new Date(1998, 11, 25).getTime() },
+    lastPhoto: { art: "cookie", takenAt: new Date(2025, 11, 25).getTime() },
   },
   {
     id: "uni-mates",
@@ -117,6 +131,9 @@ export const placeholderGroups: readonly CircleGroup[] = [
       { id: "uni-3", art: "faces", caption: "grad day,\nfinally" },
     ],
     lastMemory: "last memory 3 weeks ago",
+    // Header photos (GP-12), drawn as art with their capture dates.
+    firstPhoto: { art: "city", takenAt: new Date(2015, 8, 20).getTime() },
+    lastPhoto: { art: "faces", takenAt: new Date(2025, 5, 12).getTime() },
   },
   {
     id: "work-mates",
@@ -131,6 +148,9 @@ export const placeholderGroups: readonly CircleGroup[] = [
       { id: "work-3", art: "faces", caption: "the great\ndesk swap" },
     ],
     lastMemory: "last memory 1 week ago",
+    // Header photos (GP-12), drawn as art with their capture dates.
+    firstPhoto: { art: "sunset", takenAt: new Date(2022, 0, 10).getTime() },
+    lastPhoto: { art: "churro", takenAt: new Date(2026, 2, 6).getTime() },
   },
   {
     id: "fall-24",
@@ -145,6 +165,7 @@ export const placeholderGroups: readonly CircleGroup[] = [
       { id: "fall-3", art: "people", caption: "dorm\nmove-in" },
     ],
     lastMemory: "last memory 2 weeks ago",
+    // No header photos (GP-12), so the empty state shows in development.
   },
 ];
 
@@ -159,12 +180,13 @@ export function seedConversations(now: number): Conversation[] {
     lastOpenedAt: opened === null ? 0 : now - opened,
     messages: lines.map(([from, ago, text], i): ChatMessage => ({ id: `${id}/seed-${i}`, kind: "text", from, at: now - ago, text })),
   });
+  const madrid = chat("group:madrid-crew", 20 * HOUR, [
+    ["leo", 26 * HOUR, "rooftop again friday?"],
+    ["ana", 25.5 * HOUR, "only if we skip the 4am churros"],
+    [ME, 25 * HOUR, "we are not skipping the churros"],
+  ]);
   return [
-    chat("group:madrid-crew", 20 * HOUR, [
-      ["leo", 26 * HOUR, "rooftop again friday?"],
-      ["ana", 25.5 * HOUR, "only if we skip the 4am churros"],
-      [ME, 25 * HOUR, "we are not skipping the churros"],
-    ]),
+    { ...madrid, messages: [...madridMemories(now), ...madrid.messages] },
     chat("group:hoops-since-14", null, [
       ["jordan", 4 * HOUR, "court’s open saturday"],
       ["sam", 3 * HOUR, "6am run tmrw?"],
@@ -189,6 +211,55 @@ export function seedConversations(now: number): Conversation[] {
     chat("group:work-mates", 3 * DAY, [["nico", 4 * DAY, "karaoke rematch?"]]),
   ];
 }
+
+/**
+ * Memories already shared in Madrid Crew, drawn as art (there are no stored demo photos): the profile's recent photos (GP-5),
+ * and one taken this same ISO week three years ago, so the "then" tile shows (GP-6).
+ */
+function madridMemories(now: number): ChatMessage[] {
+  const memory = (i: number, from: string, ago: number, art: ArtKind, takenAt: number): ChatMessage => ({
+    id: `group:madrid-crew/memory-${i}`,
+    kind: "memory",
+    from,
+    at: now - ago,
+    photoId: `demo:madrid-${i}`,
+    art,
+    takenAt,
+    note: "",
+  });
+  return [
+    memory(0, "leo", 40 * DAY, "city", sameWeekYearsAgo(now, 3)),
+    memory(1, "ana", 30 * DAY, "churro", new Date(2023, 3, 14).getTime()),
+    memory(2, "nico", 20 * DAY, "faces", new Date(2022, 7, 2).getTime()),
+    memory(3, "leo", 9 * DAY, "sunset", new Date(2024, 5, 21).getTime()),
+    memory(4, "ana", 3 * DAY, "people", new Date(2021, 9, 9).getTime()),
+  ];
+}
+
+/** Noon on the same weekday of the same ISO week, `years` ISO years back. */
+function sameWeekYearsAgo(now: number, years: number): number {
+  const { year, week } = isoWeek(now);
+  let t = now - years * 364 * DAY;
+  // 364-day steps keep the weekday but can drift a week across a 53-week year.
+  while (isoWeek(t).year * 100 + isoWeek(t).week < (year - years) * 100 + week) t += 7 * DAY;
+  while (isoWeek(t).year * 100 + isoWeek(t).week > (year - years) * 100 + week) t -= 7 * DAY;
+  const d = new Date(t);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12).getTime();
+}
+
+/** Madrid Crew's next time together: a lake weekend 46 days out, everyone in (GP-11). */
+export function placeholderGoals(now: number): GoalState {
+  return { "madrid-crew": { label: "lake weekend", date: localDay(now + 46 * DAY), setBy: "leo", in: ["leo", "ana", "nico", ME] } };
+}
+
+/** "What everyone’s up to", visual only (GP-10). */
+export const placeholderUpTo: Readonly<Record<string, readonly UpToRow[]>> = {
+  "madrid-crew": [
+    { when: "Nov 3–5", text: "Leo is in Lisbon for work" },
+    { when: "Nov 14", text: "Ana turns 30" },
+    { when: "Nov 16", text: "Nico starts his new job" },
+  ],
+};
 
 /** Two gifts under Your circle's tree (CIRCLE-12), timed back from `now`. */
 export function placeholderGifts(now: number): ReceivedGift[] {

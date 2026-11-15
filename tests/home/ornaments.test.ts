@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { ME } from "@/app/intro/messages/conversations";
 import {
   CAPTION_MAX,
+  FIRST,
+  LAST,
   canUndo,
   changedLine,
   normalizeCaption,
@@ -101,6 +103,37 @@ describe("the group sees it (HOME-15)", () => {
     expect(g.memories[0]).toEqual({ ...original.memories[0], caption: "new caption", src: "blob:p1" });
     expect(g.memories.slice(1)).toEqual(original.memories.slice(1));
     for (const other of out.filter((x) => x.id !== hoops)) expect(other).toBe(placeholderGroups.find((x) => x.id === other.id));
+  });
+});
+
+describe("header photos are two more slots (GP-12)", () => {
+  const madrid = "madrid-crew";
+  const setHeader = (state: OrnamentState, index: typeof FIRST | typeof LAST, photoId: string, takenAt?: number) =>
+    ornamentReducer(state, { type: "change", groupId: madrid, index, photoId, caption: "", takenAt, by: ME, at: AT });
+
+  it("a header photo keeps its capture date, or none", () => {
+    const s = setHeader({}, FIRST, "p1", new Date(2014, 5, 2).getTime());
+    expect(s[ornamentKey(madrid, FIRST)].current).toEqual({ photoId: "p1", caption: "", takenAt: new Date(2014, 5, 2).getTime(), by: ME, at: AT });
+    expect(setHeader({}, LAST, "p2")[ornamentKey(madrid, LAST)].current).toEqual({ photoId: "p2", caption: "", by: ME, at: AT });
+  });
+
+  it("a new photo never inherits the old one's date", () => {
+    const s = setHeader(setHeader({}, LAST, "p1", new Date(2020, 0, 1).getTime()), LAST, "p2");
+    expect(s[ornamentKey(madrid, LAST)].current.takenAt).toBeUndefined();
+  });
+
+  it("withOrnaments puts them on the group, replacing the seeded art", () => {
+    const s = setHeader(setHeader({}, FIRST, "p1", new Date(2014, 5, 2).getTime()), LAST, "p2");
+    const g = withOrnaments(placeholderGroups, s, { p1: "blob:p1", p2: "blob:p2" }).find((x) => x.id === madrid)!;
+    expect(g.firstPhoto).toEqual({ src: "blob:p1", takenAt: new Date(2014, 5, 2).getTime() });
+    expect(g.lastPhoto).toEqual({ src: "blob:p2" });
+    expect(g.memories).toEqual(placeholderGroups.find((x) => x.id === madrid)!.memories);
+  });
+
+  it("an image that hasn't loaded yet leaves the group as it was", () => {
+    const s = setHeader({}, FIRST, "p1");
+    const g = withOrnaments(placeholderGroups, s, {}).find((x) => x.id === madrid)!;
+    expect(g.firstPhoto).toEqual(placeholderGroups.find((x) => x.id === madrid)!.firstPhoto);
   });
 });
 

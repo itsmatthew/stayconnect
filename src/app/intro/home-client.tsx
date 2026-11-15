@@ -6,7 +6,6 @@ import { RINGS, type CirclePerson } from "@/components/circle/types";
 import type { CirclesView } from "@/components/home/circle-toggle";
 import { HomeEmpty } from "@/components/home/home-empty";
 import { HomeScreen } from "@/components/home/home-screen";
-import { OrnamentSheet } from "@/components/home/ornament-sheet";
 import type { NavProps } from "@/components/home/main-nav";
 import type { CircleGroup, Friend } from "@/components/home/types";
 import { initialCircleState, members, overGuide, type CircleAction, type CircleState } from "./circle/rings";
@@ -14,25 +13,9 @@ import { newestFirst, type ReceivedGift } from "./circle/gifts";
 import { activity, isLit, suggestion } from "./circle/suggestions";
 import { openingCenter, rotate, visibleAround } from "./circle-carousel";
 import { initialChatState, type ChatState } from "./messages/conversations";
-import { CAPTION_MAX } from "./ornaments/ornaments";
-import type { OrnamentEdit } from "./ornaments/use-ornaments";
-import type { CropArea } from "./photo-file";
-import { usePickedPhoto } from "./use-picked-photo";
+import { OrnamentSheetClient, noOrnaments, type OrnamentControls } from "./ornaments/ornament-sheet-client";
 
-/** Changing a group's ornaments (docs/specs/home.md, HOME-14–17). `groups` already carry the changes. */
-export type OrnamentControls = {
-  lineOf: (groupId: string, index: number) => string | undefined;
-  canUndo: (groupId: string, index: number) => boolean;
-  onSave: (groupId: string, index: number, edit: OrnamentEdit) => void;
-  onUndo: (groupId: string, index: number) => void;
-  /** Downscales a picked photo before it's previewed and cropped. */
-  decode: (f: File) => Promise<Blob>;
-  /** Cuts the cropper's square out of the downscaled photo (docs/specs/group-logo.md, LOGO-7). */
-  crop: (image: Blob, area: CropArea | undefined, max: number) => Promise<Blob>;
-};
-
-/** Saved ornament photos are at most this big (HOME-14). */
-const ORNAMENT_MAX = 1024;
+export type { OrnamentControls };
 
 type HomeClientProps = {
   groups: readonly CircleGroup[];
@@ -46,29 +29,14 @@ type HomeClientProps = {
   onOpenChat?: (friendId: string) => void;
   nav?: NavProps;
   ornaments?: OrnamentControls;
+  /** Group id → "46 days · lake weekend" (docs/specs/home.md, HOME-19). */
+  countdowns?: Readonly<Record<string, string>>;
 };
 
 const noChat = initialChatState([]);
 const noCircle = initialCircleState({});
-const noOrnaments: OrnamentControls = {
-  lineOf: () => undefined,
-  canUndo: () => false,
-  onSave: () => {},
-  onUndo: () => {},
-  decode: async (f) => f,
-  crop: async (image) => image,
-};
-
-/** The open ornament sheet and the photo picked in it, not yet saved. */
-function useOrnamentSheet(decode: OrnamentControls["decode"]) {
-  const [open, setOpen] = useState<{ groupId: string; index: number } | null>(null);
-  const { pending, choose, drop } = usePickedPhoto(decode);
-  const show = (next: { groupId: string; index: number } | null) => {
-    drop();
-    setOpen(next);
-  };
-  return { open, pending, show, choose };
-}
+/** Which ornament sheet is open. */
+type OpenSheet = { groupId: string; index: number };
 
 export function HomeClient({
   groups,
@@ -81,9 +49,10 @@ export function HomeClient({
   onOpenChat = () => {},
   nav = { current: "Circles" },
   ornaments = noOrnaments,
+  countdowns = {},
 }: HomeClientProps) {
   const [center, setCenter] = useState(() => openingCenter(groups));
-  const sheet = useOrnamentSheet(ornaments.decode);
+  const [sheet, setSheet] = useState<OpenSheet | null>(null);
   const [view, setView] = useState<CirclesView>("circles");
   const turn = (delta: number) => setCenter((c) => rotate(c, delta, groups.length));
 
@@ -122,7 +91,7 @@ export function HomeClient({
   // HOME-12: no circles yet.
   if (!groups.length) return <HomeEmpty nav={nav} onDaily5={() => nav.onNavigate?.("Daily 5")} view={view} onViewChange={setView} />;
 
-  const open = sheet.open && groups.find((g) => g.id === sheet.open!.groupId);
+  const open = sheet && groups.find((g) => g.id === sheet.groupId);
   return (
     <>
       <HomeScreen
@@ -133,38 +102,10 @@ export function HomeClient({
         onPrevious={() => turn(-1)}
         onNext={() => turn(+1)}
         nav={nav}
-        onOrnament={(groupId, index) => sheet.show({ groupId, index })}
+        onOrnament={(groupId, index) => setSheet({ groupId, index })}
+        countdowns={countdowns}
       />
-      {open && sheet.open && (
-        <OrnamentSheet
-          groupName={open.name}
-          rim={open.palette.rim}
-          ornaments={
-            open.memories.map((memory, i) => ({
-              memory,
-              line: ornaments.lineOf(open.id, i),
-              canUndo: ornaments.canUndo(open.id, i),
-            })) as unknown as Parameters<typeof OrnamentSheet>[0]["ornaments"]
-          }
-          selected={sheet.open.index}
-          preview={sheet.pending?.url}
-          captionMax={CAPTION_MAX}
-          onSelect={(index) => sheet.show({ groupId: open.id, index })}
-          onPickFile={sheet.choose}
-          onSave={async (caption, area) => {
-            const { index } = sheet.open!;
-            const picked = sheet.pending?.image;
-            sheet.show(null);
-            const image = picked && (await ornaments.crop(picked, area, ORNAMENT_MAX));
-            ornaments.onSave(open.id, index, { image, caption });
-          }}
-          onUndo={() => {
-            ornaments.onUndo(open.id, sheet.open!.index);
-            sheet.show({ ...sheet.open! });
-          }}
-          onCancel={() => sheet.show(null)}
-        />
-      )}
+      {open && sheet && <OrnamentSheetClient key={`${sheet.groupId}/${sheet.index}`} group={open} index={sheet.index} controls={ornaments} onClose={() => setSheet(null)} />}
     </>
   );
 }

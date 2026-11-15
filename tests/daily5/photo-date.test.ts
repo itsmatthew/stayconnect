@@ -13,23 +13,23 @@ describe("photo date (D5-4)", () => {
 
   it("prefers EXIF DateTimeOriginal", async () => {
     parse.mockResolvedValue({ DateTimeOriginal: new Date(2014, 6, 2, 15), CreateDate: new Date(2015, 0, 1) });
-    expect(await photoDate(file())).toBe(new Date(2014, 6, 2, 15).getTime());
+    expect(await photoDate(file())).toEqual({ takenAt: new Date(2014, 6, 2, 15).getTime() });
   });
 
   it("falls back to EXIF CreateDate", async () => {
     parse.mockResolvedValue({ CreateDate: new Date(2015, 0, 1, 9) });
-    expect(await photoDate(file())).toBe(new Date(2015, 0, 1, 9).getTime());
+    expect(await photoDate(file())).toEqual({ takenAt: new Date(2015, 0, 1, 9).getTime() });
   });
 
-  it("falls back to the file's last-modified date without EXIF", async () => {
+  it("falls back to the file's last-modified date without EXIF, and marks it fileDated (GP-6)", async () => {
     parse.mockResolvedValue(undefined);
-    expect(await photoDate(file())).toBe(MODIFIED);
+    expect(await photoDate(file())).toEqual({ takenAt: MODIFIED, fileDated: true });
   });
 
   it("falls back to the file date when EXIF can't be read or is invalid", async () => {
     parse.mockRejectedValue(new Error("not a jpeg"));
-    expect(await photoDate(file())).toBe(MODIFIED);
+    expect(await photoDate(file())).toEqual({ takenAt: MODIFIED, fileDated: true });
     parse.mockResolvedValue({ DateTimeOriginal: new Date(Number.NaN) });
-    expect(await photoDate(file())).toBe(MODIFIED);
+    expect(await photoDate(file())).toEqual({ takenAt: MODIFIED, fileDated: true });
   });
 });

@@ -17,7 +17,7 @@ const decode = async (f: File) => {
   if (f.name.endsWith(".heic")) throw new Error("can't decode");
   return new Blob(["jpeg:" + f.name], { type: "image/jpeg" });
 };
-const readDate = async (f: File) => f.lastModified;
+const readDate = async (f: File) => ({ takenAt: f.lastModified });
 
 describe("photo store (D5-2/3)", () => {
   it("stores photos per pool with their date, and counts them", async () => {
@@ -62,6 +62,15 @@ describe("importing photos (D5-2)", () => {
     const again = await importPhotos([img("a.jpg"), img("d.jpg")], "mine", s, { decode, readDate });
     expect(again).toEqual({ added: 1, duplicates: 1, skipped: 0 });
     expect(await s.counts()).toEqual({ mine: 3, family: 0 });
+  });
+
+  it("keeps whether a photo is dated by its file (D5-4, GP-6)", async () => {
+    const s = await fresh();
+    const byFile = async (f: File) => (f.name.startsWith("file") ? { takenAt: f.lastModified, fileDated: true as const } : { takenAt: f.lastModified });
+    await importPhotos([img("exif.jpg"), img("file.jpg")], "mine", s, { decode, readDate: byFile });
+    const listed = await s.list();
+    expect(listed.find((p) => p.fileKey.startsWith("exif"))?.fileDated).toBeUndefined();
+    expect(listed.find((p) => p.fileKey.startsWith("file"))?.fileDated).toBe(true);
   });
 
   it("treats the same name with a different size or date as a new file", () => {

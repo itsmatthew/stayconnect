@@ -2,23 +2,25 @@
 // A memory the user sends is kept apart in `sealed` until someone in that chat replies;
 // until then nothing the sender sees (thread, list order, glow, "Delivered") knows it exists.
 
+import type { ArtKind } from "@/components/home/types";
+
 /** The user's own sender id. */
 export const ME = "me";
 
 type Base = { id: string; from: string; at: number };
-export type ChatMessage =
-  | (Base & { kind: "text"; text: string })
-  | (Base & { kind: "memory"; photoId: string; takenAt: number; note: string });
+/** `fileDated`: `takenAt` is the file's modified date, not a capture date (docs/specs/daily5.md, D5-4). `art`: demo memories have no stored photo, so they draw this. */
+type MemoryFields = { photoId: string; takenAt: number; note: string; fileDated?: true; art?: ArtKind };
+export type ChatMessage = (Base & { kind: "text"; text: string }) | (Base & { kind: "memory" } & MemoryFields);
 
 /** `id` is "group:<group id>" or "friend:<friend id>". */
 export type Conversation = { id: string; messages: ChatMessage[]; lastOpenedAt: number };
 
-export type SealedMemory = { id: string; conversationId: string; photoId: string; takenAt: number; note: string; sentAt: number };
+export type SealedMemory = { id: string; conversationId: string; photoId: string; takenAt: number; note: string; sentAt: number; fileDated?: true };
 
 export type ChatState = { conversations: Record<string, Conversation>; sealed: SealedMemory[] };
 
 export type ChatAction =
-  | { type: "sendMemory"; id: string; conversationId: string; photoId: string; takenAt: number; note: string; at: number }
+  | { type: "sendMemory"; id: string; conversationId: string; photoId: string; takenAt: number; note: string; at: number; fileDated?: true }
   | { type: "sendText"; id: string; conversationId: string; text: string; at: number }
   | { type: "receiveReply"; id: string; conversationId: string; from: string; text: string; at: number }
   | { type: "open"; conversationId: string; at: number }
@@ -41,8 +43,8 @@ function append(state: ChatState, conversationId: string, messages: ChatMessage[
 export function chatReducer(state: ChatState, action: ChatAction): ChatState {
   switch (action.type) {
     case "sendMemory": {
-      const { id, conversationId, photoId, takenAt, note, at } = action;
-      return { ...state, sealed: [...state.sealed, { id, conversationId, photoId, takenAt, note, sentAt: at }] };
+      const { id, conversationId, photoId, takenAt, note, at, fileDated } = action;
+      return { ...state, sealed: [...state.sealed, { id, conversationId, photoId, takenAt, note, sentAt: at, ...(fileDated ? { fileDated } : {}) }] };
     }
     case "sendText": {
       const text = action.text.trim();
@@ -54,7 +56,16 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       const { conversationId } = action;
       const unsealed: ChatMessage[] = state.sealed
         .filter((m) => m.conversationId === conversationId)
-        .map((m) => ({ id: m.id, kind: "memory", from: ME, at: m.sentAt, photoId: m.photoId, takenAt: m.takenAt, note: m.note }));
+        .map((m) => ({
+          id: m.id,
+          kind: "memory",
+          from: ME,
+          at: m.sentAt,
+          photoId: m.photoId,
+          takenAt: m.takenAt,
+          note: m.note,
+          ...(m.fileDated ? { fileDated: m.fileDated } : {}),
+        }));
       const reply: ChatMessage = { id: action.id, kind: "text", from: action.from, at: action.at, text: action.text };
       const next = append(state, conversationId, [...unsealed, reply]);
       return { ...next, sealed: state.sealed.filter((m) => m.conversationId !== conversationId) };

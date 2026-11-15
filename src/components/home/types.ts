@@ -12,6 +12,9 @@ export type Palette = {
 /** `src`: a photo a member put on this ornament (docs/specs/home.md, HOME-15); without one, the art is drawn. `caption` may be "". */
 export type Memory = { id: string; art: ArtKind; caption: string; src?: string };
 
+/** One of a group's two header photos (docs/specs/group-profile.md, GP-12): a member's photo (`src`), or demo art. `takenAt` is its capture date, if known. */
+export type HeaderPhoto = { src?: string; art?: ArtKind; takenAt?: number };
+
 export type CircleGroup = {
   id: string;
   name: string;
@@ -27,6 +30,9 @@ export type CircleGroup = {
   lastMemory: string;
   /** A logo image a member chose (docs/specs/group-logo.md, LOGO-4); without one, the logo is the initials. */
   logo?: string;
+  /** The header's "first photo together" and "last time together" (GP-12); absent until someone sets them. */
+  firstPhoto?: HeaderPhoto;
+  lastPhoto?: HeaderPhoto;
 };
 
 /** A placeholder face, drawn as layered radial gradients like the reference's avatars. */
