@@ -147,6 +147,8 @@ describe("groups (API-8, API-9)", () => {
 
   it("API-9: lists only the caller's groups, newest first", async () => {
     await post({ name: "One" });
+    // Same-instant inserts tie on created_at and fall back to the random id, so make the order unambiguous.
+    await db.query("update groups set created_at = created_at - interval '1 hour' where name = 'One'");
     await post({ name: "Two" });
     user = "bea";
     await post({ name: "Bea's" });
