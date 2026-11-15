@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { NavLabel } from "@/components/home/main-nav";
 import { defaultData, type AppData } from "./app-data";
 import { ArchiveClient } from "./archive/archive-client";
@@ -11,8 +11,11 @@ import { detectFaces } from "./daily5/face-detector";
 import { openPhotoStore, type PhotoStore } from "./daily5/photo-store";
 import { HomeClient } from "./home-client";
 import { MeClient } from "./me/me-client";
-import { conversationId } from "./messages/conversations";
+import { conversationId, ME } from "./messages/conversations";
 import { MessagesClient } from "./messages/messages-client";
+import { ORNAMENT_DB, openOrnamentStore, type OrnamentStore } from "./ornaments/ornament-store";
+import { canUndo, changedLine, ornamentKey, withOrnaments } from "./ornaments/ornaments";
+import { useOrnaments } from "./ornaments/use-ornaments";
 import { useChat } from "./messages/use-chat";
 import { recipientSections } from "./parties";
 import { captureDate, downscale } from "./photo-file";
@@ -24,6 +27,7 @@ type AppClientProps = {
   now?: () => number;
   openStore?: () => Promise<PhotoStore>;
   openArchive?: (name: string) => Promise<ArchiveStore>;
+  openOrnaments?: (name: string) => Promise<OrnamentStore>;
   hasFace?: (image: Blob) => Promise<boolean>;
   readCapture?: (f: File) => Promise<number | undefined>;
   decode?: (f: File) => Promise<Blob>;
@@ -48,13 +52,17 @@ function useStore<T extends { close(): void }>(open: () => Promise<T>): T | null
   return store;
 }
 
-/** The app's tabs. Chats are shared so a Daily 5 send lands in Messages (and Your circle can read who's been close); your Archive posts are shared by Archive and Me. */
+/**
+ * The app's tabs. Chats are shared so a Daily 5 send lands in Messages (and Your circle can read who's been close); your Archive posts are shared by Archive and Me.
+ * Ornament changes are merged into the groups Home shows (docs/specs/home.md, HOME-15).
+ */
 export function AppClient({
   initialTab = "Circles",
   data = defaultData,
   now = Date.now,
   openStore = openPhotoStore,
   openArchive = openArchiveStore,
+  openOrnaments = openOrnamentStore,
   hasFace = detectFaces,
   readCapture = captureDate,
   decode = downscale,
@@ -63,6 +71,9 @@ export function AppClient({
   const store = useStore(openStore);
   const [openArchiveNamed] = useState(() => () => openArchive(ARCHIVE_DB + data.storageSuffix));
   const archive = useStore(openArchiveNamed);
+  const [openOrnamentsNamed] = useState(() => () => openOrnaments(ORNAMENT_DB + data.storageSuffix));
+  const ornaments = useOrnaments(openOrnamentsNamed);
+  const homeGroups = useMemo(() => withOrnaments(data.groups, ornaments.state, ornaments.urls), [data.groups, ornaments.state, ornaments.urls]);
   const [chat, dispatch] = useChat(now, data.seedConversations, data.storageSuffix);
   const [recipients] = useState(() => recipientSections(data.groups, data.friends));
   const [circle, circleDispatch] = useCircle(data.rings, data.storageSuffix);
@@ -86,7 +97,7 @@ export function AppClient({
     case "Circles":
       return (
         <HomeClient
-          groups={data.groups}
+          groups={homeGroups}
           friends={data.friends}
           chat={chat}
           circle={circle}
@@ -95,6 +106,16 @@ export function AppClient({
           now={now}
           onOpenChat={openChat}
           nav={nav}
+          ornaments={{
+            lineOf: (groupId, index) => {
+              const v = ornaments.state[ornamentKey(groupId, index)]?.current;
+              return v && changedLine(v, (id) => data.friends.find((f) => f.id === id)?.name, now());
+            },
+            canUndo: (groupId, index) => canUndo(ornaments.state, groupId, index),
+            onSave: (groupId, index, edit) => void ornaments.change(groupId, index, edit, ME, now()),
+            onUndo: (groupId, index) => void ornaments.undo(groupId, index),
+            decode,
+          }}
         />
       );
     case "Daily 5":

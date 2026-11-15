@@ -80,6 +80,11 @@ const ORNAMENTS: Record<TreeSlot, readonly (readonly [number, number, number, nu
   ],
 };
 
+/** Where a tree's three ornaments hang, in its canvas: center, bauble radius R and string length L. */
+export function ornamentSpots(slot: TreeSlot, cx: number, cy: number, r: number) {
+  return ORNAMENTS[slot].map(([dx, dy, R, L]) => ({ cx: cx + dx * r, cy: cy + dy * r, R: R * r, L: L * r }));
+}
+
 type CircleTreeProps = Omit<TreeShapeProps, "palette" | "children" | "glow"> & {
   group: CircleGroup;
   slot: TreeSlot;
@@ -89,25 +94,13 @@ type CircleTreeProps = Omit<TreeShapeProps, "palette" | "children" | "glow"> & {
 
 /** A group's tree with its three memories hung as ornaments. */
 export function CircleTree({ group, slot, defs, ...shape }: CircleTreeProps) {
-  const { cx, cy, r } = shape;
+  const spots = ornamentSpots(slot, shape.cx, shape.cy, shape.r);
   return (
-    <g data-tree="" data-slot={slot} data-group-id={group.id} data-cx={cx}>
+    <g data-tree="" data-slot={slot} data-group-id={group.id} data-cx={shape.cx}>
       <TreeShape {...shape} palette={group.palette} glow={slot === "center"}>
-        {group.memories.map((m, i) => {
-          const [dx, dy, R, L] = ORNAMENTS[slot][i];
-          return (
-            <Ornament
-              key={m.id}
-              cx={cx + dx * r}
-              cy={cy + dy * r}
-              R={R * r}
-              L={L * r}
-              art={m.art}
-              rim={group.palette.rim}
-              defs={defs}
-            />
-          );
-        })}
+        {group.memories.map((m, i) => (
+          <Ornament key={m.id} {...spots[i]} memory={m} rim={group.palette.rim} defs={defs} />
+        ))}
       </TreeShape>
     </g>
   );

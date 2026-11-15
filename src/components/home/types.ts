@@ -9,7 +9,8 @@ export type Palette = {
   rim: string;
 };
 
-export type Memory = { id: string; art: ArtKind; caption: string };
+/** `src`: a photo a member put on this ornament (docs/specs/home.md, HOME-15); without one, the art is drawn. `caption` may be "". */
+export type Memory = { id: string; art: ArtKind; caption: string; src?: string };
 
 export type CircleGroup = {
   id: string;

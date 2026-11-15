@@ -14,3 +14,25 @@
 @media (prefers-reduced-motion: reduce) {
   .hm-anim { animation: none !important; }
 }
+@keyframes hm-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes hm-up {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+
+/* Ornament tap targets (HOME-13): invisible until focused from the keyboard. */
+.hm-orn {
+  position: absolute;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+.hm-orn:focus-visible {
+  outline: 3px solid #fff8ec;
+  box-shadow: 0 0 0 6px #27305a;
+}

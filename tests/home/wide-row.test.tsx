@@ -4,7 +4,6 @@ import { HomeClient } from "@/app/intro/home-client";
 import { placeholderGroups } from "@/app/intro/placeholder-data";
 import { wideLabelZones } from "@/components/home/home-screen";
 import { WIDE_CHURCH_BOX, WIDE_SCENE } from "@/components/home/scenery/scenery";
-import { RIVER_FILL, wideRiver } from "@/components/home/wide-river";
 import { WIDE_CENTER_X, WIDE_SLOTS } from "@/components/home/wide-row";
 
 afterEach(cleanup);
@@ -19,12 +18,11 @@ const centerCx = (wide: HTMLElement) => Number(trees(wide).find((t) => t.dataset
 const next = (wide: HTMLElement) => fireEvent.click(within(wide).getByRole("button", { name: "Next circle" }));
 
 describe("wide row (HOME-10)", () => {
-  it("keeps the center tree, ring and river at the screen's horizontal center, opening and rotated", () => {
+  it("keeps the center tree and ring at the screen's horizontal center, opening and rotated", () => {
     const { wide } = renderWide();
     for (let i = 0; i < 3; i++) {
       expect(centerCx(wide)).toBe(WIDE_CENTER_X);
       expect(Number(wide.querySelector("[data-ring] ellipse")!.getAttribute("cx"))).toBe(WIDE_CENTER_X);
-      expect(Number(wide.querySelector("[data-river]")!.getAttribute("data-center-x"))).toBe(WIDE_CENTER_X);
       next(wide);
     }
   });
@@ -69,86 +67,23 @@ describe("church and center label (HOME-8)", () => {
   });
 });
 
-describe("wide river (HOME-11)", () => {
-  const center = WIDE_SLOTS[2];
-  const river = wideRiver(center);
-  const inCircle = (x: number, y: number, cx: number, cy: number, r: number) => (x - cx) ** 2 + (y - cy) ** 2 < r * r;
-  /** Both banks and the middle, every sampled step. */
-  const bankPoints = river.points.flatMap((p) => [
-    [p.x - p.w, p.y],
-    [p.x, p.y],
-    [p.x + p.w, p.y],
-  ]);
-  const trunkBox = (s: (typeof WIDE_SLOTS)[number]) => ({ x0: s.cx - 0.3 * s.r, x1: s.cx + 0.3 * s.r, y0: s.cy + 0.6 * s.r, y1: s.bottom });
+describe("no river on wide screens (HOME-11)", () => {
+  const drawsRiver = (el: Element) =>
+    Array.from(el.querySelectorAll("[fill],[clip-path],[stroke]")).some((n) =>
+      ["fill", "clip-path", "stroke"].some((a) => /hRiver(Clip)?\)/.test(n.getAttribute(a) ?? "")),
+    );
 
-  it("is one solid colour, the phone river's blue", () => {
+  it("the wide layout draws no river, opening or rotated", () => {
     const { wide } = renderWide();
-    const body = wide.querySelector("[data-river] [data-river-body]")!;
-    expect(body.getAttribute("fill")).toBe(RIVER_FILL);
-    expect(RIVER_FILL).toBe("#3FA9F0");
-    expect(wide.querySelector("[data-river]")!.innerHTML).not.toContain("url(#");
-  });
-
-  it("rises at the horizon beside the sun", () => {
-    const first = river.points[0];
-    const horizon = (376 - WIDE_SCENE.top) / (WIDE_SCENE.height / 816);
-    expect(Math.abs(first.y - horizon)).toBeLessThan(8);
-    expect(Math.abs(first.x - center.cx)).toBeLessThan(110);
-  });
-
-  it("passes behind the center canopy, comes out, and never touches it again", () => {
-    const touches = (p: { x: number; y: number; w: number }) =>
-      [p.x - p.w, p.x, p.x + p.w].some((x) => inCircle(x, p.y, center.cx, center.cy, center.r));
-    expect(river.points.some((p) => inCircle(p.x, p.y, center.cx, center.cy, center.r))).toBe(true);
-    const behind = river.points.findIndex((p) => inCircle(p.x, p.y, center.cx, center.cy, center.r));
-    const out = river.points.findIndex((p, i) => i > behind && !touches(p));
-    expect(out).toBeGreaterThan(behind);
-    expect(river.points.slice(out).filter(touches)).toEqual([]);
-  });
-
-  it("never touches another tree's canopy or any trunk", () => {
-    for (const s of WIDE_SLOTS) {
-      const t = trunkBox(s);
-      for (const [x, y] of bankPoints) {
-        if (s !== center) expect(inCircle(x, y, s.cx, s.cy, s.r + 6)).toBe(false);
-        expect(x > t.x0 - 4 && x < t.x1 + 4 && y > t.y0 && y < t.y1).toBe(false);
-      }
+    for (let i = 0; i < 3; i++) {
+      expect(wide.querySelector("[data-river]")).toBeNull();
+      expect(drawsRiver(wide)).toBe(false);
+      next(wide);
     }
   });
 
-  it("runs clear of the center tree's friend-count badge", () => {
-    const bx = center.cx + center.badge[0] * center.r;
-    const by = center.cy + center.badge[1] * center.r;
-    // the 40px badge is anchored at its top-left corner
-    for (const [x, y] of bankPoints) expect(x > bx - 4 && x < bx + 44 && y > by - 4 && y < by + 44).toBe(false);
-  });
-
-  it("winds down through the gap between the center tree and its right neighbour", () => {
-    const right = WIDE_SLOTS[3];
-    const gap = river.points.filter((p) => p.y > center.cy + 0.6 * center.r && p.y < right.bottom + 20 && !inCircle(p.x, p.y, center.cx, center.cy, center.r));
-    expect(gap.length).toBeGreaterThan(5);
-    for (const p of gap) {
-      expect(p.x).toBeGreaterThan(center.cx + 0.3 * center.r);
-      expect(p.x).toBeLessThan(right.cx - 0.3 * right.r);
-    }
-  });
-
-  it("ends behind the card", () => {
-    const last = river.points.at(-1)!;
-    expect(last.y).toBeGreaterThanOrEqual(700);
-    expect(Math.abs(last.x - center.cx)).toBeLessThan(200);
-  });
-
-  it("is tied to the center tree, not the screen", () => {
-    const moved = wideRiver({ ...center, cx: center.cx - 100 });
-    moved.points.forEach((p, i) => {
-      expect(p.x).toBeCloseTo(river.points[i].x - 100, 5);
-      expect(p.y).toBeCloseTo(river.points[i].y, 5);
-    });
-  });
-
-  it("flows, with reduced-motion-aware animation", () => {
-    const { wide } = renderWide();
-    expect(wide.querySelectorAll("[data-river] .hm-anim").length).toBeGreaterThan(0);
+  it("the phone layout keeps its river", () => {
+    const { container } = renderWide();
+    expect(drawsRiver(container.querySelector("[data-layout='phone']")!)).toBe(true);
   });
 });
