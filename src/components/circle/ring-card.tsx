@@ -54,19 +54,6 @@ export function RingCard({ people, crowded, suggestion, onAcceptSuggestion, onDi
         color: NAVY,
       }}
     >
-      {suggestion && (
-        <section aria-label="Suggestion" style={{ display: "flex", alignItems: "center", gap: s(6), padding: `${s(4)} ${s(6)} ${s(4)} ${s(8)}`, borderRadius: s(12), background: "#FBE7B5", border: `${s(1.5)} dashed ${NAVY}` }}>
-          <span style={{ flex: 1, fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 600, fontSize: s(12), lineHeight: 1.2 }}>
-            You and {suggestion.name} have been close lately — move to {RING_NAMES[suggestion.to]}?
-          </span>
-          <button type="button" onClick={onAcceptSuggestion} style={pill(true)}>
-            Move
-          </button>
-          <button type="button" onClick={onDismissSuggestion} style={pill(false)}>
-            Not now
-          </button>
-        </section>
-      )}
 
       <div role="tablist" aria-label="Rings" style={{ display: "flex", borderRadius: s(12), background: "#EADDB8", padding: s(3) }}>
         {RINGS.map((r) => {
@@ -101,9 +88,25 @@ export function RingCard({ people, crowded, suggestion, onAcceptSuggestion, onDi
         })}
       </div>
 
-      <div style={{ fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 500, fontSize: s(14), lineHeight: 1.2, paddingLeft: s(2) }}>{BLURBS[ring]}</div>
+      {/* A suggestion takes the ring's line's place, so the card keeps Main.dc.html's height and the tree's foot shows (CIRCLE-9). */}
+      {suggestion ? (
+        <section aria-label="Suggestion" style={{ display: "flex", alignItems: "center", gap: s(6), padding: `${s(4)} ${s(6)} ${s(4)} ${s(8)}`, borderRadius: s(12), background: "#FBE7B5", border: `${s(1.5)} dashed ${NAVY}` }}>
+          <span style={{ flex: 1, fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 600, fontSize: s(12), lineHeight: 1.2 }}>
+            You and {suggestion.name} have been close lately — move to {RING_NAMES[suggestion.to]}?
+          </span>
+          <button type="button" onClick={onAcceptSuggestion} style={hit}>
+            <span style={pill(true)}>Move</span>
+          </button>
+          <button type="button" onClick={onDismissSuggestion} style={hit}>
+            <span style={pill(false)}>Not now</span>
+          </button>
+        </section>
+      ) : (
+        // A brand new tree says how it fills, as Main.dc.html's new-account card does (CIRCLE-11).
+        <div style={{ fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 500, fontSize: s(14), lineHeight: 1.2, paddingLeft: s(2) }}>{nobody ? "Your tree fills in as your friends join." : BLURBS[ring]}</div>
+      )}
+
       {crowded.includes(ring) && <div style={{ fontSize: s(11.5), fontWeight: 700, color: "#8E2A1E", paddingLeft: s(2) }}>{NOTES[ring]}</div>}
-      {nobody && <div style={{ fontSize: s(12), fontWeight: 600, paddingLeft: s(2) }}>Your circle fills as you connect with people</div>}
 
       <div style={{ display: "flex", alignItems: "flex-start", gap: s(8) }}>
         <ul aria-label="People in this ring" style={{ display: "flex", gap: s(8), margin: 0, padding: `${s(1)} ${s(2)} ${s(2)}`, listStyle: "none", overflowX: "auto", flex: "0 1 auto", minWidth: 0 }}>
@@ -126,6 +129,8 @@ export function RingCard({ people, crowded, suggestion, onAcceptSuggestion, onDi
         </button>
       </div>
 
+      {/* Steps aside while a suggestion shows, so the card keeps Main.dc.html's height (CIRCLE-9). */}
+      {!suggestion && (
       <div style={{ display: "flex", alignItems: "center", gap: s(5), fontSize: s(10.5), lineHeight: 1.2, fontWeight: 500, color: "#3F4664", paddingLeft: s(2) }}>
         <svg width={s(11)} height={s(11)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <rect x="5" y="11" width="14" height="9" rx="2" />
@@ -133,6 +138,7 @@ export function RingCard({ people, crowded, suggestion, onAcceptSuggestion, onDi
         </svg>
         <span>Only you see your circle. No one is told which ring they&apos;re in.</span>
       </div>
+      )}
 
       {menuFor && (
         <Overlay onClose={() => setMenuFor(null)}>
@@ -248,8 +254,14 @@ const personButton: CSSProperties = {
   cursor: "pointer",
 };
 
+/** The suggestion's buttons: 44 to tap, their extra height kept out of the row by negative margins. */
+const hit: CSSProperties = { flex: "none", minHeight: 44, margin: `calc((${s(26)} - 44px) / 2) 0`, padding: 0, border: 0, background: "none", display: "flex", alignItems: "center", cursor: "pointer" };
+
+/** The pill each one shows: 26 tall. */
 const pill = (primary: boolean): CSSProperties => ({
-  flex: "none",
+  boxSizing: "border-box",
+  display: "flex",
+  alignItems: "center",
   height: s(26),
   padding: `0 ${s(9)}`,
   borderRadius: s(15),

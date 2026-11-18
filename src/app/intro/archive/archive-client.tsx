@@ -1,31 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArchiveScreen } from "@/components/archive/archive-screen";
-import type { FeedSectionView, PickerView, PostCardView, SlotView } from "@/components/archive/types";
+import type { FeedPostView, PickerView, SlotView, WeekCardView } from "@/components/archive/types";
 import type { NavProps } from "@/components/home/main-nav";
 import type { AppData } from "../app-data";
 import { ME } from "../messages/conversations";
 import type { ArchiveStore } from "./archive-store";
 import { checkCapture, pickerRange } from "./capture-check";
-import { CAPTION_MAX, captionPlaceholder, cleanCaption, lockedText, pickerTitle, ribbon, slotDirections, slotLabel } from "./copy";
-import { postTime } from "./format";
-import { circleTags, feedSections, outlineColors, sharedCircles, type FeedSection } from "./gate";
-import { isOpen, openSlots, periodFromKey, periodTitle, rangeLabel } from "./periods";
+import { CAPTION_MAX, captionPlaceholder, cleanCaption, daysLeft, footer, pickerTitle, slotLabel, slotRow } from "./copy";
+import { feedPosts, weekSummary } from "./feed";
+import { sharedCircles } from "./gate";
+import { isOpen, openSlots, periodFromKey, periodTitle, rangeLabel, weekPeriod } from "./periods";
 import type { TrackStoreWork } from "../app-client";
 import { photoView, useMyPosts } from "./use-my-posts";
-
-// One-time, per browser (ARC-11).
-export const EXPLAINER_KEY = "nowandthen.archive.explainer.v1";
-
-function explainerSeen(): boolean {
-  try {
-    return localStorage.getItem(EXPLAINER_KEY) === "seen";
-  } catch {
-    return true; // No storage: skip the explainer rather than show it every time.
-  }
-}
-const noSubscription = () => () => {};
 
 type ArchiveClientProps = {
   data: AppData;
@@ -38,18 +26,19 @@ type ArchiveClientProps = {
   /** A JPEG copy, at most 1600px. Browser only, so injected. */
   decode: (f: File) => Promise<Blob>;
   nav: NavProps;
+  /** The send arrow on a post: a chat with its author (ARC-7). */
+  onOpenChat?: (friendId: string) => void;
 };
+
+const SOMEONE = { skin: "#EDB98F", hair: "#6B3F23", shirt: "#2B3350", bg: "#CFE0F4", ring: "#3F9AD8" };
 
 type Picking = { key: string; error?: string; preview?: string; pending?: { image: Blob; takenAt: number }; busy: boolean };
 
-export function ArchiveClient({ data, now, store, track, readCapture, decode, nav }: ArchiveClientProps) {
+export function ArchiveClient({ data, now, store, track, readCapture, decode, nav, onOpenChat = () => {} }: ArchiveClientProps) {
   const [placeholder] = useState(() => data.posts(now()));
   const seededMine = useMemo(() => placeholder.filter((p) => p.author === ME), [placeholder]);
   const { mine, urls, add } = useMyPosts(store, seededMine, track);
   const [picking, setPicking] = useState<Picking | null>(null);
-  // Read after hydration; the server renders it as seen.
-  const seen = useSyncExternalStore(noSubscription, explainerSeen, () => true);
-  const [dismissed, setDismissed] = useState(false);
 
   // Revoke the preview's object URL when it's replaced or the picker closes.
   const preview = picking?.preview;
@@ -57,41 +46,40 @@ export function ArchiveClient({ data, now, store, track, readCapture, decode, na
 
   const t = now();
   const friendById = new Map(data.friends.map((f) => [f.id, f]));
-  const sections = feedSections({ posts: [...placeholder.filter((p) => p.author !== ME), ...mine], groups: data.groups, viewerOf: data.viewerOf, now: t });
+  const everyone = [...placeholder.filter((p) => p.author !== ME), ...mine];
+  const friend = (id: string) => friendById.get(id);
 
+  // This week's card (ARC-10).
+  const summary = weekSummary({ posts: everyone, groups: data.groups, now: t });
+  const week: WeekCardView = {
+    range: rangeLabel(weekPeriod(t)),
+    daysLeft: daysLeft(weekPeriod(t), t),
+    line: summary.line,
+    posters: summary.posted.map((id) => ({ name: friend(id)?.name ?? "Someone", look: friend(id)?.look ?? SOMEONE })),
+  };
   const slots: SlotView[] = openSlots(t).map((p) => {
     const posted = mine.find((m) => m.period === p.key);
-    return { key: p.key, kind: p.kind, label: slotLabel(p), ...slotDirections(p, t), posted: posted && photoView(posted, urls, `Your ${slotLabel(p).toLowerCase()}`) };
+    return { key: p.key, kind: p.kind, label: slotLabel(p), ...slotRow(p, t), posted: posted && photoView(posted, urls, `Your ${slotLabel(p).toLowerCase()}`) };
   });
 
-  const card = (section: FeedSection) => (post: (typeof section.visible)[number]): PostCardView => {
-    const shared = sharedCircles(post.author, data.groups);
-    const tags = circleTags(post.author, data.groups);
-    const friend = friendById.get(post.author);
-    const name = friend?.name ?? "Someone";
+  // The feed: everyone's posts, newest first (ARC-8).
+  const visible = feedPosts({ posts: everyone, groups: data.groups, viewerOf: data.viewerOf, now: t });
+  const posts: FeedPostView[] = visible.map((post) => {
+    const period = periodFromKey(post.period);
+    const circle = sharedCircles(post.author, data.groups)[0];
+    const name = friend(post.author)?.name ?? "Someone";
     return {
       id: post.id,
-      variant: section.period.kind,
-      label: `${name}, ${periodTitle(section.period)}`,
-      author: { name, look: friend?.look ?? { skin: "#EDB98F", hair: "#6B3F23", shirt: "#2B3350", bg: "#CFE0F4", ring: "#3F9AD8" } },
-      time: postTime(post.postedAt, section.period),
-      outlines: outlineColors(post.author, data.groups),
-      palette: shared[0].palette,
-      tags: shared.slice(0, tags.names.length).map((g) => ({ name: g.name, color: g.palette.canopy })),
-      moreTags: tags.more,
-      ribbon: ribbon(section.period),
-      photo: photoView(post, urls, `${name}'s photo of ${periodTitle(section.period)}`),
+      variant: period.kind,
+      label: `${name}, ${periodTitle(period)}`,
+      author: { name, look: friend(post.author)?.look ?? SOMEONE },
+      circle: { name: circle.name, color: circle.palette.canopy },
+      photo: photoView(post, urls, `${name}'s photo of ${periodTitle(period)}`),
+      footer: footer(period, post.takenAt),
       caption: post.caption,
     };
-  };
-  const sectionViews: FeedSectionView[] = sections.map((s) => ({
-    key: s.period.key,
-    title: periodTitle(s.period),
-    range: rangeLabel(s.period),
-    cards: s.visible.map(card(s)),
-    locked: lockedText(s),
-    standins: s.hidden.map((p) => outlineColors(p.author, data.groups)[0]),
-  }));
+  });
+  const authorOf = new Map(visible.map((p) => [p.id, p.author]));
 
   const pickingPeriod = picking && periodFromKey(picking.key);
   const picker: PickerView | null = pickingPeriod && {
@@ -137,18 +125,14 @@ export function ArchiveClient({ data, now, store, track, readCapture, decode, na
 
   return (
     <ArchiveScreen
+      week={week}
       slots={slots}
-      sections={sectionViews}
-      showExplainer={!seen && !dismissed}
-      onDismissExplainer={() => {
-        setDismissed(true);
-        try {
-          localStorage.setItem(EXPLAINER_KEY, "seen");
-        } catch {
-          // Shown again next time; harmless.
-        }
-      }}
+      posts={posts}
       onPost={(key) => !mine.some((m) => m.period === key) && setPicking({ key, busy: false })}
+      onMessage={(id) => {
+        const author = authorOf.get(id);
+        if (author) onOpenChat(author);
+      }}
       picker={picker}
       onPick={pick}
       onConfirmPost={confirm}

@@ -14,5 +14,6 @@ Tests: `tests/messages/`.
 | MSG-6 | **Simulate reply (dev only).** Outside production builds, a dev strip on the recents screen lists each conversation holding sealed memories, each with a "simulate reply" button. The reply comes from a member, with placeholder text. The strip never renders when `NODE_ENV` is `production`. |
 | MSG-7 | **Kept.** Conversations, sealed memories and last-opened times are kept in localStorage and survive a reload. Memory photos are loaded from the Daily 5 photo store (IndexedDB) by id. |
 | MSG-8 | **No messages yet.** With no pinned circles or people and no listed chats, the screen shows "No messages yet. Send a memory to start one." under the search box. |
+| MSG-9 | **Notes.** A group's thread can hold small centered notes that aren't messages, such as a rename (`docs/specs/group-rename.md`, RENAME-5/6). |
 
 Layout and glow animation are visual and checked against the designer's references. The tests pin structure, labels, order and the sealed rules.

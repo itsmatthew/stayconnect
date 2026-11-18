@@ -1,0 +1,97 @@
+import { describe, expect, it } from "vitest";
+import { dayKey, giftReducer, newGift, type Gift } from "@/app/intro/gifts/gift";
+import { canOpen, copyOf, openGift, receiveGift, shelf, waiting, wrappedLine, type ReceivedGift } from "@/app/intro/gifts/received";
+
+const DAY = 86_400_000;
+const NOW = new Date(2026, 10, 11, 12).getTime();
+const TODAY = dayKey(NOW);
+const photo = { kind: "art", art: "basketball" } as const;
+
+const sent = (over: Partial<Gift> = {}): Gift => ({
+  ...giftReducer(giftReducer(newGift({ id: "g1", from: "harry", now: NOW - DAY }), { type: "to", to: { kind: "person", id: "me" } }), { type: "photo", photo, takenAt: new Date(2019, 4, 2).getTime() }),
+  note: { text: "Studs.", hand: "script", ink: "red", stamp: "heart" },
+  wrap: { pattern: "gingham", ribbon: "navy" },
+  frame: { id: "instant", dateStamp: true },
+  ...over,
+});
+const own = (id: string, sentAt: number, over: Partial<ReceivedGift> = {}): ReceivedGift => ({ ...copyOf(sent({ to: { kind: "group", id: "hoops" } }), { id, giftId: "g1", to: "harry", own: true }, { id: "harry", name: "Harry" }, sentAt, "Hoops"), ...over });
+const gift = (id: string, sentAt: number, over: Partial<ReceivedGift> = {}): ReceivedGift => ({ ...copyOf(sent(), { id, giftId: "g1", to: "me" }, { id: "harry", name: "Harry" }, sentAt), ...over });
+
+describe("a received gift is the gift as it was made (GIFT-18)", () => {
+  it("keeps the sender's photo, frame, note, handwriting, ink, stamp, paper and ribbon", () => {
+    const g = gift("g1/me", NOW);
+    expect(g).toMatchObject({ id: "g1/me", giftId: "g1", from: { id: "harry", name: "Harry" }, photo, frame: { id: "instant", dateStamp: true }, note: { text: "Studs.", hand: "script", ink: "red", stamp: "heart" }, wrap: { pattern: "gingham", ribbon: "navy" }, sentAt: NOW });
+    expect(g.openedAt).toBeUndefined();
+  });
+
+  it("says when it was wrapped, and who it's for", () => {
+    expect(wrappedLine(gift("a", new Date(2026, 10, 5).getTime()))).toBe("wrapped Nov 5 · just for you");
+  });
+});
+
+describe("waiting to pop up, then the shelf (GIFT-19, GIFT-21)", () => {
+  it("unopened gifts wait to pop up, oldest first", () => {
+    const list = [gift("old", NOW - 3 * DAY), gift("new", NOW - 1000), gift("mid", NOW - DAY, { openedAt: NOW - 10 })];
+    expect(waiting(list, TODAY).map((g) => g.id)).toEqual(["old", "new"]);
+  });
+
+  it("a gift for a later day doesn't pop up until that day", () => {
+    const list = [gift("later", NOW - DAY, { opens: { kind: "on", day: "2026-11-14" } }), gift("now", NOW)];
+    expect(waiting(list, TODAY).map((g) => g.id)).toEqual(["now"]);
+    expect(waiting(list, "2026-11-14").map((g) => g.id)).toEqual(["later", "now"]);
+  });
+
+  it("opening moves it to the shelf, newest opened first, and only once", () => {
+    let list = [gift("a", NOW - 2 * DAY), gift("b", NOW - DAY)];
+    list = openGift(list, "a", NOW - 100, TODAY);
+    list = openGift(list, "b", NOW, TODAY);
+    expect(shelf(list, TODAY).map((g) => g.id)).toEqual(["b", "a"]);
+    expect(waiting(list, TODAY)).toEqual([]);
+    expect(openGift(list, "a", NOW + 5000, TODAY).find((g) => g.id === "a")!.openedAt).toBe(NOW - 100);
+  });
+
+  it("a gift for a later day can't be opened before that day", () => {
+    const later = gift("later", NOW, { opens: { kind: "on", day: "2026-11-14" } });
+    expect(canOpen(later, TODAY)).toBe(false);
+    expect(canOpen(later, "2026-11-14")).toBe(true);
+    expect(openGift([later], "later", NOW, TODAY)[0].openedAt).toBeUndefined();
+    expect(canOpen(gift("now", NOW), TODAY)).toBe(true);
+  });
+
+  it("receiving adds a gift once, wrapped", () => {
+    const g = gift("x", NOW, { openedAt: NOW });
+    const list = receiveGift(receiveGift([], g), g);
+    expect(list).toHaveLength(1);
+    expect(list[0].openedAt).toBeUndefined();
+  });
+});
+
+describe("your own copy of a group gift (GIFT-23)", () => {
+  it("is marked yours, with the group it went to", () => {
+    expect(own("g1/harry", NOW)).toMatchObject({ own: true, toGroup: "Hoops" });
+    expect(gift("g1/me", NOW).own).toBeUndefined();
+  });
+
+  it("never pops up: you made it", () => {
+    expect(waiting([own("mine", NOW - DAY), gift("theirs", NOW)], TODAY).map((g) => g.id)).toEqual(["theirs"]);
+  });
+
+  it("stands on your shelf as soon as it's sent, newest first among what you opened", () => {
+    const list = [gift("opened", NOW - 2 * DAY, { openedAt: NOW - DAY }), own("mine", NOW - 1000)];
+    expect(shelf(list, TODAY).map((g) => g.id)).toEqual(["mine", "opened"]);
+  });
+
+  it("for a later day, it lands on your shelf on that day, not before", () => {
+    const later = own("later", NOW - DAY, { opens: { kind: "on", day: "2026-11-14" } });
+    expect(shelf([later], TODAY)).toEqual([]);
+    expect(shelf([later], "2026-11-14").map((g) => g.id)).toEqual(["later"]);
+  });
+
+  it("on the shelf it sits where it landed: the start of its day, after what you opened before then", () => {
+    const later = own("later", NOW - 3 * DAY, { opens: { kind: "on", day: "2026-11-12" } });
+    const before = gift("before", NOW - 5 * DAY, { openedAt: NOW - 2 * DAY });
+    const after = gift("after", NOW - 5 * DAY, { openedAt: new Date(2026, 10, 12, 18).getTime() });
+    expect(shelf([before, after, later], "2026-11-13").map((g) => g.id)).toEqual(["after", "later", "before"]);
+  });
+});
+

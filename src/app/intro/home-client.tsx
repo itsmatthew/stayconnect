@@ -9,9 +9,17 @@ import { HomeScreen } from "@/components/home/home-screen";
 import type { NavProps } from "@/components/home/main-nav";
 import type { CircleGroup, Friend } from "@/components/home/types";
 import { initialCircleState, members, overGuide, type CircleAction, type CircleState } from "./circle/rings";
-import { newestFirst, type ReceivedGift } from "./circle/gifts";
+import type { ReceivedGift } from "./gifts/received";
+import { dayKey } from "./gifts/gift";
+import { noGiftDeps, useGiftMaker, type GiftDeps } from "./gifts/use-gift-maker";
+import { upcomingBirthdays } from "./mail/birthdays";
+import { shelf as shelfOf } from "./gifts/received";
+import { testGift } from "./gifts/received-client";
 import { activity, isLit, suggestion } from "./circle/suggestions";
 import { openingCenter, rotate, visibleAround } from "./circle-carousel";
+import { RenameSheetClient } from "./group-names/rename-sheet-client";
+import { emptyInbox, type InboxAction, type InboxState, type MailSender } from "./mail/inbox";
+import { useMailbox } from "./mail/mailbox-client";
 import { initialChatState, type ChatState } from "./messages/conversations";
 import { OrnamentSheetClient, noOrnaments, type OrnamentControls } from "./ornaments/ornament-sheet-client";
 
@@ -24,14 +32,26 @@ type HomeClientProps = {
   chat?: ChatState;
   circle?: CircleState;
   circleDispatch?: (a: CircleAction) => void;
+  /** Gifts you've received; "your gifts" on the tree counts those on your shelf (docs/specs/gifts.md, GIFT-21). */
   gifts?: readonly ReceivedGift[];
+  /** A test gift arriving (dev only, GIFT-22), and the way to your shelf. Waiting gifts pop up from AppClient (GIFT-19). */
+  giftActions?: { receive: (g: ReceivedGift) => void; onShowShelf: () => void };
   now?: () => number;
   onOpenChat?: (friendId: string) => void;
   nav?: NavProps;
   ornaments?: OrnamentControls;
+  /** Renames a group; rejects if it couldn't be saved (docs/specs/group-rename.md, RENAME-4). */
+  onRename?: (groupId: string, raw: string) => Promise<void>;
   /** Group id → "46 days · lake weekend" (docs/specs/home.md, HOME-19). */
   countdowns?: Readonly<Record<string, string>>;
+  /** Your mailbox, by your circle's tree (docs/specs/mailbox.md). */
+  mail?: { state: InboxState; dispatch: (a: InboxAction) => void; recipientName?: string };
+  /** The gift maker, for "Schedule a gift" on a birthday in your mailbox (MAILBOX-12). Birthdays come with it. */
+  giftMaker?: GiftDeps;
 };
+
+const noGiftActions = { receive: () => {}, onShowShelf: () => {} };
+const noMail = { state: emptyInbox, dispatch: () => {} };
 
 const noChat = initialChatState([]);
 const noCircle = initialCircleState({});
@@ -45,14 +65,39 @@ export function HomeClient({
   circle: state = noCircle,
   circleDispatch: dispatch = () => {},
   gifts = [],
+  giftActions = noGiftActions,
   now = Date.now,
   onOpenChat = () => {},
   nav = { current: "Circles" },
   ornaments = noOrnaments,
+  onRename = async () => {},
   countdowns = {},
+  mail = noMail,
+  giftMaker = noGiftDeps,
 }: HomeClientProps) {
+  // Your circle is everyone you've placed or can place: the dev control sends as some of them (MAILBOX-8).
+  const circleSenders: MailSender[] = friends.map((f) => ({ id: f.id, name: f.name, look: f.look, inCircle: true }));
+  // Birthdays coming up in your whole circle: reminders in your mailbox, and a gift for one (MAILBOX-11, MAILBOX-12).
+  const maker = useGiftMaker(giftMaker, { now, nav });
+  const byFriend = new Map(friends.map((f) => [f.id, f]));
+  const today = dayKey(now());
+  const inCircle = Object.entries(state.placements).flatMap(([id, ring]) => (ring && byFriend.has(id) ? [id] : []));
+  const mailbox = useMailbox({
+    ...mail,
+    now,
+    circle: circleSenders,
+    birthdays: {
+      upcoming: upcomingBirthdays(giftMaker.birthdays ?? {}, inCircle, today),
+      person: (id) => byFriend.get(id),
+      today,
+      onSchedule: maker.startFor,
+      making: !!maker.maker,
+    },
+  });
+  const [testGifts, setTestGifts] = useState(0);
   const [center, setCenter] = useState(() => openingCenter(groups));
   const [sheet, setSheet] = useState<OpenSheet | null>(null);
+  const [renaming, setRenaming] = useState<string | null>(null);
   const [view, setView] = useState<CirclesView>("circles");
   const turn = (delta: number) => setCenter((c) => rotate(c, delta, groups.length));
 
@@ -72,9 +117,11 @@ export function HomeClient({
     const next = suggestion(state, chat, at);
     const name = next && byId.get(next.friendId)?.name;
     return (
+      <>
       <CircleScreen
+        mailbox={mailbox.tree}
         people={people}
-        gifts={newestFirst(gifts).map((g) => ({ id: g.id }))}
+        shelf={{ count: shelfOf(gifts, dayKey(now())).length, onOpen: giftActions.onShowShelf }}
         crowded={RINGS.filter((r) => overGuide(r, placed.filter((p) => p.ring === r).length))}
         suggestion={next && name ? { name, to: next.to } : undefined}
         onAcceptSuggestion={() => next && dispatch({ type: "place", friendId: next.friendId, ring: next.to })}
@@ -85,6 +132,24 @@ export function HomeClient({
         onViewChange={setView}
         nav={nav}
       />
+      {mailbox.screens}
+      {maker.maker}
+      {/* Dev only (Next inlines NODE_ENV, so production drops it): receive a gift to test opening one (GIFT-22). */}
+      {process.env.NODE_ENV !== "production" && !maker.maker && (
+        <button
+          type="button"
+          onClick={() => {
+            giftActions.receive(testGift(testGifts, now()));
+            setTestGifts(testGifts + 1);
+          }}
+          aria-label="Receive a test gift"
+          title="Receive a test gift (dev only)"
+          style={{ position: "fixed", left: 4, top: 250, zIndex: 45, width: 44, height: 44, padding: 0, border: "1.5px dashed #2B3350", borderRadius: 22, background: "rgba(255,248,236,.85)", color: "#2B3350", font: "800 13px system-ui, sans-serif", cursor: "pointer" }}
+        >
+          🎁+
+        </button>
+      )}
+      </>
     );
   }
 
@@ -92,6 +157,7 @@ export function HomeClient({
   if (!groups.length) return <HomeEmpty nav={nav} onDaily5={() => nav.onNavigate?.("Daily 5")} view={view} onViewChange={setView} />;
 
   const open = sheet && groups.find((g) => g.id === sheet.groupId);
+  const renamingGroup = groups.find((g) => g.id === renaming);
   return (
     <>
       <HomeScreen
@@ -103,9 +169,11 @@ export function HomeClient({
         onNext={() => turn(+1)}
         nav={nav}
         onOrnament={(groupId, index) => setSheet({ groupId, index })}
+        onRename={setRenaming}
         countdowns={countdowns}
       />
       {open && sheet && <OrnamentSheetClient key={`${sheet.groupId}/${sheet.index}`} group={open} index={sheet.index} controls={ornaments} onClose={() => setSheet(null)} />}
+      {renamingGroup && <RenameSheetClient group={renamingGroup} onRename={onRename} onClose={() => setRenaming(null)} />}
     </>
   );
 }

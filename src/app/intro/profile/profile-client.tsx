@@ -2,13 +2,17 @@
 
 import { useState } from "react";
 import type { CircleGroup, Friend, Party } from "@/components/home/types";
+import { ColorSheet } from "@/components/profile/color-sheet";
 import { GoalSheet } from "@/components/profile/goal-sheet";
 import { GroupProfile } from "@/components/profile/group-profile";
 import { OrnamentView } from "@/components/profile/ornament-view";
 import { AllPhotos } from "@/components/profile/photo-grid";
 import type { HeaderSlotName, NextGoal, ProfileMember, ProfilePhoto, UpToRow } from "@/components/profile/types";
 import type { Placements } from "../circle/rings";
+import type { ColorOverrides } from "../colors/color-overrides";
+import { GROUP_COLORS, groupPalette } from "../colors/palette";
 import type { PhotoStore } from "../daily5/photo-store";
+import { RenameSheetClient } from "../group-names/rename-sheet-client";
 import { formatPhotoDate } from "../daily5/format";
 import { ME, visibleMessages, type ChatState } from "../messages/conversations";
 import { usePhotoUrls } from "../messages/use-photo-urls";
@@ -25,6 +29,10 @@ export type ProfileControls = {
   placements: Placements;
   upTo: Readonly<Record<string, readonly UpToRow[]>>;
   ornaments: OrnamentControls;
+  /** This viewer's own group colors; `null` clears one (docs/specs/group-colors.md, COLOR-7). */
+  colors: { overrides: ColorOverrides; onChange: (groupId: string, colorId: string | null) => void };
+  /** Renames a group; rejects if it couldn't be saved (docs/specs/group-rename.md, RENAME-4). */
+  rename: (groupId: string, raw: string) => Promise<void>;
   /** Saves a picked photo as a header photo, with its capture date (GP-12). */
   setHeaderPhoto: (groupId: string, slot: HeaderSlotName, file: File) => Promise<void>;
 };
@@ -47,6 +55,8 @@ type ProfileClientProps = {
 const RECENT = 9;
 const PAGE = 24;
 
+const SWATCHES = GROUP_COLORS.map(({ id, label }) => ({ id, label, color: groupPalette(id, 0).canopy }));
+
 const photoOf = (m: MemoryMessage, urls: Record<string, string>): ProfilePhoto => ({
   id: m.id,
   label: `Photo from ${formatPhotoDate(m.takenAt)}`,
@@ -59,6 +69,8 @@ export function ProfileClient({ group, party, chat, friends, store, now, control
   const [viewing, setViewing] = useState<number | null>(null);
   const [editing, setEditing] = useState<number | null>(null);
   const [goalOpen, setGoalOpen] = useState(false);
+  const [colorOpen, setColorOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
   /** How many "See all" shows; null when it's closed. */
   const [allShown, setAllShown] = useState<number | null>(null);
 
@@ -115,11 +127,32 @@ export function ProfileClient({ group, party, chat, friends, store, now, control
         onDismissPrompt={endPast}
         onBack={onBack}
         onChangeLogo={onChangeLogo}
+        onChangeColor={() => setColorOpen(true)}
+        onRename={() => setRenameOpen(true)}
         onViewOrnament={setViewing}
+        onAddOrnament={setEditing}
         onSeeAll={() => setAllShown(PAGE)}
         onEditGoal={() => setGoalOpen(true)}
         onToggleIn={() => controls.dispatchGoal({ type: next?.mineIn ? "leave" : "join", groupId: group.id, who: ME })}
       />
+      {renameOpen && <RenameSheetClient group={group} onRename={controls.rename} onClose={() => setRenameOpen(false)} />}
+      {colorOpen && (
+        <ColorSheet
+          groupName={group.name}
+          swatches={SWATCHES}
+          selected={controls.colors.overrides[group.id] ?? group.colorId}
+          overridden={group.id in controls.colors.overrides}
+          onPick={(colorId) => {
+            controls.colors.onChange(group.id, colorId);
+            setColorOpen(false);
+          }}
+          onReset={() => {
+            controls.colors.onChange(group.id, null);
+            setColorOpen(false);
+          }}
+          onCancel={() => setColorOpen(false)}
+        />
+      )}
       {allShown !== null && (
         <AllPhotos
           title="All photos"

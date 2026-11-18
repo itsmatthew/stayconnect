@@ -11,7 +11,6 @@ let n = 0;
 let dbName = "";
 beforeEach(() => {
   localStorage.clear();
-  localStorage.setItem("nowandthen.archive.explainer.v1", "seen");
   URL.createObjectURL = vi.fn(() => "blob:posted");
   URL.revokeObjectURL = vi.fn();
   dbName = `posting-${++n}`;
@@ -43,8 +42,14 @@ function renderArchive(openArchive: () => Promise<ArchiveStore> = () => openArch
 
 async function openPicker() {
   const week = await screen.findByRole("region", { name: "Photo of the week" });
-  fireEvent.click(within(week).getByRole("button", { name: /Post your photo of the week/ }));
+  fireEvent.click(within(week).getByRole("button", { name: /Add your photo of the week/ }));
   return screen.getByRole("dialog", { name: "Post your photo of the week" });
+}
+/** Post stays off until the Archive store has opened, which can be slow under load: tap it once a person could. */
+async function postWhenReady(dialog: HTMLElement) {
+  const post = within(dialog).getByRole("button", { name: "Post" }) as HTMLButtonElement;
+  await waitFor(() => expect(post.disabled).toBe(false));
+  fireEvent.click(post);
 }
 const choose = (dialog: HTMLElement, file: File) =>
   fireEvent.change(within(dialog).getByLabelText("Choose a photo"), { target: { files: [file] } });
@@ -81,25 +86,24 @@ describe("posting (ARC-3, ARC-4, ARC-12)", () => {
     );
   });
 
-  it("posts a photo from this week: the slot unlocks, the feed opens, and it's kept", async () => {
+  it("posts a photo from this week: the card says it's in, and it's kept", async () => {
     const first = renderArchive();
-    expect((await screen.findByRole("region", { name: "Week 43" })).textContent).toContain("1 friend posted this week");
+    // Post-to-see is off (ARC-5): Leo's photo shows before you post.
+    expect(within(await screen.findByRole("region", { name: "Feed" })).getAllByRole("article").map((a) => a.getAttribute("aria-label"))).toEqual(["Leo, Week 43"]);
 
     const dialog = await openPicker();
     choose(dialog, photo("in-week.jpg"));
     expect(await within(dialog).findByText("Once it's posted, it can't be replaced or edited.")).toBeTruthy();
-    fireEvent.click(within(dialog).getByRole("button", { name: "Post" }));
+    await postWhenReady(dialog);
 
     const week = screen.getByRole("region", { name: "Photo of the week" });
-    expect(await within(week).findByText("unlocked ✓")).toBeTruthy();
+    expect(await within(week).findByText("Your photo of the week is in ✓")).toBeTruthy();
     expect(within(week).queryByRole("button")).toBeNull();
-    const feed = screen.getByRole("region", { name: "Week 43" });
-    expect(within(feed).getAllByRole("article").map((a) => a.getAttribute("aria-label"))).toEqual(["Leo, Week 43"]);
 
     first.unmount();
     renderArchive();
     const again = await screen.findByRole("region", { name: "Photo of the week" });
-    expect(await within(again).findByText("unlocked ✓")).toBeTruthy();
+    expect(await within(again).findByText("Your photo of the week is in ✓")).toBeTruthy();
   });
 
   it("is kept when the app closes while the post is still saving", async () => {
@@ -180,8 +184,8 @@ describe("caption (ARC-13, ME-4)", () => {
     renderArchive();
     const dialog = await preview();
     fireEvent.change(caption(dialog), { target: { value: `  ${"the 6am run, finally ".repeat(5)}` } });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Post" }));
-    await within(screen.getByRole("region", { name: "Photo of the week" })).findByText("unlocked ✓");
+    await postWhenReady(dialog);
+    await within(screen.getByRole("region", { name: "Photo of the week" })).findByText("Your photo of the week is in ✓");
 
     const [post] = await saved();
     expect(post.caption).toHaveLength(80);
@@ -201,8 +205,8 @@ describe("caption (ARC-13, ME-4)", () => {
     renderArchive();
     const dialog = await preview();
     fireEvent.change(caption(dialog), { target: { value: "   " } });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Post" }));
-    await within(screen.getByRole("region", { name: "Photo of the week" })).findByText("unlocked ✓");
+    await postWhenReady(dialog);
+    await within(screen.getByRole("region", { name: "Photo of the week" })).findByText("Your photo of the week is in ✓");
     expect((await saved())[0].caption).toBeUndefined();
   });
 

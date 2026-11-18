@@ -23,8 +23,8 @@ describe("audience, circle lines and tags (ARC-6, ARC-7)", () => {
   });
 });
 
-describe("the gate (ARC-5)", () => {
-  const ctx = (posted: string[], viewerOf: string[] = []) => ({ posted: new Set(posted), groups, viewerOf });
+describe("the gate, with post-to-see switched on (ARC-5)", () => {
+  const ctx = (posted: string[], viewerOf: string[] = []) => ({ posted: new Set(posted), groups, viewerOf, postToSee: true });
 
   it("you see a post only once you've posted for that same period", () => {
     const p = post("ana", "2026-W43");
@@ -45,7 +45,7 @@ describe("the gate (ARC-5)", () => {
   });
 });
 
-describe("feed sections (ARC-5, ARC-8, ARC-9)", () => {
+describe("feed sections, with post-to-see switched on (ARC-5, ARC-9)", () => {
   const posts = [
     post("ana", "2026-W43"),
     post("sam", "2026-W43"),
@@ -60,12 +60,12 @@ describe("feed sections (ARC-5, ARC-8, ARC-9)", () => {
   ];
 
   it("open periods first (week, month), then ended ones, most recently ended first", () => {
-    const keys = feedSections({ posts, groups, viewerOf: [], now: NOW }).map((s) => s.period.key);
+    const keys = feedSections({ posts, groups, viewerOf: [], now: NOW, postToSee: true }).map((s) => s.period.key);
     expect(keys).toEqual(["2026-W43", "2026-10", "2026-W42", "2026-W41", "2026-09"]);
   });
 
   it("each period is gated separately, and missed periods stay closed", () => {
-    const byKey = Object.fromEntries(feedSections({ posts, groups, viewerOf: [], now: NOW }).map((s) => [s.period.key, s]));
+    const byKey = Object.fromEntries(feedSections({ posts, groups, viewerOf: [], now: NOW, postToSee: true }).map((s) => [s.period.key, s]));
     expect(byKey["2026-W43"]).toMatchObject({ status: "open", visible: [] });
     expect(byKey["2026-W43"].hidden.map((p) => p.author)).toEqual(["ana", "sam"]);
     expect(byKey["2026-10"]).toMatchObject({ status: "open", visible: [], hidden: [] });
@@ -77,20 +77,20 @@ describe("feed sections (ARC-5, ARC-8, ARC-9)", () => {
   });
 
   it("your own posts are never in the feed", () => {
-    for (const s of feedSections({ posts, groups, viewerOf: [], now: NOW })) {
+    for (const s of feedSections({ posts, groups, viewerOf: [], now: NOW, postToSee: true })) {
       expect([...s.visible, ...s.hidden].some((p) => p.author === "me")).toBe(false);
     }
   });
 
   it("a viewer's circle shows through a locked period", () => {
-    const s = feedSections({ posts: [post("kim", "2026-W43"), post("ana", "2026-W43")], groups, viewerOf: ["blues"], now: NOW })[0];
+    const s = feedSections({ posts: [post("kim", "2026-W43"), post("ana", "2026-W43")], groups, viewerOf: ["blues"], now: NOW, postToSee: true })[0];
     expect(s.status).toBe("open");
     expect(s.visible.map((p) => p.author)).toEqual(["kim"]);
     expect(s.hidden.map((p) => p.author)).toEqual(["ana"]);
   });
 
   it("the year shows in December even with nobody posted", () => {
-    const keys = feedSections({ posts: [], groups, viewerOf: [], now: at(2026, 12, 5) }).map((s) => s.period.key);
+    const keys = feedSections({ posts: [], groups, viewerOf: [], now: at(2026, 12, 5), postToSee: true }).map((s) => s.period.key);
     expect(keys).toEqual(["2026-W49", "2026-12", "2026"]);
   });
 });

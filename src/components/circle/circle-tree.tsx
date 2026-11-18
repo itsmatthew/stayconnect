@@ -2,7 +2,6 @@ import { useEffect, useId, useRef, useState, type CSSProperties, type PointerEve
 import "./circle.css";
 import { faceGradient } from "../messages/avatar";
 import { FRAUNCES, s } from "../home/units";
-import { giftSpots, GROUND, LID_OVERHANG, moreChip, pileBox } from "./gift-layout";
 import { BANDS, LABELS, layoutRing, ringAt, TREE_BOX } from "./ring-layout";
 import { RINGS, type CirclePerson, type Ring } from "./types";
 
@@ -23,20 +22,24 @@ const ANNOUNCE_MS = 2500;
 
 type CircleTreeProps = {
   people: readonly CirclePerson[];
-  /** Gifts received, newest first (CIRCLE-12). */
-  gifts: readonly { id: string }[];
   onOpenChat: (id: string) => void;
   onMove: (id: string, ring: Ring) => void;
 };
 
 type Drag = { id: string; dx: number; dy: number; over?: Ring };
 
+/** Empty seats on a new tree: Main.dc.html's 5 / 12 / 38, placed as people would be. */
+const SEATS: Readonly<Record<Ring, number>> = { nest: 5, branches: 12, bloom: 38 };
+/** You, at the center of a new tree. The design's face is 44; 30 keeps it clear of the nest's seats. */
+const YOU_SIZE = 30;
+const YOU_LOOK = { skin: "#E8B58C", hair: "#3A2418", shirt: "#2A9D8F", bg: "#F6E6CF", ring: "#2A9D8F" };
+
 /**
  * The private tree: three canopy rings, everyone placed in theirs (CIRCLE-1/3/4).
  * Tap opens the chat (CIRCLE-6); press-and-hold picks someone up to drop on another ring (CIRCLE-7).
  * Drawn in TREE_BOX design px; the layout sets `--s`.
  */
-export function CircleTree({ people, gifts, onOpenChat, onMove }: CircleTreeProps) {
+export function CircleTree({ people, onOpenChat, onMove }: CircleTreeProps) {
   const box = useRef<HTMLDivElement>(null);
   const press = useRef<{ id: string; x: number; y: number; timer?: ReturnType<typeof setTimeout> } | null>(null);
   const swallowClick = useRef(false);
@@ -109,6 +112,8 @@ export function CircleTree({ people, gifts, onOpenChat, onMove }: CircleTreeProp
   };
 
   // Outer rings first, so a drag over the center reads the nest on top.
+  // Nobody placed yet: the tree waits with empty seats (CIRCLE-11).
+  const fresh = !people.some((p) => p.ring);
   const placed = [...RINGS].reverse().flatMap((ring) => {
     const theirs = people.filter((p) => p.ring === ring);
     const { spots, shown } = layoutRing(ring, theirs.length);
@@ -139,7 +144,6 @@ export function CircleTree({ people, gifts, onOpenChat, onMove }: CircleTreeProp
             <path d="M197 452c2 46 4 88 14 114h13c-14-26-17-68-14-114z" fill="#6F3820" />
           </g>
           <circle cx="195" cy="318" r="170" fill={`url(#${glowId})`} />
-          {gifts.length > 0 && <GiftPile gifts={gifts} />}
         </g>
         {CANOPY.map((c) => {
           const lit = drag?.over === c.ring;
@@ -177,6 +181,27 @@ export function CircleTree({ people, gifts, onOpenChat, onMove }: CircleTreeProp
           {ring}
         </div>
       ))}
+
+      {/* A brand new tree, as Main.dc.html's new account: a dashed seat in each of the design's spots, and you at the center (CIRCLE-11). */}
+      {fresh &&
+        RINGS.flatMap((ring) =>
+          layoutRing(ring, SEATS[ring]).spots.map((spot, i) => (
+            <span
+              key={`seat-${ring}-${i}`}
+              data-seat={ring}
+              aria-hidden="true"
+              style={{ ...dot(TREE_BOX.cx + spot.dx - spot.size / 2, TREE_BOX.cy + spot.dy - spot.size / 2, spot.size), background: "rgba(255,246,218,.12)", border: `${s(1.5)} dashed rgba(255,246,218,.55)`, pointerEvents: "none" }}
+            />
+          )),
+        )}
+      {fresh && (
+        <span
+          role="img"
+          aria-label="You"
+          className="yc-lit"
+          style={{ ...dot(TREE_BOX.cx - YOU_SIZE / 2, TREE_BOX.cy - YOU_SIZE / 2, YOU_SIZE), background: faceGradient(YOU_LOOK), border: `${s(2.5)} solid #FFF3C4`, boxShadow: `0 0 0 ${s(1.5)} #FFD75E, 0 0 ${s(12)} ${s(5)} rgba(255,221,96,.95)`, pointerEvents: "none" }}
+        />
+      )}
 
       {placed.map(({ ring, spot, person, more }, i) => {
         const x = TREE_BOX.cx + spot.dx - spot.size / 2;
@@ -224,8 +249,6 @@ export function CircleTree({ people, gifts, onOpenChat, onMove }: CircleTreeProp
         );
       })}
 
-      {gifts.length > 0 && <PileLabel count={gifts.length} />}
-
       <div role="status" aria-live="polite" style={{ position: "absolute", left: 0, width: "100%", top: s(TREE_BOX.cy + BANDS.bloom.outer + 6), textAlign: "center", pointerEvents: "none" }}>
         {announcement && (
           <span style={{ display: "inline-block", padding: `${s(4)} ${s(12)}`, borderRadius: s(14), background: "#2B3350", color: "#FBF4DD", fontStyle: "italic", fontWeight: 700, fontSize: s(13) }}>
@@ -247,69 +270,3 @@ const dot = (x: number, y: number, size: number): CSSProperties => ({
   borderRadius: "50%",
   border: 0,
 });
-
-/** Wrapping paper from the reference: box, lid, outline, ribbon. */
-const WRAPS: readonly (readonly [string, string, string, string])[] = [
-  ["#C8402D", "#E0553C", "#6E1D13", "#F7CB4D"],
-  ["#2B3350", "#3A4570", "#161B2E", "#F4E9C8"],
-  ["#6F9B4E", "#83B05E", "#3E5F2A", "#F2BE4A"],
-  ["#4F8F8B", "#63A6A1", "#2C5552", "#F7CB4D"],
-  ["#7A4E8C", "#9668A8", "#432650", "#F4E9C8"],
-  ["#E49B2E", "#F2B546", "#8F5A12", "#B43A2A"],
-];
-/** Names the pile for screen readers, over the boxes' footprint (the SVG itself is hidden). */
-function PileLabel({ count }: { count: number }) {
-  const b = pileBox(count);
-  return (
-    <span
-      role="img"
-      aria-label={`${count} ${count === 1 ? "gift" : "gifts"} received`}
-      style={{ position: "absolute", left: s(b.x + TREE_BOX.cx - 195), top: s(b.y + TREE_BOX.cy - 318), width: s(b.w), height: s(b.h), pointerEvents: "none" }}
-    />
-  );
-}
-
-/** A gift keeps its wrapping however the pile shifts. */
-const wrapOf = (id: string) => WRAPS[[...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % WRAPS.length];
-
-/**
- * Gifts the user has received, one box each, newest in front; past the slots, a "+N" chip (CIRCLE-12).
- * TODO(re-evaluate when the memory mailbox is built): gifts can't be opened yet; this pile is where the mailbox goes.
- */
-function GiftPile({ gifts }: { gifts: readonly { id: string }[] }) {
-  const spots = giftSpots(gifts.length);
-  const more = gifts.length - spots.length;
-  const chip = moreChip();
-  return (
-    <g data-gift-pile="">
-      {/* Back to front: the outermost first, so the newest (nearest the trunk) is drawn last. */}
-      {spots
-        .map((spot, i) => ({ g: gifts[i], spot }))
-        .reverse()
-        .map(({ g, spot: { x, w, h } }) => {
-          const [box, lid, line, ribbon] = wrapOf(g.id);
-          return (
-            <g key={g.id} data-gift={g.id}>
-              <ellipse cx={x + w / 2} cy={GROUND} rx={w / 2 + 5} ry="3" fill="#3F5A22" opacity=".35" />
-              <g transform={`translate(${x} ${GROUND - h - 10})`}>
-                <rect x="0" y="10" width={w} height={h} rx="3" fill={box} stroke={line} strokeWidth="1.5" />
-                <rect x={w / 2 - 3.5} y="10" width="7" height={h} fill={ribbon} />
-                <rect x={-LID_OVERHANG} y="4" width={w + 2 * LID_OVERHANG} height="8" rx="2.5" fill={lid} stroke={line} strokeWidth="1.5" />
-                <rect x={w / 2 - 3.5} y="4" width="7" height="8" fill={ribbon} />
-                <path transform={`translate(${w / 2} 4) scale(.85)`} d="M0 0c-4-13-13-11-10-4 2 4 6 4 10 4zm0 0c4-13 13-11 10-4-2 4-6 4-10 4z" fill={ribbon} stroke={line} strokeWidth="1.2" />
-              </g>
-            </g>
-          );
-        })}
-      {more > 0 && (
-        <g data-gift-more="" transform={`translate(${chip.x} ${chip.y})`}>
-          <ellipse cx={chip.w / 2} cy={chip.h} rx={chip.w / 2 + 3} ry="2.5" fill="#3F5A22" opacity=".35" />
-          <rect width={chip.w} height={chip.h} rx={chip.h / 2} fill="#2B3350" stroke="#FFF3C4" strokeWidth="1.2" />
-          <text x={chip.w / 2} y={chip.h / 2 + 3.5} textAnchor="middle" fontSize="9.5" fontWeight="800" fill="#F7CB4D" fontFamily="var(--font-karla), system-ui, sans-serif">
-            +{more}
-          </text>
-        </g>
-      )}
-    </g>
-  );
-}

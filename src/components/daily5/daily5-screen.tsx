@@ -6,6 +6,7 @@ import { FRAUNCES, NAVY, s } from "../home/units";
 import { TabFrame } from "../shell/tab-frame";
 import { PhotoPools } from "./photo-pools";
 import { Polaroid } from "./polaroid";
+import { GiftToast } from "./gift-toast";
 import { SendSheet } from "./send-sheet";
 import { SentFlight } from "./sent-flight";
 import type { Daily5Card, PoolId, PoolView, RecipientSections } from "./types";
@@ -20,10 +21,17 @@ export type Daily5ScreenProps = {
   nav: NavProps;
   /** While today's set is still being picked. */
   loading?: boolean;
+  /** Drop a photo in someone's mailbox (docs/specs/mail.md, MAIL-1). */
+  onMailbox?: (cardId: string) => void;
+  /** Send a photo as a gift (docs/specs/gifts.md, GIFT-17). */
+  onGift?: (cardId: string) => void;
+  /** "Wrapped and on its way to Leo", after a gift from here is sent. */
+  toast?: string;
+  onDismissToast?: () => void;
 };
 
 /** Daily 5 (docs/specs/daily5.md): today's five polaroids, the send sheet, and the photo pools. */
-export function Daily5Screen({ todayLabel, cards, pools, recipients, onAddFiles, onSend, nav, loading }: Daily5ScreenProps) {
+export function Daily5Screen({ todayLabel, cards, pools, recipients, onAddFiles, onSend, nav, loading, onMailbox, onGift, toast, onDismissToast }: Daily5ScreenProps) {
   const [sending, setSending] = useState<Daily5Card | null>(null);
   const [flying, setFlying] = useState<{ key: number; src: string; color?: string } | null>(null);
   const landed = useCallback(() => setFlying(null), []);
@@ -43,7 +51,7 @@ export function Daily5Screen({ todayLabel, cards, pools, recipients, onAddFiles,
 
       <div style={{ display: "flex", flexDirection: "column", gap: s(30), padding: `0 ${s(14)} ${s(30)}` }}>
         {cards.map((card, i) => (
-          <Polaroid key={card.id} card={card} index={i} onSend={() => setSending(card)} />
+          <Polaroid key={card.id} card={card} index={i} onSend={() => setSending(card)} onMailbox={onMailbox && (() => onMailbox(card.id))} onGift={onGift && (() => onGift(card.id))} />
         ))}
         {!loading && cards.length === 0 && (
           <p style={{ margin: `${s(8)} ${s(6)} 0`, fontFamily: FRAUNCES, fontStyle: "italic", fontSize: s(16), lineHeight: 1.4, color: "#3F4664" }}>
@@ -66,6 +74,7 @@ export function Daily5Screen({ todayLabel, cards, pools, recipients, onAddFiles,
           }}
         />
       )}
+      {toast && <GiftToast text={toast} onDismiss={onDismissToast} />}
       {flying && <SentFlight key={flying.key} src={flying.src} color={flying.color} onDone={landed} />}
     </TabFrame>
   );

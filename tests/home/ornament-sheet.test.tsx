@@ -54,9 +54,9 @@ function renderHome() {
 }
 
 const HOOPS = "Hoops Since ’14";
-const ornamentButtons = (layout: HTMLElement) => within(layout).getAllByRole("button", { name: /^Change ornament \d of / });
+const ornamentButtons = (layout: HTMLElement) => within(layout).getAllByRole("button", { name: /^(Change|Add photo to) ornament \d of / });
 const tapOrnament = (layout: HTMLElement, n: number, group = HOOPS) =>
-  fireEvent.click(within(layout).getByRole("button", { name: `Change ornament ${n} of ${group}` }));
+  fireEvent.click(within(layout).getByRole("button", { name: new RegExp(`^(Change|Add photo to) ornament ${n} of ${group}$`) }));
 const dialog = () => screen.getByRole("dialog", { name: `${HOOPS}’s defining memories` });
 const caption = () => within(dialog()).getByRole("textbox", { name: "Caption" }) as HTMLInputElement;
 const save = () => within(dialog()).getByRole("button", { name: "Save" }) as HTMLButtonElement;
@@ -84,8 +84,8 @@ describe("ornaments are buttons (HOME-13)", () => {
     expect(ornamentButtons(phone)).toHaveLength(9);
     expect(ornamentButtons(wide)).toHaveLength(15);
     for (const i of [1, 2, 3]) {
-      expect(within(phone).getByRole("button", { name: `Change ornament ${i} of ${HOOPS}` })).toBeTruthy();
-      expect(within(wide).getByRole("button", { name: `Change ornament ${i} of Family` })).toBeTruthy();
+      expect(within(phone).getByRole("button", { name: `Add photo to ornament ${i} of ${HOOPS}` })).toBeTruthy();
+      expect(within(wide).getByRole("button", { name: `Add photo to ornament ${i} of Family` })).toBeTruthy();
     }
   });
 
@@ -94,9 +94,9 @@ describe("ornaments are buttons (HOME-13)", () => {
     tapOrnament(wide, 2);
     const choices = within(dialog()).getAllByRole("button", { name: /^Ornament \d$/ });
     expect(choices.map((c) => c.getAttribute("aria-pressed"))).toEqual(["false", "true", "false"]);
-    expect(caption().value).toBe("the 6am run");
     fireEvent.click(choices[2]);
-    expect(caption().value).toBe("post-game tacos");
+    const after = within(dialog()).getAllByRole("button", { name: /^Ornament \d$/ });
+    expect(after.map((c) => c.getAttribute("aria-pressed"))).toEqual(["false", "false", "true"]);
   });
 
   it("a side tree's ornament opens that group", () => {
@@ -105,17 +105,16 @@ describe("ornaments are buttons (HOME-13)", () => {
     expect(screen.getByRole("dialog", { name: "Madrid Crew’s defining memories" })).toBeTruthy();
   });
 
-  it("“swap photos” opens the sheet on the center group's first ornament (HOME-4)", () => {
+  it("“add photos” opens the sheet on the center group's first blank (HOME-4)", () => {
     const { phone } = renderHome();
-    fireEvent.click(within(card(phone)).getByRole("button", { name: "swap photos" }));
+    fireEvent.click(within(card(phone)).getByRole("button", { name: "add photos" }));
     const choices = within(dialog()).getAllByRole("button", { name: /^Ornament \d$/ });
     expect(choices[0].getAttribute("aria-pressed")).toBe("true");
-    expect(caption().value).toBe("buzzer beater");
   });
 });
 
 describe("the sheet (HOME-14)", () => {
-  it("is a plain photo picker with an optional, short caption; Save waits for a change", () => {
+  it("is a plain photo picker with an optional, short caption; a blank's Save waits for a photo", () => {
     const { phone } = renderHome();
     tapOrnament(phone, 1);
     const input = within(dialog()).getByLabelText("Choose a photo") as HTMLInputElement;
@@ -126,9 +125,18 @@ describe("the sheet (HOME-14)", () => {
     expect(caption().placeholder).toBe("what makes this one ours");
     expect(dialog().textContent).toContain("Pick a photo that defines this group — the inside joke, the trip, the night everyone still talks about.");
     expect(save().disabled).toBe(true);
-    fireEvent.change(caption(), { target: { value: "buzzer beater " } });
+    fireEvent.change(caption(), { target: { value: "a caption" } });
     expect(save().disabled).toBe(true);
     fireEvent.change(caption(), { target: { value: "" } });
+    expect(save().disabled).toBe(true);
+  });
+
+  it("a filled ornament's caption can change on its own", async () => {
+    const { phone } = renderHome();
+    await changeFirst(phone);
+    tapOrnament(phone, 1);
+    expect(save().disabled).toBe(true);
+    fireEvent.change(caption(), { target: { value: "new caption" } });
     expect(save().disabled).toBe(false);
   });
 
@@ -151,9 +159,9 @@ describe("the sheet (HOME-14)", () => {
     fireEvent.click(within(dialog()).getByRole("button", { name: "Cancel" }));
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(hoopsOrnaments(phone)[0].querySelector("image")).toBeNull();
-    expect(flat(card(phone).textContent)).toContain("buzzer beater");
+    expect(flat(card(phone).textContent)).not.toContain("nope");
     tapOrnament(phone, 1);
-    expect(caption().value).toBe("buzzer beater");
+    expect(caption().value).toBe("");
     expect(within(dialog()).queryByRole("img", { name: "New photo" })).toBeNull();
   });
 });
@@ -170,7 +178,6 @@ describe("saving (HOME-15)", () => {
     for (const layout of [phone, wide]) {
       expect(card(layout).querySelector("image[href^='blob:']")).toBeTruthy();
       expect(flat(card(layout).textContent)).toContain("new rim");
-      expect(flat(card(layout).textContent)).not.toContain("buzzer beater");
     }
   });
 
@@ -230,10 +237,10 @@ describe("undo (HOME-17)", () => {
     await changeFirst(phone);
     tapOrnament(phone, 1);
     fireEvent.click(within(dialog()).getByRole("button", { name: "undo" }));
-    await waitFor(() => expect(caption().value).toBe("buzzer beater"));
+    await waitFor(() => expect(caption().value).toBe(""));
     expect(within(dialog()).queryByRole("button", { name: "undo" })).toBeNull();
     expect(dialog().textContent).not.toContain("changed this");
     expect(hoopsOrnaments(phone)[0].querySelector("image")).toBeNull();
-    expect(flat(card(phone).textContent)).toContain("buzzer beater");
+    expect(flat(card(phone).textContent)).not.toContain("new rim");
   });
 });

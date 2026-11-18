@@ -3,6 +3,7 @@ import { MemoryPicture } from "../home/memory-art";
 import type { Memory } from "../home/types";
 import { FRAUNCES, KARLA, NAVY, PAPER, s } from "../home/units";
 import { PartyAvatar } from "../messages/avatar";
+import { EditableName } from "../shared/editable-name";
 import { HeaderPicture, PickArea } from "../shared/header-photo";
 import { MembersString } from "./members-string";
 import { NextCard } from "./next-card";
@@ -34,7 +35,7 @@ const UP_TO_CHIPS = ["#C8432B", "#D99A12", "#4F8A3C"];
  * No superlatives and no ranking of members, on purpose.
  */
 export function GroupProfile(props: GroupProfileProps) {
-  const { party, members, ornaments, photos, hasMore, then, goal, upTo, header, onPickHeader, onPickPrompt, onDismissPrompt, onBack, onChangeLogo, onViewOrnament, onSeeAll, onEditGoal, onToggleIn } = props;
+  const { party, members, ornaments, photos, hasMore, then, goal, upTo, header, onPickHeader, onPickPrompt, onDismissPrompt, onBack, onChangeLogo, onChangeColor, onRename, onViewOrnament, onAddOrnament, onSeeAll, onEditGoal, onToggleIn } = props;
   const photosId = useId();
   return (
     <div
@@ -81,14 +82,32 @@ export function GroupProfile(props: GroupProfileProps) {
               <path d="M13.5 6.5l4 4" />
             </svg>
           </button>
-          <h1 style={{ margin: `${s(46)} 0 0`, textAlign: "center", fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(22), letterSpacing: s(-0.3) }}>{party.name}</h1>
+          <h1 style={{ margin: `${s(46)} ${s(14)} 0`, textAlign: "center", fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(22), letterSpacing: s(-0.3) }}>
+            <EditableName name={party.name} onEdit={onRename} />
+          </h1>
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <button
+              type="button"
+              onClick={onChangeColor}
+              style={{ minHeight: 44, padding: `0 ${s(12)}`, display: "flex", alignItems: "center", gap: s(8), border: 0, background: "none", color: NAVY, fontFamily: KARLA, fontSize: s(13), fontWeight: 700, cursor: "pointer" }}
+            >
+              <span aria-hidden="true" style={{ width: s(14), height: s(14), borderRadius: "50%", background: party.palette.canopy }} />
+              Color on my screen
+            </button>
+          </div>
         </div>
 
         <MembersString members={members} />
 
         <section aria-label="Defining memories" style={{ margin: `0 ${s(14)}`, display: "flex", justifyContent: "space-around" }}>
           {ornaments.map((m, i) => (
-            <OrnamentButton key={m.id} memory={m} rim={party.palette.rim} label={`View ornament ${i + 1} of ${party.name}`} onClick={() => onViewOrnament(i)} />
+            <OrnamentButton
+              key={m.id}
+              memory={m}
+              rim={party.palette.rim}
+              color={party.palette.canopy}
+              label={`${m.src ? "View" : "Add photo to"} ornament ${i + 1} of ${party.name}`}
+              onClick={() => (m.src ? onViewOrnament(i) : onAddOrnament(i))} />
           ))}
         </section>
 
@@ -157,7 +176,7 @@ function Prompt({ text, onPick, onDismiss }: { text: string; onPick: (file: File
   );
 }
 
-function OrnamentButton({ memory, rim, label, onClick }: { memory: Memory; rim: string; label: string; onClick: () => void }) {
+function OrnamentButton({ memory, rim, color, label, onClick }: { memory: Memory; rim: string; color: string; label: string; onClick: () => void }) {
   const clip = `orn${useId().replace(/[^\w-]/g, "")}`;
   return (
     <button type="button" aria-label={label} onClick={onClick} style={{ width: s(108), padding: 0, border: 0, background: "none", color: NAVY, display: "flex", flexDirection: "column", alignItems: "center", gap: s(6), cursor: "pointer" }}>
@@ -166,7 +185,7 @@ function OrnamentButton({ memory, rim, label, onClick }: { memory: Memory; rim: 
           <circle cx="20" cy="20" r="18" />
         </clipPath>
         <g clipPath={`url(#${clip})`}>
-          <MemoryPicture memory={memory} cx={20} cy={20} R={18} />
+          <MemoryPicture memory={memory} color={color} cx={20} cy={20} R={18} />
         </g>
         <circle cx="20" cy="20" r="18" fill="none" stroke={rim} strokeWidth="1.6" />
         <circle cx="20" cy="20" r="19.2" fill="none" stroke={NAVY} strokeWidth=".8" />

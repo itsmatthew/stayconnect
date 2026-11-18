@@ -1,5 +1,6 @@
-// Who sees what (docs/specs/archive.md, ARC-5–9). You see a friend's post for a period only once you've
-// posted your own for that same period, unless you're a viewer on a circle they belong to.
+// Who sees what (docs/specs/archive.md, ARC-5–9). Everyone who shares a circle with you sees your posts.
+// "Post to see" (you see a friend's post for a period only once you've posted your own, unless you're a viewer on
+// their circle) is switched off for now and kept behind POST_TO_SEE, so it can come back.
 import type { CircleGroup } from "@/components/home/types";
 import { ME } from "../messages/conversations";
 import { feedOrder, isOpen, openSlots, periodFromKey, type Period } from "./periods";
@@ -23,22 +24,28 @@ export function circleTags(author: string, groups: readonly CircleGroup[]): { na
   return { names: shared.slice(0, 2).map((g) => g.name), more: Math.max(0, shared.length - 2) };
 }
 
-type GateContext = { posted: ReadonlySet<string>; groups: readonly CircleGroup[]; viewerOf: readonly string[] };
+/**
+ * "Post to see" (ARC-5): you see a period's posts only once you've posted for it. Off for now, as Jackson decided;
+ * TODO(re-evaluate when the Archive wants posting to unlock the feed again): set it true, and bring back the locked lines (ARC-9).
+ */
+export const POST_TO_SEE = false;
 
-export function canSee(post: ArchivePost, { posted, groups, viewerOf }: GateContext): boolean {
+type GateContext = { posted: ReadonlySet<string>; groups: readonly CircleGroup[]; viewerOf: readonly string[]; postToSee?: boolean };
+
+export function canSee(post: ArchivePost, { posted, groups, viewerOf, postToSee = POST_TO_SEE }: GateContext): boolean {
   const shared = sharedCircles(post.author, groups);
   if (!shared.length) return false;
-  return posted.has(post.period) || shared.some((g) => viewerOf.includes(g.id));
+  return !postToSee || posted.has(post.period) || shared.some((g) => viewerOf.includes(g.id));
 }
 
 /** `unlocked`: you posted. `open`: you still can. `closed`: you missed it, for good. */
 export type FeedStatus = "unlocked" | "open" | "closed";
 export type FeedSection = { period: Period; status: FeedStatus; visible: ArchivePost[]; hidden: ArchivePost[] };
 
-type FeedInput = { posts: readonly ArchivePost[]; groups: readonly CircleGroup[]; viewerOf: readonly string[]; now: number };
+type FeedInput = { posts: readonly ArchivePost[]; groups: readonly CircleGroup[]; viewerOf: readonly string[]; now: number; postToSee?: boolean };
 
 /** The feed (ARC-8): every period friends have posted in, plus the ones open now, in feed order. Never your own posts. */
-export function feedSections({ posts, groups, viewerOf, now }: FeedInput): FeedSection[] {
+export function feedSections({ posts, groups, viewerOf, now, postToSee = POST_TO_SEE }: FeedInput): FeedSection[] {
   const posted = new Set(posts.filter((p) => p.author === ME).map((p) => p.period));
   const byPeriod = new Map<string, ArchivePost[]>(openSlots(now).map((p) => [p.key, []]));
   for (const p of posts) {
@@ -48,7 +55,7 @@ export function feedSections({ posts, groups, viewerOf, now }: FeedInput): FeedS
     byPeriod.set(p.period, list);
   }
 
-  const ctx = { posted, groups, viewerOf };
+  const ctx = { posted, groups, viewerOf, postToSee };
   return [...byPeriod]
     .map(([key, list]) => {
       const period = periodFromKey(key);

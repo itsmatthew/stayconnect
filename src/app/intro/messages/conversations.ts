@@ -10,7 +10,8 @@ export const ME = "me";
 type Base = { id: string; from: string; at: number };
 /** `fileDated`: `takenAt` is the file's modified date, not a capture date (docs/specs/daily5.md, D5-4). `art`: demo memories have no stored photo, so they draw this. */
 type MemoryFields = { photoId: string; takenAt: number; note: string; fileDated?: true; art?: ArtKind };
-export type ChatMessage = (Base & { kind: "text"; text: string }) | (Base & { kind: "memory" } & MemoryFields);
+/** `note`: a small line in the thread, not a bubble (docs/specs/group-rename.md, RENAME-5). `name` is the group's new name. */
+export type ChatMessage = (Base & { kind: "text"; text: string }) | (Base & { kind: "memory" } & MemoryFields) | (Base & { kind: "note"; name: string });
 
 /** `id` is "group:<group id>" or "friend:<friend id>". */
 export type Conversation = { id: string; messages: ChatMessage[]; lastOpenedAt: number };
@@ -23,6 +24,7 @@ export type ChatAction =
   | { type: "sendMemory"; id: string; conversationId: string; photoId: string; takenAt: number; note: string; at: number; fileDated?: true }
   | { type: "sendText"; id: string; conversationId: string; text: string; at: number }
   | { type: "receiveReply"; id: string; conversationId: string; from: string; text: string; at: number }
+  | { type: "rename"; id: string; conversationId: string; by: string; name: string; at: number }
   | { type: "open"; conversationId: string; at: number }
   | { type: "load"; state: ChatState };
 
@@ -70,6 +72,10 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       const next = append(state, conversationId, [...unsealed, reply]);
       return { ...next, sealed: state.sealed.filter((m) => m.conversationId !== conversationId) };
     }
+    case "rename": {
+      const msg: ChatMessage = { id: action.id, kind: "note", from: action.by, at: action.at, name: action.name };
+      return append(state, action.conversationId, [msg], action.by === ME ? { lastOpenedAt: action.at } : {});
+    }
     case "open": {
       const c = state.conversations[action.conversationId];
       if (!c) return state;
@@ -99,9 +105,10 @@ export function hasNew(state: ChatState, conversationId: string): boolean {
   return !!m && m.from !== ME && m.at > (state.conversations[conversationId]?.lastOpenedAt ?? 0);
 }
 
-/** "Delivered" shows under my last message only when it's the last visible message. */
+/** "Delivered" shows under my last message only when it's the last visible message. A note isn't a message (RENAME-6). */
 export function showsDelivered(state: ChatState, conversationId: string): boolean {
-  return last(state, conversationId)?.from === ME;
+  const m = last(state, conversationId);
+  return m?.from === ME && m.kind !== "note";
 }
 
 /** Conversations with a visible message, minus the pinned ones, most recent activity first. */

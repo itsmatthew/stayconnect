@@ -9,8 +9,8 @@ export type Palette = {
   rim: string;
 };
 
-/** `src`: a photo a member put on this ornament (docs/specs/home.md, HOME-15); without one, the art is drawn. `caption` may be "". */
-export type Memory = { id: string; art: ArtKind; caption: string; src?: string };
+/** `src`: a photo a member put on this ornament (docs/specs/home.md, HOME-15); without one, it's a blank (HOME-20). `caption` may be "". */
+export type Memory = { id: string; caption: string; src?: string };
 
 /** One of a group's two header photos (docs/specs/group-profile.md, GP-12): a member's photo (`src`), or demo art. `takenAt` is its capture date, if known. */
 export type HeaderPhoto = { src?: string; art?: ArtKind; takenAt?: number };
@@ -18,7 +18,12 @@ export type HeaderPhoto = { src?: string; art?: ArtKind; takenAt?: number };
 export type CircleGroup = {
   id: string;
   name: string;
+  /** The group's shared color (docs/specs/group-colors.md). */
+  colorId: string;
+  /** What this viewer sees: the shared color at their shade, or their own override (COLOR-5/7). */
   palette: Palette;
+  /** When the viewer joined; keeps their shades stable (COLOR-6). */
+  joinedAt: number;
   /** One of the user's 3–5 closest circles: pinned to the front of home and messages. */
   closest: boolean;
   /** Friend ids. */

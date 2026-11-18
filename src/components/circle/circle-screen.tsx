@@ -5,6 +5,7 @@ import { HeaderActions, Wordmark } from "../home/header-actions";
 import { BottomNav, TopNav, type NavProps } from "../home/main-nav";
 import { Scenery, useSceneIds } from "../home/scenery/scenery";
 import { INK, KARLA, s } from "../home/units";
+import { TreeMailbox } from "../mail/tree-mailbox";
 import { CircleTree } from "./circle-tree";
 import { RingCard } from "./ring-card";
 import { TREE_BOX } from "./ring-layout";
@@ -13,8 +14,8 @@ import type { CirclePerson, CircleSuggestion, Ring } from "./types";
 type CircleScreenProps = {
   /** Everyone the user can place, placed people in each ring's order. */
   people: readonly CirclePerson[];
-  /** Gifts received, newest first (CIRCLE-12). */
-  gifts?: readonly { id: string }[];
+  /** "your gifts" on the tree: how many are on your shelf, and the way there (GIFT-21). */
+  shelf?: { count: number; onOpen: () => void };
   /** Rings past their soft guide (CIRCLE-2). */
   crowded?: readonly Ring[];
   suggestion?: CircleSuggestion;
@@ -25,6 +26,8 @@ type CircleScreenProps = {
   view: CirclesView;
   onViewChange: (v: CirclesView) => void;
   nav: NavProps;
+  /** Your mailbox, by the tree (docs/specs/mailbox.md, MAILBOX-1). */
+  mailbox?: { count: number; label: string; onOpen: () => void };
 };
 
 /** Your circle (docs/specs/circle.md): the private tree and its card, in Home's scenery. Phone below 768px, wide at 768px and up. */
@@ -37,8 +40,30 @@ export function CircleScreen(props: CircleScreenProps) {
   );
 }
 
-function Tree({ people, gifts = [], onOpenChat, onMove }: CircleScreenProps) {
-  return <CircleTree people={people} gifts={gifts} onOpenChat={onOpenChat} onMove={onMove} />;
+function Tree({ people, onOpenChat, onMove }: CircleScreenProps) {
+  return (
+    <>
+      <CircleTree people={people} onOpenChat={onOpenChat} onMove={onMove} />
+    </>
+  );
+}
+
+/** "your gifts", as on Main.dc.html's tree: a red pill with how many are on your shelf. Looks 32 tall, 44 to tap. */
+function ShelfPill({ count, onOpen }: { count: number; onOpen: () => void }) {
+  return (
+    <button type="button" aria-label={`your gifts, ${count} on your shelf`} onClick={onOpen} style={{ minHeight: 44, padding: 0, border: 0, background: "none", display: "flex", alignItems: "center", cursor: "pointer" }}>
+      <span style={{ height: s(32), boxSizing: "border-box", padding: `0 ${s(5)} 0 ${s(9)}`, display: "flex", alignItems: "center", gap: s(5), borderRadius: s(16), border: `${s(2)} solid #2B3350`, background: "#B43A2A", color: "#FFF6DA", boxShadow: `0 ${s(2)} 0 #2B3350` }}>
+        <svg width={s(13)} height={s(13)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="4" y="11" width="16" height="10" rx="1.5" />
+          <rect x="2.5" y="7" width="19" height="4" rx="1" />
+          <path d="M12 7v14" />
+          <path d="M12 7c-4-6-8-2-5 0zm0 0c4-6 8-2 5 0z" />
+        </svg>
+        <span style={{ fontFamily: "var(--font-fraunces), Georgia, serif", fontStyle: "italic", fontWeight: 700, fontSize: s(12), whiteSpace: "nowrap" }}>your gifts</span>
+        <span style={{ minWidth: s(18), height: s(18), boxSizing: "border-box", padding: `0 ${s(4)}`, borderRadius: s(9), background: "#2B3350", color: "#F7CB4D", fontWeight: 800, fontSize: s(11), lineHeight: s(18), textAlign: "center" }}>{count}</span>
+      </span>
+    </button>
+  );
 }
 function Card({ crowded = [], ...p }: CircleScreenProps) {
   return <RingCard {...p} crowded={crowded} />;
@@ -64,6 +89,18 @@ function PhoneLayout(props: CircleScreenProps) {
           <div style={{ position: "absolute", left: s(195 - TREE_BOX.cx), top: s(318 - TREE_BOX.cy) }}>
             <Tree {...props} />
           </div>
+          {/* Where Main.dc.html puts it: left of the trunk, standing on the grass. */}
+          {props.mailbox && (
+            <div style={{ position: "absolute", left: s(24), top: s(464), zIndex: 1 }}>
+              <TreeMailbox {...props.mailbox} />
+            </div>
+          )}
+          {/* Where Main.dc.html puts it: right of the trunk, at the canopy's foot. */}
+          {props.shelf && (
+            <div style={{ position: "absolute", right: s(12), top: s(534), zIndex: 1 }}>
+              <ShelfPill {...props.shelf} />
+            </div>
+          )}
           <div
             style={{
               position: "absolute",
@@ -135,6 +172,18 @@ function WideLayout(props: CircleScreenProps) {
           >
             <Tree {...props} />
           </div>
+          {/* The phone's spot beside the tree, scaled with it: 171 left of the canopy's center and 146 below. */}
+          {props.mailbox && (
+            <div style={{ position: "absolute", left: d(WIDE_TREE.cx - 171 * WIDE_TREE.scale), top: d(WIDE_TREE.cy + 146 * WIDE_TREE.scale), "--s": `calc(${WIDE_TREE.scale} * var(--d))`, zIndex: 1 } as CSSProperties}>
+              <TreeMailbox {...props.mailbox} />
+            </div>
+          )}
+          {/* The phone's spot right of the tree, scaled with it: its right edge 183 right of the canopy's center, 216 below. */}
+          {props.shelf && (
+            <div style={{ position: "absolute", left: d(WIDE_TREE.cx + 183 * WIDE_TREE.scale), top: d(WIDE_TREE.cy + 216 * WIDE_TREE.scale), translate: "-100% 0", "--s": `calc(${WIDE_TREE.scale} * var(--d))`, zIndex: 1 } as CSSProperties}>
+              <ShelfPill {...props.shelf} />
+            </div>
+          )}
           <div style={{ position: "absolute", top: d(118), left: "50%", transform: "translateX(-50%)", "--s": "calc(1.18 * var(--d))" } as CSSProperties}>
             <CircleToggle value={view} onChange={onViewChange} />
           </div>

@@ -80,7 +80,7 @@ describe("empty states with the switch off (DEMO-2)", () => {
   it("Your circle: an empty tree that fills as you connect (CIRCLE-11)", () => {
     renderOff("Circles");
     fireEvent.click(screen.getByRole("button", { name: "your circle" }));
-    expect(screen.getAllByText("Your circle fills as you connect with people").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Your tree fills in as your friends join.").length).toBeGreaterThan(0);
   });
 
   it("Messages: no messages yet", () => {
@@ -88,10 +88,11 @@ describe("empty states with the switch off (DEMO-2)", () => {
     expect(screen.getByText("No messages yet. Send a memory to start one.")).toBeTruthy();
   });
 
-  it("Archive: your slots and the locked state, nobody posted", async () => {
+  it("Archive: this week's card with nobody posted, and an empty feed", async () => {
     renderOff("Archive");
     expect(await screen.findByRole("region", { name: "Photo of the week" })).toBeTruthy();
-    expect((await screen.findByRole("region", { name: "Week 43" })).textContent).toContain("No one's posted this week yet — be the first");
+    expect(screen.getByRole("region", { name: "This week" }).textContent).toContain("No one's posted yet this week");
+    expect(screen.getByRole("region", { name: "Feed" }).textContent).toContain("Your circles' photos will show here.");
   });
 
   it("Me: the year's empty slots", async () => {
@@ -134,13 +135,13 @@ describe("demo and real ornaments never mix (DEMO-3, HOME-18)", () => {
   it("with the switch on, ornaments are stored under a .demo name", async () => {
     const open = renderWith(demoData);
     await waitFor(() => expect(open).toHaveBeenCalledWith(`${ORNAMENT_DB}.demo`));
-    expect(screen.getAllByRole("button", { name: /^Change ornament / }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /^(Change|Add photo to) ornament / }).length).toBeGreaterThan(0);
   });
 
   it("with it off, there's nothing to change and the name has no suffix", async () => {
     const open = renderWith(emptyData);
     await waitFor(() => expect(open).toHaveBeenCalledWith(ORNAMENT_DB));
-    expect(screen.queryAllByRole("button", { name: /^Change ornament / })).toEqual([]);
+    expect(screen.queryAllByRole("button", { name: /^(Change|Add photo to) ornament / })).toEqual([]);
   });
 });
 
@@ -148,7 +149,6 @@ describe("no placeholder data anywhere (DEMO-4)", () => {
   const words = [
     ...friends.map((f) => f.name),
     ...placeholderGroups.map((g) => g.name),
-    ...placeholderGroups.flatMap((g) => g.memories.map((m) => m.caption.replace("\n", " "))),
     ...placeholderReplies,
     ...seedConversations(NOW).flatMap((c) => c.messages.flatMap((m) => (m.kind === "text" ? [m.text] : []))),
     ...placeholderPosts(NOW).flatMap((p) => (p.caption ? [p.caption] : [])),

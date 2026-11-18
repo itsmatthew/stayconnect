@@ -94,7 +94,12 @@ export function ChatThread({ party, panes, messages, delivered, onBack, onSendTe
         </header>
 
         <div role="log" aria-label="Conversation" style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: `${s(14)} ${s(14)} ${s(12)}`, display: "flex", flexDirection: "column", gap: s(5) }}>
-          {messages.map((m) => (
+          {messages.map((m) =>
+            m.kind === "note" ? (
+              <div key={m.id} data-note="" style={{ alignSelf: "center", maxWidth: s(280), padding: `${s(4)} 0`, textAlign: "center", fontSize: s(11.5), fontWeight: 700, color: "#3F4664", overflowWrap: "anywhere" }}>
+                {m.text}
+              </div>
+            ) : (
             <div key={m.id} data-message="" data-mine={String(m.mine)} style={m.mine ? { alignSelf: "flex-end", maxWidth: s(260) } : { display: "flex", alignItems: "flex-end", gap: s(8), maxWidth: s(290) }}>
               {!m.mine && group && <SenderAvatar sender={m.sender} />}
               <div style={{ display: "flex", flexDirection: "column", gap: s(2), alignItems: m.mine ? "flex-end" : "flex-start" }}>
@@ -104,7 +109,8 @@ export function ChatThread({ party, panes, messages, delivered, onBack, onSendTe
                 {m.kind === "text" ? <div style={m.mine ? myBubble : theirBubble}>{m.text}</div> : <MemoryBubble m={m} />}
               </div>
             </div>
-          ))}
+            ),
+          )}
           {delivered && <div style={{ alignSelf: "flex-end", fontSize: s(11), fontWeight: 700, color: "#3F4664", paddingRight: s(4) }}>Delivered</div>}
         </div>
 

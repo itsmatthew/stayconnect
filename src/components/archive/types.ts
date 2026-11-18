@@ -1,54 +1,51 @@
-import type { ArtKind, FriendLook, Palette } from "../home/types";
+import type { ArtKind, FriendLook } from "../home/types";
 
 /** A posted photo: an image (your own), or memory art standing in for one (placeholder posts). `src` is missing while it loads. */
 export type PhotoView = { kind: "image"; src?: string; alt: string } | { kind: "art"; art: ArtKind; alt: string };
 
 export type SlotKind = "week" | "month" | "year" | "bonus";
 
-/** One of your own slots at the top of the Archive (docs/specs/archive.md, ARC-10). */
+/** One row on this week's card: a slot you can post to, or your photo once it's in (docs/specs/archive.md, ARC-10). */
 export type SlotView = {
   key: string;
   kind: SlotKind;
-  /** The slot's region name: "Photo of the week". */
+  /** The row's region name: "Photo of the week". */
   label: string;
-  size: "large" | "medium" | "small" | "grown";
-  /** "Post your photo of the week to see everyone's · closes Sunday". */
-  directions: string;
+  /** "Add your photo of the week". */
+  title: string;
+  /** "your circles are waiting on you", "closes Oct 31". */
+  sub: string;
   posted?: PhotoView;
+  /** "Your photo of the week is in ✓". */
+  postedLine: string;
 };
 
-export type PostCardView = {
+/** This week's card (ARC-10). */
+export type WeekCardView = {
+  /** "Oct 19–25". */
+  range: string;
+  /** "5 days left", "last day". */
+  daysLeft: string;
+  /** "2 of 5 friends have posted". */
+  line: string;
+  /** Faces of friends who have posted this week, first to post first. */
+  posters: readonly { name: string; look: FriendLook }[];
+};
+
+/** One post in the feed (ARC-8). */
+export type FeedPostView = {
   id: string;
   variant: SlotKind;
   /** "Leo, Week 42". */
   label: string;
   author: { name: string; look: FriendLook };
-  /** "Tuesday · 2:40 pm". */
-  time: string;
-  /** Canopy colours of the shared circles, closest first, at most 3 (ARC-7). */
-  outlines: readonly string[];
-  /** The first shared circle's colours, for the card itself. */
-  palette: Palette;
-  tags: readonly { name: string; color: string }[];
-  moreTags: number;
-  /** "photo of October"; none on weekly cards. */
-  ribbon?: string;
+  /** Their first shared circle: its name and color (ARC-7). */
+  circle: { name: string; color: string };
   photo: PhotoView;
+  /** "Tue, Oct 13" · "WEEK 42"; "February" · "PHOTO OF THE MONTH". */
+  footer: { left: string; right: string };
   /** Shown under the photo (ARC-13). */
   caption?: string;
-};
-
-export type FeedSectionView = {
-  key: string;
-  /** The section's region name: "Week 43", "October", "2026", "Bonus week". */
-  title: string;
-  /** "Oct 19–25". */
-  range: string;
-  cards: readonly PostCardView[];
-  /** The locked line (ARC-9), when some posts are still hidden. */
-  locked?: string;
-  /** One blurred stand-in per hidden post, in its author's first circle colour. */
-  standins: readonly string[];
 };
 
 /** The posting dialog for one slot. */

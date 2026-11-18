@@ -3,22 +3,31 @@
 // their rings and gifts in Your circle (docs/specs/circle.md), seed conversations, the replies "simulate reply" uses (docs/specs/messages.md), Archive posts
 // (docs/specs/archive.md), and next-time-together goals and up-to rows (docs/specs/group-profile.md). Only app-data.ts imports it, behind the demo switch (docs/specs/demo.md).
 
-import type { ArtKind, CircleGroup, Friend, Palette } from "@/components/home/types";
+import type { ArtKind, CircleGroup, Friend } from "@/components/home/types";
 import type { UpToRow } from "@/components/profile/types";
-import type { ReceivedGift } from "./circle/gifts";
+import type { ReceivedGift } from "./gifts/received";
 import type { Placements } from "./circle/rings";
 import { isOpen, isoWeek, periodsOfYear } from "./archive/periods";
 import type { ArchivePost } from "./archive/posts";
+import { groupPalette } from "./colors/palette";
+import type { DirectoryEntry } from "./mail/directory";
+import type { InboxState, Letter, MailSender } from "./mail/inbox";
+import type { MonthDay } from "./mail/birthdays";
 import { ME, type ChatMessage, type Conversation } from "./messages/conversations";
 import { localDay, type GoalState } from "./profile/goals";
 
-const red: Palette = { canopy: "#C8432B", shade: "#93281A", highlight: "#F3A088", rim: "#FFD2C4" };
-const green: Palette = { canopy: "#5E8068", shade: "#3F5F4C", highlight: "#B8D2BE", rim: "#D6F0DC" };
-const amber: Palette = { canopy: "#E3A22F", shade: "#B97814", highlight: "#FBE2A0", rim: "#FFF0BE" };
-const purple: Palette = { canopy: "#9A4FB0", shade: "#6B2F80", highlight: "#D7AEE3", rim: "#F0DDF6" };
-const orange: Palette = { canopy: "#E8792E", shade: "#A8501A", highlight: "#F7B98A", rim: "#FFE3CC" };
-const blue: Palette = { canopy: "#3F86C4", shade: "#285E92", highlight: "#A9CFEF", rim: "#D8ECFB" };
-const rust: Palette = { canopy: "#B85A2E", shade: "#82391A", highlight: "#EBA684", rim: "#FADACB" };
+/** A demo group's shared color, and when the user joined it. Two groups share red, to show the shade shift (COLOR-5). */
+const colored = (colorId: string, year: number) => ({ colorId, palette: groupPalette(colorId, 0), joinedAt: new Date(year, 0, 1).getTime() });
+
+/** What each friend's other groups use, for `suggestGroupColor` (COLOR-4). */
+export const placeholderMemberColors: Readonly<Record<string, readonly string[]>> = {
+  leo: ["red", "green"],
+  ana: ["red", "blue"],
+  nico: ["amber"],
+  sam: ["amber", "purple"],
+  jordan: ["green", "orange"],
+  priya: ["teal"],
+};
 
 export const friends: readonly Friend[] = [
   { id: "leo", name: "Leo", closest: true, look: { skin: "#EDB98F", hair: "#6B3F23", shirt: "#2B3350", bg: "#CFE0F4", ring: "#3F9AD8" } },
@@ -51,14 +60,14 @@ export const placeholderGroups: readonly CircleGroup[] = [
   {
     id: "madrid-crew",
     name: "Madrid Crew",
-    palette: red,
+    ...colored("red", 2019),
     closest: true,
     members: ["leo", "ana", "nico"],
     friendCount: 6,
     memories: [
-      { id: "madrid-1", art: "city", caption: "rooftop,\nlast night" },
-      { id: "madrid-2", art: "churro", caption: "the 4am\nchurro run" },
-      { id: "madrid-3", art: "faces", caption: "wrong line,\ntwice" },
+      { id: "madrid-1", caption: "" },
+      { id: "madrid-2", caption: "" },
+      { id: "madrid-3", caption: "" },
     ],
     lastMemory: "last memory 2 days ago",
     // Header photos (GP-12), drawn as art with their capture dates.
@@ -68,14 +77,14 @@ export const placeholderGroups: readonly CircleGroup[] = [
   {
     id: "hoops-since-14",
     name: "Hoops Since ’14",
-    palette: amber,
+    ...colored("amber", 2014),
     closest: true,
     members: ["sam", "jordan", "leo"],
     friendCount: 5,
     memories: [
-      { id: "hoops-1", art: "basketball", caption: "buzzer\nbeater" },
-      { id: "hoops-2", art: "sunset", caption: "the 6am\nrun" },
-      { id: "hoops-3", art: "people", caption: "post-game\ntacos" },
+      { id: "hoops-1", caption: "" },
+      { id: "hoops-2", caption: "" },
+      { id: "hoops-3", caption: "" },
     ],
     lastMemory: "last memory yesterday",
     // Header photos (GP-12), drawn as art with their capture dates.
@@ -85,14 +94,14 @@ export const placeholderGroups: readonly CircleGroup[] = [
   {
     id: "apt-4b",
     name: "Apt 4B",
-    palette: green,
+    ...colored("green", 2021),
     closest: true,
     members: ["priya", "ana"],
     friendCount: 3,
     memories: [
-      { id: "apt-1", art: "people", caption: "the couch\nmove" },
-      { id: "apt-2", art: "cookie", caption: "burnt\npancakes" },
-      { id: "apt-3", art: "sunset", caption: "move-in\nday" },
+      { id: "apt-1", caption: "" },
+      { id: "apt-2", caption: "" },
+      { id: "apt-3", caption: "" },
     ],
     lastMemory: "last memory 5 days ago",
     // Header photos (GP-12), drawn as art with their capture dates.
@@ -102,16 +111,16 @@ export const placeholderGroups: readonly CircleGroup[] = [
   {
     id: "family",
     name: "Family",
-    palette: blue,
+    ...colored("blue", 2012),
     closest: true,
     members: ["mom", "dad", "grandma"],
     // Grandma sees everyone's Archive posts without posting (ARC-5).
     viewers: ["grandma"],
     friendCount: 4,
     memories: [
-      { id: "family-1", art: "sunset", caption: "lake house,\nevery july" },
-      { id: "family-2", art: "cookie", caption: "grandma’s\nrecipe" },
-      { id: "family-3", art: "faces", caption: "the ski\ntrip" },
+      { id: "family-1", caption: "" },
+      { id: "family-2", caption: "" },
+      { id: "family-3", caption: "" },
     ],
     lastMemory: "last memory 4 days ago",
     // Header photos (GP-12), drawn as art with their capture dates.
@@ -121,14 +130,14 @@ export const placeholderGroups: readonly CircleGroup[] = [
   {
     id: "uni-mates",
     name: "Uni Mates",
-    palette: purple,
+    ...colored("purple", 2020),
     closest: false,
     members: ["priya", "jordan"],
     friendCount: 2,
     memories: [
-      { id: "uni-1", art: "city", caption: "library,\n2am" },
-      { id: "uni-2", art: "churro", caption: "finals week\nfuel" },
-      { id: "uni-3", art: "faces", caption: "grad day,\nfinally" },
+      { id: "uni-1", caption: "" },
+      { id: "uni-2", caption: "" },
+      { id: "uni-3", caption: "" },
     ],
     lastMemory: "last memory 3 weeks ago",
     // Header photos (GP-12), drawn as art with their capture dates.
@@ -138,14 +147,14 @@ export const placeholderGroups: readonly CircleGroup[] = [
   {
     id: "work-mates",
     name: "Work Mates",
-    palette: orange,
+    ...colored("orange", 2023),
     closest: false,
     members: ["sam", "nico"],
     friendCount: 5,
     memories: [
-      { id: "work-1", art: "people", caption: "offsite\nkaraoke" },
-      { id: "work-2", art: "cookie", caption: "bake-off,\nlost" },
-      { id: "work-3", art: "faces", caption: "the great\ndesk swap" },
+      { id: "work-1", caption: "" },
+      { id: "work-2", caption: "" },
+      { id: "work-3", caption: "" },
     ],
     lastMemory: "last memory 1 week ago",
     // Header photos (GP-12), drawn as art with their capture dates.
@@ -155,14 +164,14 @@ export const placeholderGroups: readonly CircleGroup[] = [
   {
     id: "fall-24",
     name: "Fall 24",
-    palette: rust,
+    ...colored("red", 2024),
     closest: false,
     members: ["jordan", "ana", "nico"],
     friendCount: 3,
     memories: [
-      { id: "fall-1", art: "basketball", caption: "first\ntailgate" },
-      { id: "fall-2", art: "sunset", caption: "orientation\nweek" },
-      { id: "fall-3", art: "people", caption: "dorm\nmove-in" },
+      { id: "fall-1", caption: "" },
+      { id: "fall-2", caption: "" },
+      { id: "fall-3", caption: "" },
     ],
     lastMemory: "last memory 2 weeks ago",
     // No header photos (GP-12), so the empty state shows in development.
@@ -261,13 +270,44 @@ export const placeholderUpTo: Readonly<Record<string, readonly UpToRow[]>> = {
   ],
 };
 
-/** Two gifts under Your circle's tree (CIRCLE-12), timed back from `now`. */
+/** Two wrapped gifts that pop up as the app opens (GIFT-19) and two already on the shelf, timed back from `now`. */
 export function placeholderGifts(now: number): ReceivedGift[] {
+  // Each as its sender made it: their frame, note, handwriting, ink, stamp, paper and ribbon. Photos are drawn.
+  const g = (id: string, from: [string, string], art: string, taken: number, frame: string, note: ReceivedGift["note"], wrap: ReceivedGift["wrap"], sentAgo: number, openedAgo?: number): ReceivedGift => ({
+    id,
+    giftId: id.split("/")[0],
+    from: { id: from[0], name: from[1] },
+    photo: { kind: "art", art },
+    takenAt: taken,
+    frame: { id: frame, dateStamp: frame !== "film" },
+    note,
+    wrap,
+    opens: { kind: "now" },
+    sentAt: now - sentAgo,
+    ...(openedAgo !== undefined ? { openedAt: now - openedAgo } : {}),
+  });
   return [
-    { id: "placeholder-gift/mom", from: "mom", receivedAt: now - 1 * DAY },
-    { id: "placeholder-gift/leo", from: "leo", receivedAt: now - 2 * HOUR },
+    g("placeholder-gift-leo/me", ["leo", "Leo"], "basketball", new Date(2014, 2, 3).getTime(), "instant", { text: "We were just talking about this the other day. Studs.", hand: "script", ink: "navy", stamp: "tree" }, { pattern: "stars", ribbon: "gold" }, 2 * HOUR),
+    g("placeholder-gift-mom/me", ["mom", "Mom"], "cookie", new Date(2019, 8, 1).getTime(), "wood", { text: "Found this in the kitchen drawer. Love you.", hand: "pen", ink: "red", stamp: "heart" }, { pattern: "gingham", ribbon: "red" }, 1 * DAY),
+    g("placeholder-gift-ana/me", ["ana", "Ana"], "churro", new Date(2023, 6, 12).getTime(), "album", { text: "Madrid, round two?", hand: "pencil", ink: "green", stamp: "sunrise" }, { pattern: "kraft", ribbon: "cream" }, 9 * DAY, 8 * DAY),
+    g("placeholder-gift-priya/me", ["priya", "Priya"], "sunset", new Date(2021, 5, 20).getTime(), "classic", { text: "Best sky of that whole summer.", hand: "script", ink: "graphite", stamp: "calendar" }, { pattern: "dots", ribbon: "navy" }, 20 * DAY, 19 * DAY),
   ];
 }
+
+/**
+ * People on Now & Then outside the demo user's circle, for dropping photos (docs/specs/mail.md, MAIL-3).
+ * Theo has turned off "Let people find me by name", so only his username or number finds him.
+ */
+export const placeholderDirectory: readonly DirectoryEntry[] = [
+  { id: "kate-morgan", name: "Kate Morgan", username: "katemorgan", phone: "+15550123456", findableByName: true, mutual: ["Leo", "Ana"], look: { skin: "#F1C7A0", hair: "#B8562E", shirt: "#7A4E8C", bg: "#E6D3F0", ring: "#7A4E8C" } },
+  { id: "katie-ruiz", name: "Katie Ruiz", username: "katieruiz", phone: "+15550198765", findableByName: true, mutual: ["Sam"], mailbox: "friendsOfFriends", look: { skin: "#C98A5C", hair: "#2A1C14", shirt: "#4F8F8B", bg: "#CFE0D4", ring: "#4F8F8B" } },
+  { id: "kate-bishop", name: "Kate Bishop", username: "katebishop", phone: "+15550133344", findableByName: true, mutual: ["Leo", "Ana", "Sam", "Priya"], look: { skin: "#E8B48C", hair: "#3B2A1E", shirt: "#B43A2A", bg: "#F6D9A8", ring: "#B43A2A" } },
+  { id: "kate-sullivan", name: "Kate Sullivan", username: "katesullivan", phone: "+15550144455", findableByName: true, mutual: [], look: { skin: "#F3D2B5", hair: "#D9A441", shirt: "#3F9AD8", bg: "#CFE0F4", ring: "#3F9AD8" } },
+  { id: "theo-park", name: "Theo Park", username: "theopark", phone: "+15550111222", findableByName: false, mutual: [], mailbox: "circles", look: { skin: "#F1C7A0", hair: "#8C8C8C", shirt: "#2B3350", bg: "#F6D9A8", ring: "#2B3350" } },
+];
+
+/** How the demo user signs a gift's postcard (docs/specs/gifts.md, GIFT-7). */
+export const placeholderSenderName = "Jackson";
 
 /** What a recipient says when the dev-only "simulate reply" fires (docs/specs/messages.md, MSG-6). */
 export const placeholderReplies: readonly string[] = [
@@ -328,4 +368,53 @@ export function placeholderPosts(now: number): ArchivePost[] {
       return open || missed ? theirs : [...theirs, make(ME)];
     }),
   );
+}
+
+/**
+ * Your mailbox (docs/specs/mailbox.md): three new photos from Kate Morgan, who isn't in your circle, stacked in one
+ * envelope; one from Leo; and some kept from before. Photos are drawn, never real.
+ */
+export function placeholderMail(now: number): InboxState {
+  const DAY = 86_400_000;
+  const friend = (id: string): MailSender => {
+    const f = friends.find((x) => x.id === id)!;
+    return { id: f.id, name: f.name, look: f.look, inCircle: true };
+  };
+  const kate = placeholderDirectory[0];
+  const stranger: MailSender = { id: kate.id, name: kate.name, look: kate.look, inCircle: false };
+  const l = (id: string, from: MailSender, art: string, sentAgo: number, takenYear: number, status: Letter["status"]): Letter => ({
+    id,
+    from,
+    photo: { kind: "art", art },
+    takenAt: new Date(takenYear, 10, 4).getTime(),
+    sentAt: now - sentAgo,
+    status,
+  });
+  return {
+    letters: [
+      l("demo-mail-1", friend("leo"), "basketball", DAY, 2019, "new"),
+      l("demo-mail-2", stranger, "faces", 3 * 3_600_000, 2014, "new"),
+      l("demo-mail-3", stranger, "sunset", 2 * 3_600_000, 2016, "new"),
+      l("demo-mail-4", stranger, "people", 3_600_000, 2017, "new"),
+      l("demo-mail-5", friend("priya"), "cookie", 2 * DAY, 2021, "kept"),
+      l("demo-mail-6", friend("leo"), "city", 20 * DAY, 2023, "kept"),
+      l("demo-mail-7", friend("ana"), "churro", 38 * DAY, 2024, "kept"),
+    ],
+    blocked: [],
+    reports: [],
+    seen: [],
+    birthdayGifts: [],
+  };
+}
+
+/**
+ * Some of the demo user's circle have birthdays (docs/specs/mailbox.md, MAILBOX-11), timed from `now`: Leo's is 3 days
+ * away, so his reminder is waiting; Grandma's is a few weeks off. TODO(server/onboarding): everyone answers this when they join.
+ */
+export function placeholderBirthdays(now: number): Record<string, MonthDay> {
+  const md = (daysAway: number) => {
+    const d = new Date(now + daysAway * 86_400_000);
+    return `${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
+  return { leo: md(3), grandma: md(24), priya: md(150) };
 }

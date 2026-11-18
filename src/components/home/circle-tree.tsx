@@ -99,7 +99,7 @@ export function CircleTree({ group, slot, defs, ...shape }: CircleTreeProps) {
     <g data-tree="" data-slot={slot} data-group-id={group.id} data-cx={shape.cx}>
       <TreeShape {...shape} palette={group.palette} glow={slot === "center"}>
         {group.memories.map((m, i) => (
-          <Ornament key={m.id} {...spots[i]} memory={m} rim={group.palette.rim} defs={defs} />
+          <Ornament key={m.id} {...spots[i]} memory={m} rim={group.palette.rim} color={group.palette.canopy} defs={defs} />
         ))}
       </TreeShape>
     </g>

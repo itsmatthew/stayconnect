@@ -17,7 +17,11 @@ export function useMyPosts(store: ArchiveStore | null, seeded: readonly ArchiveP
   useEffect(() => {
     if (!store) return;
     let live = true;
-    store.posts().then((p) => live && setStored(p));
+    // Merge, don't replace: a post made while this load was in flight isn't in it, and would vanish.
+    store.posts().then((loaded) => {
+      if (!live) return;
+      setStored((made) => [...loaded, ...made.filter((m) => !loaded.some((l) => l.id === m.id))]);
+    });
     return () => {
       live = false;
     };

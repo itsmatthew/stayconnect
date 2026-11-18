@@ -50,11 +50,11 @@ describe("main nav (D5-1, HOME-6, ARC-1)", () => {
     expect(screen.getAllByRole("region", { name: "Selected circle" }).length).toBeGreaterThan(0);
   });
 
-  it("Archive opens the 65 Archive and Me opens your 65 (ARC-1)", async () => {
+  it("Archive opens the Archive and Me opens your 65 (ARC-1)", async () => {
     renderApp();
     tap("Archive");
     expect(current()).toEqual(["Archive"]);
-    expect(await screen.findByRole("heading", { name: "65 Archive" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Archive" })).toBeTruthy();
     tap("Me");
     expect(current()).toEqual(["Me"]);
     expect(await screen.findByRole("list", { name: /^Your 65 for \d{4}$/ })).toBeTruthy();
