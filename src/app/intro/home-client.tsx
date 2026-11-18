@@ -45,7 +45,9 @@ type HomeClientProps = {
   /** Group id → "46 days · lake weekend" (docs/specs/home.md, HOME-19). */
   countdowns?: Readonly<Record<string, string>>;
   /** Your mailbox, by your circle's tree (docs/specs/mailbox.md). */
-  mail?: { state: InboxState; dispatch: (a: InboxAction) => void; recipientName?: string };
+  mail?: { state: InboxState; dispatch: (a: InboxAction) => void; recipientName?: string; onStartCircle?: () => void; letterAgain?: number };
+  /** Open on this circle (docs/specs/onboarding.md, ONB-12). */
+  focus?: string;
   /** The gift maker, for "Schedule a gift" on a birthday in your mailbox (MAILBOX-12). Birthdays come with it. */
   giftMaker?: GiftDeps;
 };
@@ -74,6 +76,7 @@ export function HomeClient({
   countdowns = {},
   mail = noMail,
   giftMaker = noGiftDeps,
+  focus,
 }: HomeClientProps) {
   // Your circle is everyone you've placed or can place: the dev control sends as some of them (MAILBOX-8).
   const circleSenders: MailSender[] = friends.map((f) => ({ id: f.id, name: f.name, look: f.look, inCircle: true }));
@@ -95,7 +98,10 @@ export function HomeClient({
     },
   });
   const [testGifts, setTestGifts] = useState(0);
-  const [center, setCenter] = useState(() => openingCenter(groups));
+  const [center, setCenter] = useState(() => {
+    const at = focus ? groups.findIndex((g) => g.id === focus) : -1;
+    return at >= 0 ? at : openingCenter(groups);
+  });
   const [sheet, setSheet] = useState<OpenSheet | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [view, setView] = useState<CirclesView>("circles");

@@ -52,6 +52,11 @@ import { FIRST, LAST, LOGO, canUndo, changedLine, ornamentKey, withOrnaments } f
 import type { OrnamentControls } from "./ornaments/ornament-sheet-client";
 import { useOrnaments } from "./ornaments/use-ornaments";
 import { useChat } from "./messages/use-chat";
+import { localCircleInvites } from "./onboarding/local-circle-invites";
+import { localMyCircles } from "./onboarding/local-my-circles";
+import { circleGroup, withMyCircles, type MyCircleStore } from "./onboarding/my-circles";
+import { StartCircleClient, type CircleInvites, type NewCircle } from "./onboarding/start-circle-client";
+import { useMyCircles } from "./onboarding/use-my-circles";
 import { recipientSections } from "./parties";
 import { captureDate, cropSquare, downscale, type CropArea } from "./photo-file";
 import { activeGoal, countdownTag } from "./profile/goals";
@@ -93,6 +98,10 @@ type AppClientProps = {
   decode?: (f: File) => Promise<Blob>;
   /** Cuts a cropped square out of a photo (docs/specs/group-logo.md, LOGO-7). */
   crop?: (image: Blob, area: CropArea | undefined, max: number) => Promise<Blob>;
+  /** Circles you started (docs/specs/onboarding.md, ONB-13). TODO(server): a fake. */
+  myCircles?: (storageSuffix: string) => MyCircleStore;
+  /** A new circle's invite link (ONB-11). TODO(server): a fake. */
+  circleInvites?: () => CircleInvites;
 };
 
 /** Work on a store that must finish before it closes. */
@@ -158,6 +167,8 @@ export function AppClient({
   readCapture = captureDate,
   decode = downscale,
   crop = cropSquare,
+  myCircles = localMyCircles,
+  circleInvites = () => localCircleInvites(typeof location === "undefined" ? "" : location.origin),
 }: AppClientProps) {
   const [tab, setTab] = useState<NavLabel>(initialTab);
   const [store, trackStoreWork] = useStore(openStore);
@@ -172,14 +183,17 @@ export function AppClient({
   const [findMeSetting] = useState(() => findMe(data.storageSuffix));
   const [mailboxFrom] = useState(() => mailboxSetting(data.storageSuffix));
   const [inboxState, inboxDispatch, inboxLoaded] = useInbox(inbox(data.storageSuffix), () => data.mail(now()));
+  const mine = useMyCircles(myCircles(data.storageSuffix));
+  // Circles you started come first, wherever groups are (ONB-13).
+  const groups = useMemo(() => withMyCircles(data.groups, mine.circles, circleGroup), [data.groups, mine.circles]);
   // Someone with no circles finds a welcome letter in their mailbox, once (docs/specs/onboarding.md, ONB-1).
-  const welcome = inboxLoaded && welcomeDue(inboxState, data.groups.length);
+  const welcome = inboxLoaded && mine.loaded && welcomeDue(inboxState, groups.length);
   useEffect(() => {
     if (welcome) inboxDispatch({ type: "welcome", at: now() });
   }, [welcome, inboxDispatch, now]);
   const [names, saveGroupName] = useGroupNames(groupNames(data.storageSuffix));
   // Names and colors are applied once, here, so every screen shows the same ones (COLOR-9, RENAME-7).
-  const viewerData = useMemo(() => ({ ...data, groups: withViewerColors(withGroupNames(data.groups, names), overrides) }), [data, names, overrides]);
+  const viewerData = useMemo(() => ({ ...data, groups: withViewerColors(withGroupNames(groups, names), overrides) }), [data, groups, names, overrides]);
   const homeGroups = useMemo(() => withOrnaments(viewerData.groups, ornaments.state, ornaments.urls), [viewerData.groups, ornaments.state, ornaments.urls]);
   const [chat, dispatch] = useChat(now, data.seedConversations, data.storageSuffix);
   const recipients = useMemo(() => recipientSections(homeGroups, data.friends), [homeGroups, data.friends]);
@@ -196,6 +210,12 @@ export function AppClient({
   /** Friend id → birthday. TODO(server/onboarding): asked when people join (MAILBOX-11). */
   const [birthdays] = useState(() => data.birthdays(now()));
   const [goals, dispatchGoal] = useGoals(goalSeed, data.storageSuffix);
+  /** "Start a circle" is open (ONB-7); `letterAgain` reopens the welcome letter from its first step. */
+  const [starting, setStarting] = useState(false);
+  const [letterAgain, setLetterAgain] = useState(0);
+  /** Home opens on this circle after "Go to my circle" (ONB-12). */
+  const [focus, setFocus] = useState<string>();
+  const [inviteService] = useState(circleInvites);
   /** A thread for Messages to open on arrival (CIRCLE-6). */
   const [openThread, setOpenThread] = useState<string | null>(null);
 
@@ -229,6 +249,22 @@ export function AppClient({
     onUndo: (groupId, index) => void ornaments.undo(groupId, index),
     decode,
     crop,
+  };
+  /** A header photo, saved at once, downscaled, with its capture date (GP-12). The change starts now, so the store stays open while it's prepared. */
+  const saveHeaderPhoto = (groupId: string, slot: "first" | "last", file: File) =>
+    ornaments.change(
+      groupId,
+      slot === "first" ? FIRST : LAST,
+      Promise.all([decode(file), readCapture(file)]).then(([image, takenAt]) => ({ image, caption: "", takenAt })),
+      ME,
+      now(),
+    );
+  /** A circle you started: saved, its logo and header photos set, as you'd set them on its profile (ONB-13). */
+  const makeCircle = ({ circle, logo, now: nowPhoto, then }: NewCircle) => {
+    mine.add(circle);
+    void ornaments.change(circle.id, LOGO, Promise.resolve({ image: logo, caption: "" }), ME, now());
+    if (then) void saveHeaderPhoto(circle.id, "first", then);
+    if (nowPhoto) void saveHeaderPhoto(circle.id, "last", nowPhoto);
   };
   /** Shared by Home's card and the group profile (RENAME-2). The note follows only a successful save (RENAME-4). */
   const renameGroup = async (groupId: string, raw: string) => {
@@ -265,6 +301,25 @@ export function AppClient({
     <>
       {screen()}
       {popups.screen}
+      {starting && (
+        <StartCircleClient
+          mine={viewerData.groups}
+          me={data.senderName || undefined}
+          now={now}
+          invites={inviteService}
+          share={shareService}
+          onCreate={makeCircle}
+          onBackToLetter={() => {
+            setStarting(false);
+            setLetterAgain((n) => n + 1);
+          }}
+          onDone={(id) => {
+            setStarting(false);
+            setFocus(id);
+            navigate("Circles");
+          }}
+        />
+      )}
     </>
   );
 
@@ -273,6 +328,8 @@ export function AppClient({
     case "Circles":
       return (
         <HomeClient
+          key={focus}
+          focus={focus}
           groups={homeGroups}
           friends={data.friends}
           chat={chat}
@@ -292,7 +349,7 @@ export function AppClient({
           ornaments={ornamentControls}
           onRename={renameGroup}
           countdowns={countdowns}
-          mail={{ state: inboxState, dispatch: inboxDispatch, recipientName: data.senderName || undefined }}
+          mail={{ state: inboxState, dispatch: inboxDispatch, recipientName: data.senderName || undefined, onStartCircle: () => setStarting(true), letterAgain }}
           giftMaker={giftDeps}
         />
       );
@@ -331,16 +388,7 @@ export function AppClient({
             ornaments: ornamentControls,
             colors: { overrides, onChange: setColorOverride },
             rename: renameGroup,
-            // Header photos are saved at once, downscaled, with their capture date (GP-12). The change starts at the tap,
-            // so the store stays open while the photo is prepared.
-            setHeaderPhoto: (groupId, slot, file) =>
-              ornaments.change(
-                groupId,
-                slot === "first" ? FIRST : LAST,
-                Promise.all([decode(file), readCapture(file)]).then(([image, takenAt]) => ({ image, caption: "", takenAt })),
-                ME,
-                now(),
-              ),
+            setHeaderPhoto: saveHeaderPhoto,
           }}
         />
       );

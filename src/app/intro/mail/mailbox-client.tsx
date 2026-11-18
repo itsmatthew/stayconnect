@@ -71,18 +71,26 @@ type MailboxDeps = {
   birthdays?: MailboxBirthdays;
   /** "Start my first circle" under the welcome letter (ONB-7). */
   onStartCircle?: () => void;
+  /** Counts up each time the letter should open again ("Back to the letter", ONB-7). */
+  letterAgain?: number;
 };
 
 /**
  * Your mailbox (docs/specs/mailbox.md): what the tree's mailbox shows, and the screens it opens. Done keeps a photo,
  * closing leaves the rest new, and ⋯ removes, blocks or reports. Nothing here ever reaches the sender.
  */
-export function useMailbox({ state, dispatch, now, recipientName, circle, birthdays = noBirthdays, onStartCircle }: MailboxDeps): { tree: { count: number; label: string; onOpen: () => void }; screens: ReactNode; welcomeNew: boolean; welcomeHint: boolean } {
+export function useMailbox({ state, dispatch, now, recipientName, circle, birthdays = noBirthdays, onStartCircle, letterAgain = 0 }: MailboxDeps): { tree: { count: number; label: string; onOpen: () => void }; screens: ReactNode; welcomeNew: boolean; welcomeHint: boolean } {
   const [screen, setScreen] = useState<Screen>({ kind: "closed" });
   const [zoom, setZoom] = useState<Letter | null>(null);
   const [menu, setMenu] = useState<Letter | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [devSent, setDevSent] = useState(0);
+  // "Back to the letter" from starting a circle opens it again (ONB-7).
+  const [letterSeen, setLetterSeen] = useState(letterAgain);
+  if (letterAgain !== letterSeen) {
+    setLetterSeen(letterAgain);
+    if (letterAgain > 0) setScreen({ kind: "welcome", phase: "open", kept: false });
+  }
 
   const { upcoming, person, today } = birthdays;
   /** A birthday as its card: who, when, the countdown, and whether you've sent them something for it. */
