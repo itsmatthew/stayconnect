@@ -88,10 +88,11 @@ describe("empty states with the switch off (DEMO-2)", () => {
     expect(screen.getByText("No messages yet. Send a memory to start one.")).toBeTruthy();
   });
 
-  it("Archive: your slots and the locked state, nobody posted", async () => {
+  it("Archive: this week's card with nobody posted, and an empty feed", async () => {
     renderOff("Archive");
     expect(await screen.findByRole("region", { name: "Photo of the week" })).toBeTruthy();
-    expect((await screen.findByRole("region", { name: "Week 43" })).textContent).toContain("No one's posted this week yet — be the first");
+    expect(screen.getByRole("region", { name: "This week" }).textContent).toContain("No one's posted yet this week");
+    expect(screen.getByRole("region", { name: "Feed" }).textContent).toContain("Your circles' photos will show here.");
   });
 
   it("Me: the year's empty slots", async () => {

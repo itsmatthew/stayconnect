@@ -1,4 +1,4 @@
-// The Archive's words, chosen from the period and the date (docs/specs/archive.md, ARC-8–10).
+// The Archive's words, chosen from the period and the date (docs/specs/archive.md, ARC-8–10, ARC-13).
 import { closesLabel, inLastWeekOfMonth, periodTitle, type Period } from "./periods";
 import type { FeedSection } from "./gate";
 
@@ -18,20 +18,21 @@ export function slotLabel(p: Period): string {
   }
 }
 
-/** What an empty slot asks for (ARC-10). The monthly slot grows in the month's last week. */
-export function slotDirections(p: Period, now: number): { directions: string; size: "large" | "medium" | "small" | "grown" } {
+/**
+ * A row on this week's card (ARC-10): what to add, a line under it, and what it says once your photo is in. The
+ * month's row asks for "the photo that defines" it in its last week.
+ */
+export function slotRow(p: Period, now: number): { title: string; sub: string; postedLine: string } {
   const closes = closesLabel(p);
   switch (p.kind) {
     case "week":
-      return { directions: `Post your photo of the week to see everyone's · ${closes}`, size: "large" };
+      return { title: "Add your photo of the week", sub: "your circles are waiting on you", postedLine: "Your photo of the week is in ✓" };
     case "bonus":
-      return { directions: `Bonus week · the week between years · ${closes}`, size: "large" };
+      return { title: "Add your bonus week photo", sub: `the week between years · ${closes}`, postedLine: "Your bonus week photo is in ✓" };
     case "month":
-      return inLastWeekOfMonth(now)
-        ? { directions: `The photo that defines your ${monthName(p)} · ${closes}`, size: "grown" }
-        : { directions: `Photo of ${monthName(p)} · ${closes}`, size: "small" };
+      return { title: `Add your photo of ${monthName(p)}`, sub: inLastWeekOfMonth(now) ? `the photo that defines your ${monthName(p)} · ${closes}` : closes, postedLine: `Your photo of ${monthName(p)} is in ✓` };
     case "year":
-      return { directions: `Your photo of ${p.year} · ${closes}`, size: "medium" };
+      return { title: `Add your photo of ${p.year}`, sub: closes, postedLine: `Your photo of ${p.year} is in ✓` };
   }
 }
 
@@ -49,20 +50,6 @@ export function pickerTitle(p: Period): string {
   }
 }
 
-/** The bigger cards' ribbon: "photo of October", "photo of 2026" (ARC-8). Weekly cards have none. */
-export function ribbon(p: Period): string | undefined {
-  switch (p.kind) {
-    case "week":
-      return undefined;
-    case "bonus":
-      return "Bonus week · the week between years";
-    case "month":
-      return `photo of ${monthName(p)}`;
-    case "year":
-      return `photo of ${p.year}`;
-  }
-}
-
 const THIS: Record<Period["kind"], string> = { week: "this week", bonus: "this bonus week", month: "this month", year: "this year" };
 
 function missedName(p: Period): string {
@@ -71,7 +58,7 @@ function missedName(p: Period): string {
   return periodTitle(p);
 }
 
-/** The locked line (ARC-9), or nothing when there's nothing left to unlock. */
+/** The locked line (ARC-9), or nothing when there's nothing left to unlock. Unused while "post to see" is off (POST_TO_SEE in gate.ts); kept for when it returns. */
 export function lockedText({ period, status, visible, hidden }: FeedSection): string | undefined {
   if (status === "unlocked") return undefined;
   const n = hidden.length;
@@ -102,4 +89,38 @@ export function captionPlaceholder(p: Period): string {
 export function cleanCaption(text: string): string | undefined {
   const line = text.replace(/\s+/g, " ").trim().slice(0, CAPTION_MAX).trim();
   return line || undefined;
+}
+
+const DAY = 86_400_000;
+/** Whole days between two local dates. */
+const daysBetween = (a: number, b: number) => {
+  const d = (t: number) => {
+    const x = new Date(t);
+    return Date.UTC(x.getFullYear(), x.getMonth(), x.getDate()) / DAY;
+  };
+  return d(b) - d(a);
+};
+
+/** This week's card (ARC-10): "5 days left", "1 day left", then "last day" on Sunday. */
+export function daysLeft(p: Period, now: number): string {
+  const n = daysBetween(now, p.end - 1);
+  return n <= 0 ? "last day" : `${n} ${n === 1 ? "day" : "days"} left`;
+}
+
+/**
+ * Under each photo in the feed (ARC-8): "Tue, Nov 3" (the day it was taken) and "WEEK 45"; "February" and "PHOTO OF THE
+ * MONTH"; "2025" and "PHOTO OF THE YEAR"; the bonus week's day and "BONUS WEEK".
+ */
+export function footer(p: Period, takenAt: number): { left: string; right: string } {
+  const day = new Date(takenAt).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+  switch (p.kind) {
+    case "week":
+      return { left: day, right: `WEEK ${p.index}` };
+    case "bonus":
+      return { left: day, right: "BONUS WEEK" };
+    case "month":
+      return { left: new Date(p.start).toLocaleDateString("en-US", { month: "long" }), right: "PHOTO OF THE MONTH" };
+    case "year":
+      return { left: String(p.year), right: "PHOTO OF THE YEAR" };
+  }
 }

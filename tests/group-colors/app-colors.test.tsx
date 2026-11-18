@@ -81,9 +81,10 @@ describe("everywhere the same (COLOR-9)", () => {
     const { container } = renderApp("Archive", data);
     const teals = [0, 1, 2].map((s) => groupPalette("teal", s).canopy);
     await waitFor(() => {
-      const outlines = [...container.querySelectorAll("[data-outlines]")].flatMap((el) => el.getAttribute("data-outlines")!.split(" ")).filter(Boolean);
-      expect(outlines.length).toBeGreaterThan(0);
-      for (const c of outlines) expect(teals).toContain(c);
+      // Each post wears its circle's color (ARC-7).
+      const colors = [...container.querySelectorAll("article[data-color]")].map((el) => el.getAttribute("data-color"));
+      expect(colors.length).toBeGreaterThan(0);
+      for (const c of colors) expect(teals).toContain(c);
     });
   });
 });

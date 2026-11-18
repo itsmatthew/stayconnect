@@ -294,7 +294,7 @@ export function AppClient({
     case "Daily 5":
       return <Daily5Client store={store} track={trackStoreWork} now={now} hasFace={hasFace} recipients={recipients} dispatch={dispatch} nav={nav} gifts={giftDeps} drops={{ directory: data.directory, mail: mailService, share: shareService, friends: data.friends, placements: circle.placements }} />;
     case "Archive":
-      return <ArchiveClient data={viewerData} now={now} store={archive} track={trackArchiveWork} readCapture={readCapture} decode={decode} nav={nav} />;
+      return <ArchiveClient data={viewerData} now={now} store={archive} track={trackArchiveWork} readCapture={readCapture} decode={decode} nav={nav} onOpenChat={openChat} />;
     case "Messages":
       return (
         <MessagesClient
