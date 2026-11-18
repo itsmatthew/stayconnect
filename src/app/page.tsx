@@ -25,7 +25,7 @@ export default function Home() {
           Stay connected with the people who knew you when.
         </h1>
         <p className="mt-6 max-w-md text-lg text-zinc-600 dark:text-zinc-400">
-          A lightweight way to keep up with old friends — high school,
+          A simple way to keep up with old friends — high school,
           college, wherever life pulled you apart.
         </p>
         <Link
