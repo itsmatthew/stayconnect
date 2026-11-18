@@ -3,6 +3,7 @@
 The receiving side of mailbox drops (`docs/specs/mail.md`): photos people dropped for you, by your circle's tree. Built from `design-ref/project/MailOpen.dc.html` and the mailbox in `Main.dc.html` (phone, 390×844); the wide layout extends it.
 The rules are plain TypeScript in `src/app/intro/mail/inbox.ts`, so the mobile app can import them unchanged. Views are in `src/components/mail/`.
 TODO(server): mail arrives only from the demo and the dev control, and is kept in this browser. Reports go nowhere yet.
+The welcome letter a new person finds here is in `docs/specs/onboarding.md` (ONB-1 to ONB-6).
 Tests: `tests/mail/inbox.test.ts`, `tests/mail/mailbox.test.tsx`; birthdays: `tests/mail/birthdays.test.ts`, `tests/mail/mailbox-birthday.test.tsx` (rules in `src/app/intro/mail/birthdays.ts`).
 TODO(server/onboarding): birthdays come from the demo until people are asked for theirs when they join.
 

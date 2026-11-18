@@ -6,6 +6,7 @@ import { BottomNav, TopNav, type NavProps } from "../home/main-nav";
 import { Scenery, useSceneIds } from "../home/scenery/scenery";
 import { INK, KARLA, s } from "../home/units";
 import { TreeMailbox } from "../mail/tree-mailbox";
+import { TapHint, TapRing } from "../onboarding/tap-hint";
 import { CircleTree } from "./circle-tree";
 import { RingCard } from "./ring-card";
 import { TREE_BOX } from "./ring-layout";
@@ -28,7 +29,21 @@ type CircleScreenProps = {
   nav: NavProps;
   /** Your mailbox, by the tree (docs/specs/mailbox.md, MAILBOX-1). */
   mailbox?: { count: number; label: string; onOpen: () => void };
+  /** A welcome letter is waiting: point to the mailbox (docs/specs/onboarding.md, ONB-2). */
+  mailHint?: boolean;
 };
+
+/** "You’ve got mail" by the mailbox, as in WelcomeLetter.dc.html: a ring around it and a callout to its right. */
+function MailHint() {
+  return (
+    <>
+      <TapRing size={112} style={{ left: s(-19), top: s(-15) }} />
+      <TapHint title="You’ve got mail" style={{ position: "absolute", left: s(86), top: s(-52) }}>
+        Tap your mailbox to open it.
+      </TapHint>
+    </>
+  );
+}
 
 /** Your circle (docs/specs/circle.md): the private tree and its card, in Home's scenery. Phone below 768px, wide at 768px and up. */
 export function CircleScreen(props: CircleScreenProps) {
@@ -93,6 +108,7 @@ function PhoneLayout(props: CircleScreenProps) {
           {props.mailbox && (
             <div style={{ position: "absolute", left: s(24), top: s(464), zIndex: 1 }}>
               <TreeMailbox {...props.mailbox} />
+              {props.mailHint && <MailHint />}
             </div>
           )}
           {/* Where Main.dc.html puts it: right of the trunk, at the canopy's foot. */}
@@ -176,6 +192,7 @@ function WideLayout(props: CircleScreenProps) {
           {props.mailbox && (
             <div style={{ position: "absolute", left: d(WIDE_TREE.cx - 171 * WIDE_TREE.scale), top: d(WIDE_TREE.cy + 146 * WIDE_TREE.scale), "--s": `calc(${WIDE_TREE.scale} * var(--d))`, zIndex: 1 } as CSSProperties}>
               <TreeMailbox {...props.mailbox} />
+              {props.mailHint && <MailHint />}
             </div>
           )}
           {/* The phone's spot right of the tree, scaled with it: its right edge 183 right of the canopy's center, 216 below. */}

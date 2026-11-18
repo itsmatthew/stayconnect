@@ -120,6 +120,7 @@ export function HomeClient({
       <>
       <CircleScreen
         mailbox={mailbox.tree}
+        mailHint={mailbox.welcomeHint}
         people={people}
         shelf={{ count: shelfOf(gifts, dayKey(now())).length, onOpen: giftActions.onShowShelf }}
         crowded={RINGS.filter((r) => overGuide(r, placed.filter((p) => p.ring === r).length))}
@@ -154,7 +155,7 @@ export function HomeClient({
   }
 
   // HOME-12: no circles yet.
-  if (!groups.length) return <HomeEmpty nav={nav} onDaily5={() => nav.onNavigate?.("Daily 5")} view={view} onViewChange={setView} />;
+  if (!groups.length) return <HomeEmpty nav={nav} onDaily5={() => nav.onNavigate?.("Daily 5")} view={view} onViewChange={setView} startHere={mailbox.welcomeHint} />;
 
   const open = sheet && groups.find((g) => g.id === sheet.groupId);
   const renamingGroup = groups.find((g) => g.id === renaming);

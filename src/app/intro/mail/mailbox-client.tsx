@@ -9,9 +9,10 @@ import type { BirthdayCardView, BirthdayTileView, MailItemView, MailPiece } from
 import { faceGradient } from "@/components/messages/avatar";
 import { MailViewer } from "@/components/mail/mail-viewer";
 import { PhotoZoom } from "@/components/mail/photo-zoom";
+import { WelcomeEnvelope, WelcomeLetter, WelcomeTile, type WelcomeDay } from "@/components/onboarding/welcome-mail";
 import { birthdayLong, birthdayShort, countdown, type Upcoming } from "./birthdays";
 import type { FaceLook } from "./directory";
-import { envelopes, hasBirthdayGift, inboxReducer, keptGroups, mailboxLabel, newCount, newReminders, type InboxAction, type InboxState, type Letter, type MailSender } from "./inbox";
+import { envelopes, hasBirthdayGift, inboxReducer, keptGroups, mailboxLabel, newCount, newReminders, welcomeIsNew, type InboxAction, type InboxState, type Letter, type MailSender } from "./inbox";
 
 const ARTS: readonly ArtKind[] = ["city", "churro", "faces", "people", "cookie", "sunset", "basketball"];
 const asArt = (art: string): ArtKind => (ARTS as readonly string[]).includes(art) ? (art as ArtKind) : "people";
@@ -33,7 +34,18 @@ const view = (l: Letter): MailItemView => ({
 /** TODO(server): stands in for someone outside your circle until real mail arrives. Shown only by the dev control. */
 const TEST_STRANGER: MailSender = { id: "test-stranger", name: "Riley Test", look: { skin: "#E8B48C", hair: "#3B2A1E", shirt: "#4F8F8B", bg: "#CFE0D4", ring: "#4F8F8B" }, inCircle: false };
 
-type Screen = { kind: "closed" } | { kind: "new"; index: number; opened: boolean; photo: number } | { kind: "kept" } | { kind: "reminder"; personId: string; day: string };
+/** The welcome letter (docs/specs/onboarding.md, ONB-4 to ONB-6): sealed, opening, or open; `kept` when it was reopened from your mail. */
+type WelcomeScreen = { kind: "welcome"; phase: "sealed" | "opening" | "open"; kept: boolean };
+type Screen = { kind: "closed" } | { kind: "new"; index: number; opened: boolean; photo: number } | { kind: "kept" } | { kind: "reminder"; personId: string; day: string } | WelcomeScreen;
+
+/** The letter's day on its postmark and letterhead (ONB-4, ONB-5). */
+const welcomeDay = (t: number): WelcomeDay => ({
+  postmark: fmt(t, { month: "short", day: "numeric" }).toUpperCase(),
+  year: String(new Date(t).getFullYear()),
+  letterhead: fmt(t, { weekday: "short", month: "short", day: "numeric" }),
+});
+/** How long the envelope takes to drop away before the letter slides up, as designed. */
+const OPENING_MS = 550;
 
 /** Birthdays coming up in your circle, and scheduling a gift for one (MAILBOX-11, MAILBOX-12). */
 export type MailboxBirthdays = {
@@ -57,13 +69,15 @@ type MailboxDeps = {
   /** People in your circle the dev control can send as. */
   circle: readonly MailSender[];
   birthdays?: MailboxBirthdays;
+  /** "Start my first circle" under the welcome letter (ONB-7). */
+  onStartCircle?: () => void;
 };
 
 /**
  * Your mailbox (docs/specs/mailbox.md): what the tree's mailbox shows, and the screens it opens. Done keeps a photo,
  * closing leaves the rest new, and ⋯ removes, blocks or reports. Nothing here ever reaches the sender.
  */
-export function useMailbox({ state, dispatch, now, recipientName, circle, birthdays = noBirthdays }: MailboxDeps): { tree: { count: number; label: string; onOpen: () => void }; screens: ReactNode } {
+export function useMailbox({ state, dispatch, now, recipientName, circle, birthdays = noBirthdays, onStartCircle }: MailboxDeps): { tree: { count: number; label: string; onOpen: () => void }; screens: ReactNode; welcomeNew: boolean; welcomeHint: boolean } {
   const [screen, setScreen] = useState<Screen>({ kind: "closed" });
   const [zoom, setZoom] = useState<Letter | null>(null);
   const [menu, setMenu] = useState<Letter | null>(null);
@@ -97,7 +111,8 @@ export function useMailbox({ state, dispatch, now, recipientName, circle, birthd
   const pieces = piecesOf(state);
   const reminders = newReminders(upcoming, state).length;
   const photos = newCount(state);
-  const count = photos + reminders;
+  const welcomeNew = welcomeIsNew(state);
+  const count = photos + reminders + (welcomeNew ? 1 : 0);
   const byId = new Map(state.letters.map((l) => [l.id, l]));
   const close = (after?: string) => {
     setScreen({ kind: "closed" });
@@ -150,8 +165,37 @@ export function useMailbox({ state, dispatch, now, recipientName, circle, birthd
   const zoomTo = (item: MailItemView) => setZoom(byId.get(item.id) ?? null);
   const menuFor = (item: MailItemView) => setMenu(byId.get(item.id) ?? null);
 
+  /** Opening the letter reads it: from then on it's kept (ONB-6). */
+  const openWelcome = (w: WelcomeScreen) => {
+    if (w.phase !== "sealed") return;
+    setScreen({ ...w, phase: "opening" });
+    setTimeout(() => {
+      dispatch({ type: "readWelcome" });
+      setScreen((cur) => (cur.kind === "welcome" && cur.phase === "opening" ? { ...cur, phase: "open" } : cur));
+    }, OPENING_MS);
+  };
+  const welcomeScreen = (w: WelcomeScreen) => {
+    const day = welcomeDay(state.welcome?.at ?? now());
+    if (w.phase !== "open") return <WelcomeEnvelope day={day} recipientName={recipientName} opening={w.phase === "opening"} onOpen={() => openWelcome(w)} onClose={() => close()} />;
+    return (
+      <WelcomeLetter
+        day={day}
+        recipientName={recipientName}
+        onClose={() => (w.kept ? setScreen({ kind: "kept" }) : close())}
+        onStartCircle={
+          onStartCircle &&
+          (() => {
+            close();
+            onStartCircle();
+          })
+        }
+      />
+    );
+  };
+
   const screens = (
     <>
+      {screen.kind === "welcome" && welcomeScreen(screen)}
       {screen.kind === "new" && pieceViews.length > 0 && !birthdays.making && (
         <MailViewer
           subtitle={`${count} new`}
@@ -198,7 +242,12 @@ export function useMailbox({ state, dispatch, now, recipientName, circle, birthd
       )}
       {screen.kind === "kept" && (
         <KeptSheet
-          groups={keptGroups(state, now()).map((g) => ({ label: g.label, items: g.letters.map(view), reminders: g.reminders.flatMap((r) => keptReminder(r.personId, r.day) ?? []) }))}
+          groups={keptGroups(state, now()).map((g) => ({
+            label: g.label,
+            items: g.letters.map(view),
+            reminders: g.reminders.flatMap((r) => keptReminder(r.personId, r.day) ?? []),
+            ...(g.welcome ? { lead: <WelcomeTile onOpen={() => setScreen({ kind: "welcome", phase: "open", kept: true })} /> } : {}),
+          }))}
           onZoom={zoomTo}
           onReminder={(key) => {
             const [personId, day] = key.split("/");
@@ -234,12 +283,17 @@ export function useMailbox({ state, dispatch, now, recipientName, circle, birthd
   return {
     tree: {
       count,
-      label: mailboxLabel(photos, reminders),
+      label: mailboxLabel(photos, reminders, welcomeNew),
       onOpen: () => {
         setNote(null);
+        // The welcome letter comes first, before birthdays and photos (ONB-4).
+        if (welcomeNew) return setScreen({ kind: "welcome", phase: "sealed", kept: false });
         setScreen(count ? { kind: "new", index: 0, opened: false, photo: 0 } : { kind: "kept" });
       },
     },
     screens,
+    welcomeNew,
+    // The callouts point to the mailbox only while it's shut (ONB-2).
+    welcomeHint: welcomeNew && screen.kind === "closed",
   };
 }

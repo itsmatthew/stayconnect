@@ -1,0 +1,15 @@
+# Onboarding
+
+How a brand-new person meets the app, from the designer's "New user, downloaded on their own" (WelcomeLetter.dc.html) and "New user, invited by a friend" (InviteReceive.dc.html) prototypes (phone, 390×844), on the live design link.
+There is no database yet: everything here stays in this browser, like the mailbox it lives in (`docs/specs/mailbox.md`).
+Tests: `tests/onboarding/`.
+
+| ID | Behaviour |
+|----|-----------|
+| ONB-1 | **The welcome letter arrives.** Someone with no circles gets one welcome letter in their mailbox the first time the app opens, as new mail. It arrives once: reading it, or later having circles, never brings it back. With demo data (`docs/specs/demo.md`) there are circles, so no letter. Its day is the day it arrived. Saved with the mailbox (`nowandthen.inbox.v1`, MAILBOX-10). |
+| ONB-2 | **Start here.** While the letter is new and you have no circles, Home shows a callout under the toggle, "Start here · Tap **your circle** to see your tree.", over the empty home (HOME-12). On your circle, a callout by the mailbox reads "You’ve got mail · Tap your mailbox to open it.", with a pulsing ring around the mailbox. Motion is off under reduced motion. |
+| ONB-3 | **On your tree.** The letter counts as new mail: the flag is up and the badge counts it with any photos and birthdays, and the mailbox reads "Your mailbox, a welcome letter" ("…, a welcome letter and 2 new photos", "…, a welcome letter and 1 birthday coming up"). |
+| ONB-4 | **The envelope.** Tapping the mailbox while the letter is new opens it first, before birthdays and photos: over your tree, dimmed, "Your mailbox" and "1 new", and one cream envelope that bobs: the Now & Then mark with "Now & Then" and "Harrison & Jackson" as the return address, a "N&T FOREVER" tree stamp, a round "GAINESVILLE FL" postmark with the letter's day ("NOV 8", "2026") and wavy bars, your name in handwriting (TODO(server): your profile's name, from `GET /api/me`; "you" until then), and "tap to open". Tapping it ("Open the welcome letter") lifts the flap and slides the letter up. × closes it, still new. |
+| ONB-5 | **The letter.** A lined page with a double rule under "welcome to · Now & Then" and the letter's day ("Sun, Nov 8", "2026"), "Hey ‹your name›," ("Hey there," with no name yet), the two opening paragraphs, the five features as designed (65 Archive, Daily 5, Your circles, Your circle, Gifts), each with its icon and two lines, "100% private. No ads, ever. We will never sell your data.", "Invite your people and spread the word.", and "Glad you’re here, Harrison & Jackson" in handwriting. It scrolls under a fade at the top. Under it, "Start my first circle" (46 tall). × ("Close the letter") closes it. |
+| ONB-6 | **Read, then kept.** Opening the letter reads it: closing it after that, or starting a circle, keeps it with your mail (MAILBOX-5) under the week or month it arrived, as a tile, "Welcome letter · from Harrison & Jackson", before that group's photos. Tapping the tile opens the letter again. |
+| ONB-7 | **Start my first circle.** TODO(onboarding phase 2): the four steps that start a circle. Until then, the button is not shown. |

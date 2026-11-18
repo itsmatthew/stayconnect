@@ -22,7 +22,7 @@ import type { Directory } from "./mail/directory";
 import type { FindMeSetting } from "./mail/find-me";
 import { localFindMe } from "./mail/local-find-me";
 import { localMailboxSetting } from "./mail/local-mailbox-setting";
-import type { InboxStore } from "./mail/inbox";
+import { welcomeDue, type InboxStore } from "./mail/inbox";
 import { localInbox } from "./mail/local-inbox";
 import { useInbox } from "./mail/use-inbox";
 import { localInvites, localMail } from "./mail/local-mail";
@@ -171,7 +171,12 @@ export function AppClient({
   const [mailService] = useState(() => mail(data.storageSuffix, data.directory));
   const [findMeSetting] = useState(() => findMe(data.storageSuffix));
   const [mailboxFrom] = useState(() => mailboxSetting(data.storageSuffix));
-  const [inboxState, inboxDispatch] = useInbox(inbox(data.storageSuffix), () => data.mail(now()));
+  const [inboxState, inboxDispatch, inboxLoaded] = useInbox(inbox(data.storageSuffix), () => data.mail(now()));
+  // Someone with no circles finds a welcome letter in their mailbox, once (docs/specs/onboarding.md, ONB-1).
+  const welcome = inboxLoaded && welcomeDue(inboxState, data.groups.length);
+  useEffect(() => {
+    if (welcome) inboxDispatch({ type: "welcome", at: now() });
+  }, [welcome, inboxDispatch, now]);
   const [names, saveGroupName] = useGroupNames(groupNames(data.storageSuffix));
   // Names and colors are applied once, here, so every screen shows the same ones (COLOR-9, RENAME-7).
   const viewerData = useMemo(() => ({ ...data, groups: withViewerColors(withGroupNames(data.groups, names), overrides) }), [data, names, overrides]);
