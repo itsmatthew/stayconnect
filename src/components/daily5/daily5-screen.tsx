@@ -55,7 +55,7 @@ export function Daily5Screen({ todayLabel, cards, pools, recipients, onAddFiles,
         ))}
         {!loading && cards.length === 0 && (
           <p data-tour="d5-empty" style={{ margin: `${s(8)} ${s(6)} 0`, fontFamily: FRAUNCES, fontStyle: "italic", fontSize: s(16), lineHeight: 1.4, color: "#3F4664" }}>
-            Add your photos and the family computer’s below. Each day, five photos at least a year old will appear here.
+            Add your photos and the family computer’s below. Each day, five photos at least 3 months old will appear here.
           </p>
         )}
         <PhotoPools pools={pools} onAddFiles={onAddFiles} />

@@ -20,7 +20,7 @@ describe("the stops (ONB-15)", () => {
   });
 
   it("the Daily 5 stop is written for photos you add", () => {
-    expect(TOUR_STOPS[1].body).toBe("Every morning it picks five of your photos from at least a year ago. Add yours here to see your first five.");
+    expect(TOUR_STOPS[1].body).toBe("Every morning it picks five of your photos from at least 3 months ago. Add yours here to see your first five.");
   });
 });
 

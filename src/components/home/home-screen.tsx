@@ -168,11 +168,26 @@ const PHONE_BADGES: Record<TreeSlot, { left: number; top: number; size: number; 
 };
 const SLOTS: readonly TreeSlot[] = ["left", "center", "right"];
 
+/**
+ * A key per tree: its circle's id, so a tree keeps its identity as the carousel turns, and a count on repeats
+ * (one circle fills every slot; the web keeps the repeating trees), so React never sees the same key twice.
+ */
+export function treeKeys(ids: readonly string[]): string[] {
+  const seen = new Map<string, number>();
+  return ids.map((id) => {
+    const n = seen.get(id) ?? 0;
+    seen.set(id, n + 1);
+    return n ? `${id}#${n}` : id;
+  });
+}
+
 function PhoneLayout({ phone, view, onViewChange, onPrevious, onNext, nav, onOrnament, onRename, countdowns = {} }: HomeScreenProps) {
   const ids = useSceneIds();
   const bySlot = { left: phone[0], center: phone[1], right: phone[2] };
+  const [leftKey, centerKey, rightKey] = treeKeys(SLOTS.map((slot) => bySlot[slot].id));
+  const keys: Record<TreeSlot, string> = { left: leftKey, center: centerKey, right: rightKey };
   const tree = (slot: TreeSlot) => (
-    <CircleTree key={bySlot[slot].id} group={bySlot[slot]} slot={slot} defs={treeDefs(ids)} {...PHONE_TREES[slot]} />
+    <CircleTree key={keys[slot]} group={bySlot[slot]} slot={slot} defs={treeDefs(ids)} {...PHONE_TREES[slot]} />
   );
   return (
     <div
@@ -282,6 +297,7 @@ const WIDE_CLEAR_ZONES = wideLabelZones();
 
 function WideLayout({ wide, view, onViewChange, onPrevious, onNext, nav, onOrnament, onRename, countdowns = {} }: HomeScreenProps) {
   const ids = useSceneIds();
+  const wideKeys = treeKeys(wide.map((g) => g.id));
   return (
     <div
       data-layout="wide"
@@ -307,7 +323,7 @@ function WideLayout({ wide, view, onViewChange, onPrevious, onNext, nav, onOrnam
           <DottedRing cx={CENTER.cx} cy={607} rx={165} ry={34} />
           {WIDE_PAINT.map((i) => {
             const { cx, cy, r, bottom, shadowRy, slot } = WIDE_SLOTS[i];
-            return <CircleTree key={wide[i].id} group={wide[i]} slot={slot} defs={treeDefs(ids)} {...{ cx, cy, r, bottom, shadowRy }} />;
+            return <CircleTree key={wideKeys[i]} group={wide[i]} slot={slot} defs={treeDefs(ids)} {...{ cx, cy, r, bottom, shadowRy }} />;
           })}
         </svg>
 

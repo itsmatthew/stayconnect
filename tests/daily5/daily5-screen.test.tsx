@@ -101,7 +101,7 @@ describe("Daily 5 screen", () => {
   it("explains the empty state and keeps the pools reachable (D5-10)", () => {
     renderScreen({ cards: [] });
     expect(screen.queryAllByRole("article")).toHaveLength(0);
-    expect(screen.getByText(/at least a year old/)).toBeTruthy();
+    expect(screen.getByText(/at least 3 months old/)).toBeTruthy();
     expect(screen.getByRole("group", { name: "My photos" })).toBeTruthy();
   });
 
