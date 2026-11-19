@@ -51,24 +51,29 @@ export const TOUR_DELAY_MS = 2200;
 export const DONE_LINE = "Tap a + on your tree to add your 3 ornaments. Everything else is one tap away down here.";
 
 /** `at` is the stop; `onTab` is a tab's last stop after Got it, pointing at the next tab. */
-export type TourState = { at: number; onTab: boolean } | { done: true } | null;
+/** `joined`: the circle an invite brought you, which changes the closing line (ONB-22). */
+export type TourState = { at: number; onTab: boolean; joined?: string } | { done: true; joined?: string } | null;
 export type TourAction = { type: "gotIt" } | { type: "tap" } | { type: "end" };
 
-export const startTour = (): TourState => ({ at: 0, onTab: false });
+export const startTour = ({ joined }: { joined?: string } = {}): TourState => ({ at: 0, onTab: false, ...(joined ? { joined } : {}) });
+const doneLine = (joined?: string) => (joined ? `${joined} is on your tree now. Check your mailbox, there’s a letter waiting for you.` : DONE_LINE);
 
 /** Does this point at a tab in the nav, so it needs a tap? */
 const tapTo = (stop: Stop, onTab: boolean): TourTab | undefined => (stop.id === "planted" ? "Daily 5" : onTab ? stop.next : undefined);
 
-const advance = (at: number, stops: readonly Stop[]): TourState => (at + 1 < stops.length ? { at: at + 1, onTab: false } : { done: true });
+const advance = ({ at, joined }: { at: number; joined?: string }, stops: readonly Stop[]): TourState => {
+  const j = joined ? { joined } : {};
+  return at + 1 < stops.length ? { at: at + 1, onTab: false, ...j } : { done: true, ...j };
+};
 
 export function tourReducer(state: TourState, action: TourAction, stops: readonly Stop[] = TOUR_STOPS): TourState {
   if (action.type === "end") return null;
   if (!state || "done" in state) return state;
   const stop = stops[state.at];
   const needsTap = !!tapTo(stop, state.onTab);
-  if (action.type === "tap") return needsTap ? advance(state.at, stops) : state;
+  if (action.type === "tap") return needsTap ? advance(state, stops) : state;
   if (needsTap) return state;
-  return stop.next ? { at: state.at, onTab: true } : advance(state.at, stops);
+  return stop.next ? { ...state, onTab: true } : advance(state, stops);
 }
 
 export type TourView =
@@ -86,7 +91,7 @@ export type TourView =
 
 export function tourView(state: TourState, stops: readonly Stop[] = TOUR_STOPS): TourView | null {
   if (!state) return null;
-  if ("done" in state) return { kind: "done", tab: "Circles", title: "You’re all set", body: DONE_LINE };
+  if ("done" in state) return { kind: "done", tab: "Circles", title: "You’re all set", body: doneLine(state.joined) };
   const stop = stops[state.at];
   const to = tapTo(stop, state.onTab);
   const pointing = state.onTab && stop.next;

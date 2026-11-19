@@ -1,9 +1,10 @@
-// Circles you started (docs/specs/onboarding.md, ONB-13). Plain TypeScript: no React or browser APIs.
+// Circles you started or joined (docs/specs/onboarding.md, ONB-13, ONB-20). Plain TypeScript: no React or browser APIs.
 // TODO(server): `POST /api/groups` makes them for real; until then they live in this browser.
 
 import { groupPalette, type GroupPalette } from "../colors/palette";
 
-export type MyCircle = { id: string; name: string; colorId: string; createdAt: number };
+/** `joined`: from an invite (ONB-20), with `from` the name of whoever saved you a spot. */
+export type MyCircle = { id: string; name: string; colorId: string; createdAt: number; joined?: true; from?: string };
 
 /** A new circle as Home and Messages draw groups: you're its only member until people join. */
 export type CircleShape = {
@@ -28,13 +29,14 @@ export function circleGroup(c: MyCircle): CircleShape {
     joinedAt: c.createdAt,
     closest: true,
     members: [],
-    friendCount: 1,
+    // TODO(server): real members; until then you, and whoever invited you.
+    friendCount: c.joined ? 2 : 1,
     memories: [
       { id: `${c.id}-1`, caption: "" },
       { id: `${c.id}-2`, caption: "" },
       { id: `${c.id}-3`, caption: "" },
     ],
-    lastMemory: "you started it",
+    lastMemory: !c.joined ? "you started it" : c.from ? `you joined just now · ${c.from} saved you a spot` : "you joined just now",
   };
 }
 

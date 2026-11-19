@@ -83,3 +83,14 @@ describe("when it starts (ONB-14)", () => {
     expect(TOUR_DELAY_MS).toBe(2200);
   });
 });
+
+describe("the tour for invited friends (ONB-22)", () => {
+  it("ends pointing at the letter waiting in your mailbox", () => {
+    let s: TourState = startTour({ joined: "Red Robin" });
+    for (let i = 0; i < 40 && tourView(s)?.kind === "stop"; i++) {
+      const v = tourView(s)!;
+      s = tourReducer(s, { type: v.kind === "stop" && v.tap ? "tap" : "gotIt" });
+    }
+    expect(tourView(s)).toMatchObject({ kind: "done", title: "You’re all set", body: "Red Robin is on your tree now. Check your mailbox, there’s a letter waiting for you." });
+  });
+});

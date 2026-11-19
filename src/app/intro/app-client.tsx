@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { NavLabel } from "@/components/home/main-nav";
 import { defaultData, type AppData } from "./app-data";
 import { ArchiveClient } from "./archive/archive-client";
@@ -58,6 +58,7 @@ import { circleGroup, withMyCircles, type MyCircleStore } from "./onboarding/my-
 import { StartCircleClient, type CircleInvites, type NewCircle } from "./onboarding/start-circle-client";
 import { TOUR_DELAY_MS, startTour, tourReducer, type TourState } from "./onboarding/tour";
 import { TourClient } from "./onboarding/tour-client";
+import { joinedCircle, readInvite, type InvitePayload } from "./onboarding/invite";
 import { useMyCircles } from "./onboarding/use-my-circles";
 import { recipientSections } from "./parties";
 import { captureDate, cropSquare, downscale, type CropArea } from "./photo-file";
@@ -106,6 +107,8 @@ type AppClientProps = {
   circleInvites?: () => CircleInvites;
   /** How long after "Go to my circle" the tour starts (ONB-14); tests skip the wait. */
   tourDelayMs?: number;
+  /** The `invite=` an invite link opened the app with (ONB-19): read once, cleared once handled. Defaults to the address bar. */
+  inviteLink?: InviteLink;
 };
 
 /** Work on a store that must finish before it closes. */
@@ -117,6 +120,20 @@ export type TrackStoreWork = <T>(work: Promise<T>) => Promise<T>;
  * TODO(re-evaluate when a fourth IndexedDB store is added, or the stores move to the database): the photo, Archive and
  * ornament stores are three databases, and `useOrnaments` repeats this open/track/close guard; consolidate them.
  */
+export type InviteLink = { read(): string | null; clear(): void };
+
+/** The address bar's `invite=`, taken off it once handled, so a reload doesn't read it again (ONB-19). */
+const addressInvite: InviteLink = {
+  read: () => (typeof location === "undefined" ? null : new URL(location.href).searchParams.get("invite")),
+  clear: () => {
+    const url = new URL(location.href);
+    if (!url.searchParams.has("invite")) return;
+    url.searchParams.delete("invite");
+    // Null state, as Next's docs do, so its router keeps the new address.
+    history.replaceState(null, "", url);
+  },
+};
+
 function useStore<T extends { close(): void }>(open: () => Promise<T>): [T | null, TrackStoreWork] {
   const [store, setStore] = useState<T | null>(null);
   const [inFlight] = useState(() => new Set<Promise<unknown>>());
@@ -174,6 +191,7 @@ export function AppClient({
   myCircles = localMyCircles,
   circleInvites = () => localCircleInvites(typeof location === "undefined" ? "" : location.origin),
   tourDelayMs = TOUR_DELAY_MS,
+  inviteLink = addressInvite,
 }: AppClientProps) {
   const [tab, setTab] = useState<NavLabel>(initialTab);
   const [store, trackStoreWork] = useStore(openStore);
@@ -210,7 +228,8 @@ export function AppClient({
   /** Your own copy of a group gift, landing on your shelf after Done (GIFT-23). */
   const [landing, setLanding] = useState<string>();
   // Waiting gifts pop up as the app opens, over whatever it opens on (GIFT-19).
-  const popups = useGiftPopups({ shown: useContext(AppShown), loaded: gifts.loaded, list: gifts.list, open: gifts.open, viewerName: data.senderName, now, onDone: () => showShelf() });
+  const shown = useContext(AppShown);
+  const popups = useGiftPopups({ shown, loaded: gifts.loaded, list: gifts.list, open: gifts.open, viewerName: data.senderName, now, onDone: () => showShelf() });
   const [goalSeed] = useState(() => data.goals(now()));
   /** Friend id → birthday. TODO(server/onboarding): asked when people join (MAILBOX-11). */
   const [birthdays] = useState(() => data.birthdays(now()));
@@ -222,12 +241,41 @@ export function AppClient({
   const [focus, setFocus] = useState<string>();
   // The tour after "Go to my circle" (ONB-14): held here, since it moves between tabs.
   const [tour, setTour] = useState<TourState>(null);
-  const [tourDue, setTourDue] = useState(0);
+  /** A tour to start: after "Go to my circle" at once, after an invite once the intro is over (ONB-22). */
+  const [tourDue, setTourDue] = useState<{ n: number; joined?: string } | null>(null);
+  const tourReady = !!tourDue && (!tourDue.joined || shown);
   useEffect(() => {
-    if (!tourDue) return;
-    const id = setTimeout(() => setTour(startTour()), tourDelayMs);
+    if (!tourDue || !tourReady) return;
+    const id = setTimeout(() => setTour(startTour({ joined: tourDue.joined })), tourDelayMs);
     return () => clearTimeout(id);
-  }, [tourDue, tourDelayMs]);
+  }, [tourDue, tourReady, tourDelayMs]);
+  // An invite link (ONB-19 to ONB-21): join its circle once the saved circles and mailbox are read, so neither load overwrites it.
+  const [invite] = useState(() => {
+    const token = inviteLink.read();
+    return token ? readInvite(token) : null;
+  });
+  const [inviteDone, setInviteDone] = useState(false);
+  const [joining, setJoining] = useState<InvitePayload | null>(null);
+  if (invite && !inviteDone && mine.loaded && inboxLoaded) {
+    // Settled while rendering, as React suggests for state that follows other state.
+    setInviteDone(true);
+    setFocus(invite.id);
+    if (!mine.circles.some((c) => c.id === invite.id)) {
+      setJoining(invite);
+      setTourDue({ n: 1, joined: invite.name });
+    }
+  }
+  useEffect(() => {
+    if (inviteDone) inviteLink.clear();
+  }, [inviteDone, inviteLink]);
+  const joined = useRef<string | null>(null);
+  const addCircle = mine.add;
+  useEffect(() => {
+    if (!joining || joined.current === joining.id) return;
+    joined.current = joining.id;
+    addCircle(joinedCircle(joining, now()));
+    inboxDispatch({ type: "welcome", at: now() });
+  }, [joining, addCircle, inboxDispatch, now]);
   const [inviteService] = useState(circleInvites);
   /** A thread for Messages to open on arrival (CIRCLE-6). */
   const [openThread, setOpenThread] = useState<string | null>(null);
@@ -330,7 +378,7 @@ export function AppClient({
             setStarting(false);
             setFocus(id);
             navigate("Circles");
-            setTourDue((n) => n + 1);
+            setTourDue((d) => ({ n: (d?.n ?? 0) + 1 }));
           }}
         />
       )}
