@@ -241,7 +241,8 @@ export function AppClient({
   const [birthdays] = useState(() => data.birthdays(now()));
   const [goals, dispatchGoal] = useGoals(goalSeed, data.storageSuffix);
   /** "Start a circle" is open (ONB-7); `letterAgain` reopens the welcome letter from its first step. */
-  const [starting, setStarting] = useState(false);
+  /** Starting a circle: from the welcome letter (ONB-7) or an outline tree on Home (HOME-24). */
+  const [starting, setStarting] = useState<false | "letter" | "tree">(false);
   const [letterAgain, setLetterAgain] = useState(0);
   /** Home opens on this circle after "Go to my circle" (ONB-12). */
   const [focus, setFocus] = useState<string>();
@@ -387,15 +388,18 @@ export function AppClient({
           invites={inviteService}
           share={shareService}
           onCreate={makeCircle}
+          leaveLabel={starting === "tree" ? "Close" : undefined}
           onBackToLetter={() => {
             setStarting(false);
-            setLetterAgain((n) => n + 1);
+            if (starting === "letter") setLetterAgain((n) => n + 1);
           }}
           onDone={(id) => {
+            // The tour follows your first circle, the one the letter started (ONB-14).
+            const first = starting === "letter";
             setStarting(false);
             setFocus(id);
             navigate("Circles");
-            setTourDue((d) => ({ n: (d?.n ?? 0) + 1 }));
+            if (first) setTourDue((d) => ({ n: (d?.n ?? 0) + 1 }));
           }}
         />
       )}
@@ -429,7 +433,8 @@ export function AppClient({
           ornaments={ornamentControls}
           onRename={renameGroup}
           countdowns={countdowns}
-          mail={{ state: inboxState, dispatch: inboxDispatch, recipientName: data.senderName || undefined, onStartCircle: () => setStarting(true), letterAgain }}
+          mail={{ state: inboxState, dispatch: inboxDispatch, recipientName: data.senderName || undefined, onStartCircle: () => setStarting("letter"), letterAgain }}
+          onStartCircle={() => setStarting("tree")}
           giftMaker={giftDeps}
         />
       );

@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import "./home.css";
 import { CarouselArrow } from "./carousel-arrow";
 import { CircleToggle, type CirclesView } from "./circle-toggle";
-import { CircleTree, ornamentSpots, type TreeSlot } from "./circle-tree";
+import { CircleTree, OutlineTree, ornamentSpots, type TreeSlot } from "./circle-tree";
 import { CountBadge } from "./count-badge";
 import { DottedRing } from "./dotted-ring";
 import { GroupCard } from "./group-card";
@@ -14,10 +14,12 @@ import { FRAUNCES, INK, KARLA, s } from "./units";
 import { toSceneZone, WIDE_CENTER_SLOT, WIDE_PAINT, WIDE_SLOTS, wideLabelBox } from "./wide-row";
 
 type HomeScreenProps = {
-  /** Center ±1, for phones. */
-  phone: readonly [CircleGroup, CircleGroup, CircleGroup];
+  /** Center ±1, for phones. `null`: no circle for that slot, an outline tree (HOME-24). */
+  phone: readonly [CircleGroup | null, CircleGroup, CircleGroup | null];
   /** Center ±2, for wide screens. */
-  wide: readonly [CircleGroup, CircleGroup, CircleGroup, CircleGroup, CircleGroup];
+  wide: readonly [CircleGroup | null, CircleGroup | null, CircleGroup, CircleGroup | null, CircleGroup | null];
+  /** A tap on an outline tree: start a new circle (HOME-24). */
+  onStartCircle?: () => void;
   view: CirclesView;
   onViewChange: (v: CirclesView) => void;
   onPrevious: () => void;
@@ -71,7 +73,15 @@ function OrnamentButtons({ group, slot, cx, cy, r, onOrnament }: { group: Circle
   });
 }
 
-function Label({ name, center, glow = center, style }: { name: string; center: boolean; glow?: boolean; style: CSSProperties }) {
+/** The button over an outline tree's canopy (HOME-24). */
+function StartCircleButton({ cx, cy, r, onStartCircle }: { cx: number; cy: number; r: number; onStartCircle?: () => void }) {
+  return <button type="button" className="hm-orn" aria-label="Start a new circle" onClick={onStartCircle} style={abs(cx - r, cy - r, { width: s(2 * r), height: s(2 * r), borderRadius: "50%" })} />;
+}
+
+/** What a slot's label says: its circle's name, or "new circle" over an outline tree. */
+const NEW_CIRCLE = "new circle";
+
+function Label({ name, center, glow = center, outline = false, style }: { name: string; center: boolean; glow?: boolean; outline?: boolean; style: CSSProperties }) {
   return (
     <div
       data-tree-label=""
@@ -82,6 +92,7 @@ function Label({ name, center, glow = center, style }: { name: string; center: b
         fontStyle: "italic",
         fontWeight: center ? 700 : 600,
         color: INK,
+        opacity: outline ? 0.6 : undefined,
         textShadow: glow ? "0 0 8px rgba(255,248,236,.9), 0 0 3px rgba(255,248,236,.9)" : undefined,
         ...style,
       }}
@@ -181,14 +192,15 @@ export function treeKeys(ids: readonly string[]): string[] {
   });
 }
 
-function PhoneLayout({ phone, view, onViewChange, onPrevious, onNext, nav, onOrnament, onRename, countdowns = {} }: HomeScreenProps) {
+function PhoneLayout({ phone, view, onViewChange, onPrevious, onNext, nav, onOrnament, onRename, onStartCircle, countdowns = {} }: HomeScreenProps) {
   const ids = useSceneIds();
   const bySlot = { left: phone[0], center: phone[1], right: phone[2] };
-  const [leftKey, centerKey, rightKey] = treeKeys(SLOTS.map((slot) => bySlot[slot].id));
+  const [leftKey, centerKey, rightKey] = treeKeys(SLOTS.map((slot) => bySlot[slot]?.id ?? `outline-${slot}`));
   const keys: Record<TreeSlot, string> = { left: leftKey, center: centerKey, right: rightKey };
-  const tree = (slot: TreeSlot) => (
-    <CircleTree key={keys[slot]} group={bySlot[slot]} slot={slot} defs={treeDefs(ids)} {...PHONE_TREES[slot]} />
-  );
+  const tree = (slot: TreeSlot) => {
+    const g = bySlot[slot];
+    return g ? <CircleTree key={keys[slot]} group={g} slot={slot} defs={treeDefs(ids)} {...PHONE_TREES[slot]} /> : <OutlineTree key={keys[slot]} slot={slot} {...PHONE_TREES[slot]} />;
+  };
   return (
     <div
       data-layout="phone"
@@ -244,21 +256,26 @@ function PhoneLayout({ phone, view, onViewChange, onPrevious, onNext, nav, onOrn
           </div>
 
           {SLOTS.map((slot) => (
-            <Label key={slot} name={bySlot[slot].name} center={slot === "center"} style={PHONE_LABELS[slot]} />
-          ))}
-          {SLOTS.map((slot) => (
-            <CountdownTag key={`tag-${slot}`} groupId={bySlot[slot].id} text={countdowns[bySlot[slot].id]} {...PHONE_TAGS[slot]} />
+            <Label key={slot} name={bySlot[slot]?.name ?? NEW_CIRCLE} center={slot === "center"} outline={!bySlot[slot]} style={PHONE_LABELS[slot]} />
           ))}
           {SLOTS.map((slot) => {
+            const g = bySlot[slot];
+            return g && <CountdownTag key={`tag-${slot}`} groupId={g.id} text={countdowns[g.id]} {...PHONE_TAGS[slot]} />;
+          })}
+          {SLOTS.map((slot) => {
             const { cx, cy, r } = PHONE_TREES[slot];
-            return <OrnamentButtons key={slot} group={bySlot[slot]} slot={slot} cx={cx} cy={cy} r={r} onOrnament={onOrnament} />;
+            const g = bySlot[slot];
+            return g ? <OrnamentButtons key={slot} group={g} slot={slot} cx={cx} cy={cy} r={r} onOrnament={onOrnament} /> : <StartCircleButton key={slot} cx={cx} cy={cy} r={r} onStartCircle={onStartCircle} />;
           })}
           {SLOTS.map((slot) => {
             const b = PHONE_BADGES[slot];
+            const g = bySlot[slot];
             return (
-              <div key={slot} style={abs(b.left, b.top)}>
-                <CountBadge count={bySlot[slot].friendCount} size={b.size} fontSize={b.fontSize} />
-              </div>
+              g && (
+                <div key={slot} style={abs(b.left, b.top)}>
+                  <CountBadge count={g.friendCount} size={b.size} fontSize={b.fontSize} />
+                </div>
+              )
             );
           })}
 
@@ -295,9 +312,9 @@ const CENTER = WIDE_SLOTS[WIDE_CENTER_SLOT];
 /** Small trees stay off the labels (HOME-8). There is no river on wide screens (HOME-11). */
 const WIDE_CLEAR_ZONES = wideLabelZones();
 
-function WideLayout({ wide, view, onViewChange, onPrevious, onNext, nav, onOrnament, onRename, countdowns = {} }: HomeScreenProps) {
+function WideLayout({ wide, view, onViewChange, onPrevious, onNext, nav, onOrnament, onRename, onStartCircle, countdowns = {} }: HomeScreenProps) {
   const ids = useSceneIds();
-  const wideKeys = treeKeys(wide.map((g) => g.id));
+  const wideKeys = treeKeys(wide.map((g, i) => g?.id ?? `outline-${i}`));
   return (
     <div
       data-layout="wide"
@@ -323,7 +340,8 @@ function WideLayout({ wide, view, onViewChange, onPrevious, onNext, nav, onOrnam
           <DottedRing cx={CENTER.cx} cy={607} rx={165} ry={34} />
           {WIDE_PAINT.map((i) => {
             const { cx, cy, r, bottom, shadowRy, slot } = WIDE_SLOTS[i];
-            return <CircleTree key={wideKeys[i]} group={wide[i]} slot={slot} defs={treeDefs(ids)} {...{ cx, cy, r, bottom, shadowRy }} />;
+            const g = wide[i];
+            return g ? <CircleTree key={wideKeys[i]} group={g} slot={slot} defs={treeDefs(ids)} {...{ cx, cy, r, bottom, shadowRy }} /> : <OutlineTree key={wideKeys[i]} slot={slot} {...{ cx, cy, r, bottom, shadowRy }} />;
           })}
         </svg>
 
@@ -333,8 +351,9 @@ function WideLayout({ wide, view, onViewChange, onPrevious, onNext, nav, onOrnam
             return (
               <Label
                 key={`label-${i}`}
-                name={wide[i].name}
+                name={wide[i]?.name ?? NEW_CIRCLE}
                 center={t.slot === "center"}
+                outline={!wide[i]}
                 glow
                 style={{ left: s(b.left), top: s(b.top), width: s(b.width), fontSize: s(b.fontSize), lineHeight: 1.3 }}
               />
@@ -344,11 +363,12 @@ function WideLayout({ wide, view, onViewChange, onPrevious, onNext, nav, onOrnam
             const b = wideLabelBox(t);
             // The center name sits right under the toggle, so its tag goes below the name.
             const center = t.slot === "center";
+            const g = wide[i];
             return (
-              <CountdownTag
+              g && <CountdownTag
                 key={`tag-${i}`}
-                groupId={wide[i].id}
-                text={countdowns[wide[i].id]}
+                groupId={g.id}
+                text={countdowns[g.id]}
                 left={b.left}
                 top={center ? b.top + b.height : b.top}
                 width={b.width}
@@ -357,15 +377,23 @@ function WideLayout({ wide, view, onViewChange, onPrevious, onNext, nav, onOrnam
               />
             );
           })}
-          {WIDE_SLOTS.map((t, i) => (
-            <OrnamentButtons key={`ornaments-${i}`} group={wide[i]} slot={t.slot} cx={t.cx} cy={t.cy} r={t.r} onOrnament={onOrnament} />
-          ))}
+          {WIDE_SLOTS.map((t, i) => {
+            const g = wide[i];
+            return g ? (
+              <OrnamentButtons key={`ornaments-${i}`} group={g} slot={t.slot} cx={t.cx} cy={t.cy} r={t.r} onOrnament={onOrnament} />
+            ) : (
+              <StartCircleButton key={`ornaments-${i}`} cx={t.cx} cy={t.cy} r={t.r} onStartCircle={onStartCircle} />
+            );
+          })}
           {WIDE_SLOTS.map((t, i) => {
             const center = t.slot === "center";
+            const g = wide[i];
             return (
-              <div key={`badge-${i}`} style={abs(t.cx + t.badge[0] * t.r, t.cy + t.badge[1] * t.r)}>
-                <CountBadge count={wide[i].friendCount} size={center ? 40 : 33} fontSize={center ? 19 : 16} />
-              </div>
+              g && (
+                <div key={`badge-${i}`} style={abs(t.cx + t.badge[0] * t.r, t.cy + t.badge[1] * t.r)}>
+                  <CountBadge count={g.friendCount} size={center ? 40 : 33} fontSize={center ? 19 : 16} />
+                </div>
+              )
             );
           })}
 

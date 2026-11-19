@@ -39,6 +39,8 @@ type Props = StartCircleView & {
   onPhoto: (slot: "now" | "then", file: File) => void;
   onNext: () => void;
   onBack: () => void;
+  /** Step 1's back arrow: "Back to the letter", or "Close" when it was opened from Home (HOME-24). */
+  firstBackLabel?: string;
   onShare: () => void;
   onDone: () => void;
 };
@@ -107,7 +109,7 @@ export function StartCircleScreen(p: Props) {
       <div className="wl-fade" style={{ position: "relative", width: s(390), height: "100%", margin: "0 auto" }}>
         {inFlow && (
           <div style={{ position: "absolute", left: 0, right: 0, top: s(46), height: 44, display: "flex", alignItems: "center", justifyContent: "space-between", padding: `0 ${s(12)}` }}>
-            <button type="button" aria-label={p.step === 1 ? "Back to the letter" : "Back"} onClick={p.onBack} style={{ width: 44, height: 44, padding: 0, border: 0, borderRadius: "50%", background: "none", color: NAVY, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+            <button type="button" aria-label={p.step === 1 ? (p.firstBackLabel ?? "Back to the letter") : "Back"} onClick={p.onBack} style={{ width: 44, height: 44, padding: 0, border: 0, borderRadius: "50%", background: "none", color: NAVY, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M15 5l-7 7 7 7" />
               </svg>

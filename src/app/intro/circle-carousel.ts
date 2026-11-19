@@ -21,3 +21,24 @@ export function openingCenter(groups: readonly { closest: boolean }[]): number {
   return closest.length ? closest[Math.floor((closest.length - 1) / 2)] : 0;
 }
 
+
+/**
+ * The `radius` slots either side of `center`, each item at most once (HOME-2, HOME-24): nearest the center first, right
+ * before left, and `null` for a slot with no item left, drawn as an outline tree.
+ */
+export function slotsAround<T>(items: readonly T[], center: number, radius: number): (T | null)[] {
+  const out: (T | null)[] = Array(2 * radius + 1).fill(null);
+  const used = new Set<number>();
+  const place = (d: number) => {
+    const i = rotate(center, d, items.length);
+    if (used.has(i)) return;
+    used.add(i);
+    out[radius + d] = items[i];
+  };
+  place(0);
+  for (let d = 1; d <= radius; d++) {
+    place(d);
+    place(-d);
+  }
+  return out;
+}

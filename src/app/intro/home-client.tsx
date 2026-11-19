@@ -16,7 +16,7 @@ import { upcomingBirthdays } from "./mail/birthdays";
 import { shelf as shelfOf } from "./gifts/received";
 import { testGift } from "./gifts/received-client";
 import { activity, isLit, suggestion } from "./circle/suggestions";
-import { openingCenter, rotate, visibleAround } from "./circle-carousel";
+import { openingCenter, rotate, slotsAround } from "./circle-carousel";
 import { RenameSheetClient } from "./group-names/rename-sheet-client";
 import { emptyInbox, type InboxAction, type InboxState, type MailSender } from "./mail/inbox";
 import { useMailbox } from "./mail/mailbox-client";
@@ -48,6 +48,8 @@ type HomeClientProps = {
   mail?: { state: InboxState; dispatch: (a: InboxAction) => void; recipientName?: string; onStartCircle?: () => void; letterAgain?: number };
   /** Open on this circle (docs/specs/onboarding.md, ONB-12). */
   focus?: string;
+  /** A tap on an outline tree (HOME-24). */
+  onStartCircle?: () => void;
   /** The gift maker, for "Schedule a gift" on a birthday in your mailbox (MAILBOX-12). Birthdays come with it. */
   giftMaker?: GiftDeps;
 };
@@ -77,6 +79,7 @@ export function HomeClient({
   mail = noMail,
   giftMaker = noGiftDeps,
   focus,
+  onStartCircle,
 }: HomeClientProps) {
   // Your circle is everyone you've placed or can place: the dev control sends as some of them (MAILBOX-8).
   const circleSenders: MailSender[] = friends.map((f) => ({ id: f.id, name: f.name, look: f.look, inCircle: true }));
@@ -168,8 +171,9 @@ export function HomeClient({
   return (
     <>
       <HomeScreen
-        phone={visibleAround(groups, center, 1) as [CircleGroup, CircleGroup, CircleGroup]}
-        wide={visibleAround(groups, center, 2) as [CircleGroup, CircleGroup, CircleGroup, CircleGroup, CircleGroup]}
+        phone={slotsAround(groups, center, 1) as unknown as [CircleGroup | null, CircleGroup, CircleGroup | null]}
+        wide={slotsAround(groups, center, 2) as unknown as [CircleGroup | null, CircleGroup | null, CircleGroup, CircleGroup | null, CircleGroup | null]}
+        onStartCircle={onStartCircle}
         view={view}
         onViewChange={setView}
         onPrevious={() => turn(-1)}

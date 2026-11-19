@@ -26,8 +26,10 @@ type Props = {
   share: Share;
   /** Makes the circle: called once it's shared or copied (ONB-11). */
   onCreate: (made: NewCircle) => void;
-  /** "Back to the letter" on step 1 (ONB-7). */
+  /** Step 1's back arrow (ONB-7): back to the letter, or closing, as `leaveLabel` says. */
   onBackToLetter: () => void;
+  /** Step 1's back arrow's name: "Back to the letter" (the default) or "Close" (HOME-24). */
+  leaveLabel?: string;
   /** "Go to my circle" (ONB-12). */
   onDone: (circleId: string) => void;
 };
@@ -35,7 +37,7 @@ type Props = {
 type Picked = { file: File; url: string };
 
 /** Starting a circle (docs/specs/onboarding.md, ONB-7 to ONB-12): the steps' state, the share, and making the circle. */
-export function StartCircleClient({ mine, me, now, invites, share, onCreate, onBackToLetter, onDone }: Props) {
+export function StartCircleClient({ mine, me, now, invites, share, onCreate, onBackToLetter, leaveLabel, onDone }: Props) {
   const [draft, dispatch] = useReducer(startReducer<Picked>, mine, (m) => startDraft<Picked>(m.map((g) => g.colorId)));
   const [id] = useState(() => `mine-${crypto.randomUUID()}`);
   const [created] = useState(() => now());
@@ -83,6 +85,7 @@ export function StartCircleClient({ mine, me, now, invites, share, onCreate, onB
 
   return (
     <StartCircleScreen
+      firstBackLabel={leaveLabel}
       step={draft.step}
       name={draft.name}
       shown={shown}
