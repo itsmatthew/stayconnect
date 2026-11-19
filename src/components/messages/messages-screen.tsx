@@ -64,13 +64,15 @@ export function MessagesScreen({ pinnedCircles, pinnedPeople, list, onOpen, seal
 
       {!pinnedCircles.length && !pinnedPeople.length && !list.length && (
         // MSG-8: nobody to talk to yet.
-        <p style={{ margin: `${s(48)} ${s(32)} 0`, textAlign: "center", fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 600, fontSize: s(17), lineHeight: 1.35 }}>
+        <p data-tour="ms-empty" style={{ margin: `${s(48)} ${s(32)} 0`, textAlign: "center", fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 600, fontSize: s(17), lineHeight: 1.35 }}>
           No messages yet. Send a memory to start one.
         </p>
       )}
 
-      <OrnamentRow name="closest circles" rows={pinnedCircles.filter(match)} onOpen={onOpen} />
-      <OrnamentRow name="closest people" rows={pinnedPeople.filter(match)} onOpen={onOpen} />
+      <div data-tour="ms-pins">
+        <OrnamentRow name="closest circles" rows={pinnedCircles.filter(match)} onOpen={onOpen} />
+        <OrnamentRow name="closest people" rows={pinnedPeople.filter(match)} onOpen={onOpen} />
+      </div>
 
       <div style={{ padding: `${s(18)} ${s(14)} ${s(24)}` }}>
         <div aria-hidden="true" style={{ height: s(5), display: "flex", borderRadius: s(3), overflow: "hidden" }}>
@@ -78,7 +80,7 @@ export function MessagesScreen({ pinnedCircles, pinnedPeople, list, onOpen, seal
           <span style={{ flex: 1, background: "#F0B429" }} />
           <span style={{ flex: 1, background: "#4F8A3C" }} />
         </div>
-        <div role="list" aria-label="Chats">
+        <div role="list" aria-label="Chats" data-tour="ms-chats">
           {list.filter(match).map((r) => (
             <div role="listitem" key={r.conversationId}>
               <button

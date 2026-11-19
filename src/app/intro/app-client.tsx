@@ -56,6 +56,8 @@ import { localCircleInvites } from "./onboarding/local-circle-invites";
 import { localMyCircles } from "./onboarding/local-my-circles";
 import { circleGroup, withMyCircles, type MyCircleStore } from "./onboarding/my-circles";
 import { StartCircleClient, type CircleInvites, type NewCircle } from "./onboarding/start-circle-client";
+import { TOUR_DELAY_MS, startTour, tourReducer, type TourState } from "./onboarding/tour";
+import { TourClient } from "./onboarding/tour-client";
 import { useMyCircles } from "./onboarding/use-my-circles";
 import { recipientSections } from "./parties";
 import { captureDate, cropSquare, downscale, type CropArea } from "./photo-file";
@@ -102,6 +104,8 @@ type AppClientProps = {
   myCircles?: (storageSuffix: string) => MyCircleStore;
   /** A new circle's invite link (ONB-11). TODO(server): a fake. */
   circleInvites?: () => CircleInvites;
+  /** How long after "Go to my circle" the tour starts (ONB-14); tests skip the wait. */
+  tourDelayMs?: number;
 };
 
 /** Work on a store that must finish before it closes. */
@@ -169,6 +173,7 @@ export function AppClient({
   crop = cropSquare,
   myCircles = localMyCircles,
   circleInvites = () => localCircleInvites(typeof location === "undefined" ? "" : location.origin),
+  tourDelayMs = TOUR_DELAY_MS,
 }: AppClientProps) {
   const [tab, setTab] = useState<NavLabel>(initialTab);
   const [store, trackStoreWork] = useStore(openStore);
@@ -215,6 +220,14 @@ export function AppClient({
   const [letterAgain, setLetterAgain] = useState(0);
   /** Home opens on this circle after "Go to my circle" (ONB-12). */
   const [focus, setFocus] = useState<string>();
+  // The tour after "Go to my circle" (ONB-14): held here, since it moves between tabs.
+  const [tour, setTour] = useState<TourState>(null);
+  const [tourDue, setTourDue] = useState(0);
+  useEffect(() => {
+    if (!tourDue) return;
+    const id = setTimeout(() => setTour(startTour()), tourDelayMs);
+    return () => clearTimeout(id);
+  }, [tourDue, tourDelayMs]);
   const [inviteService] = useState(circleInvites);
   /** A thread for Messages to open on arrival (CIRCLE-6). */
   const [openThread, setOpenThread] = useState<string | null>(null);
@@ -317,9 +330,11 @@ export function AppClient({
             setStarting(false);
             setFocus(id);
             navigate("Circles");
+            setTourDue((n) => n + 1);
           }}
         />
       )}
+      <TourClient state={tour} dispatch={(a) => setTour((s) => tourReducer(s, a))} onNavigate={navigate} />
     </>
   );
 

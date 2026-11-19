@@ -36,6 +36,7 @@ export function BottomNav({ current: currentTab, onNavigate }: NavProps) {
         return (
           <button
             key={it.label}
+            data-tour={`nav:${it.label}`}
             type="button"
             aria-current={current ? "page" : undefined}
             onClick={() => onNavigate?.(it.label)}
@@ -74,6 +75,7 @@ export function TopNav({ current: currentTab, onNavigate }: NavProps) {
         return (
           <button
             key={it.label}
+            data-tour={`nav:${it.label}`}
             type="button"
             aria-current={current ? "page" : undefined}
             onClick={() => onNavigate?.(it.label)}

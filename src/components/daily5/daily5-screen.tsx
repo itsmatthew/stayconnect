@@ -54,7 +54,7 @@ export function Daily5Screen({ todayLabel, cards, pools, recipients, onAddFiles,
           <Polaroid key={card.id} card={card} index={i} onSend={() => setSending(card)} onMailbox={onMailbox && (() => onMailbox(card.id))} onGift={onGift && (() => onGift(card.id))} />
         ))}
         {!loading && cards.length === 0 && (
-          <p style={{ margin: `${s(8)} ${s(6)} 0`, fontFamily: FRAUNCES, fontStyle: "italic", fontSize: s(16), lineHeight: 1.4, color: "#3F4664" }}>
+          <p data-tour="d5-empty" style={{ margin: `${s(8)} ${s(6)} 0`, fontFamily: FRAUNCES, fontStyle: "italic", fontSize: s(16), lineHeight: 1.4, color: "#3F4664" }}>
             Add your photos and the family computer’s below. Each day, five photos at least a year old will appear here.
           </p>
         )}

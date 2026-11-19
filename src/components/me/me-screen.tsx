@@ -38,6 +38,7 @@ export function MeScreen({ year, years, onYearChange, tiles, nav, onSendGift, fi
   return (
     <TabFrame nav={nav}>
       <h1 style={{ margin: 0, padding: `${s(44)} ${s(20)} 0`, fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(28), letterSpacing: s(-0.5) }}>Me</h1>
+      <div data-tour="me-year">
       <div style={{ display: "flex", gap: s(8), padding: `${s(16)} ${s(14)} ${s(12)}` }}>
         <button type="button" aria-current={view === "posts" ? "page" : undefined} onClick={() => setView("posts")} style={pillButton}>
           <span style={{ ...pill, background: "#B43A2A", color: "#FFF6DA", opacity: view === "posts" ? 1 : 0.92, boxShadow: view === "posts" ? `0 ${s(3)} 0 ${NAVY}` : "none" }}>posts</span>
@@ -48,6 +49,7 @@ export function MeScreen({ year, years, onYearChange, tiles, nav, onSendGift, fi
         </button>
       </div>
       {view === "posts" ? <SixtyFiveGrid year={year} tiles={tiles} onOpen={setOpenKey} /> : <GiftShelf onSendGift={onSendGift} gifts={shelf?.gifts} onOpenGift={shelf?.onOpenGift} landing={shelf?.landing} />}
+      </div>
       {findMe && <FindMeRow {...findMe} />}
       {mailbox && <MailboxRow {...mailbox} />}
       {open?.photo && <TileViewer tile={{ ...open, photo: open.photo }} onClose={() => setOpenKey(null)} />}

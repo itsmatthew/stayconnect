@@ -29,6 +29,7 @@ export function Polaroid({ card, index, onSend, onMailbox, onGift }: { card: Dai
   const tilt = TILTS[index % TILTS.length];
   return (
     <article
+      data-tour={index === 0 ? "d5-card" : undefined}
       style={{
         boxSizing: "border-box",
         padding: `${s(14)} ${s(14)} 0`,
@@ -52,7 +53,7 @@ export function Polaroid({ card, index, onSend, onMailbox, onGift }: { card: Dai
           }}
         />
       </div>
-      <div style={{ height: s(76), display: "flex", alignItems: "center", justifyContent: "space-between", padding: `0 ${s(2)} ${s(4)} ${s(6)}` }}>
+      <div data-tour={index === 0 ? "d5-send" : undefined} style={{ height: s(76), display: "flex", alignItems: "center", justifyContent: "space-between", padding: `0 ${s(2)} ${s(4)} ${s(6)}` }}>
         <span style={{ fontFamily: CAVEAT, fontWeight: 700, fontSize: s(27), color: NAVY, transform: "rotate(-2deg)" }}>{card.dateLabel}</span>
         <span style={{ display: "flex", alignItems: "flex-start", gap: s(10), paddingTop: s(4) }}>
           {onMailbox && (

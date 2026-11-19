@@ -27,7 +27,7 @@ export function PhotoPools({ pools, onAddFiles }: { pools: readonly PoolView[]; 
     e.target.value = "";
   };
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: s(12) }}>
+    <div data-tour="d5-pools" style={{ display: "flex", flexDirection: "column", gap: s(12) }}>
       {pools.map((p) => (
         <section
           key={p.id}
