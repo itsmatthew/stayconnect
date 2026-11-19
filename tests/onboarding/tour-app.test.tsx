@@ -62,7 +62,7 @@ describe("the tour (ONB-14 to ONB-18)", () => {
   it("starts on Home after Go to my circle, walks Daily 5, Archive, Messages and Me, then You're all set", async () => {
     await makeCircle();
     const first = await card("Your tree’s planted");
-    expect(within(first).getByText("1 of 9")).toBeTruthy();
+    expect(within(first).getByText("1 of 11")).toBeTruthy();
     expect(within(first).getByText("Let’s take a quick look around so you know what everything does.")).toBeTruthy();
     expect(within(first).queryByRole("button", { name: "Got it" })).toBeNull();
     const steps: [string, string][] = [
@@ -77,6 +77,8 @@ describe("the tour (ONB-14 to ONB-18)", () => {
       ["Your circle’s chat", "Got it"],
       ["Pin your people", "Got it"],
       ["Up next: Me", "Go to Me"],
+      ["Now & then", "Got it"],
+      ["Your bio", "Got it"],
       ["Your year", "Got it"],
       ["Up next: Circles", "Go to Circles"],
     ];
@@ -85,7 +87,7 @@ describe("the tour (ONB-14 to ONB-18)", () => {
       if (title === "Daily 5") expect(tabShown("Daily 5")).toBe("page");
       if (title === "65 Archive") expect(tabShown("Archive")).toBe("page");
       if (title === "Your circle’s chat") expect(tabShown("Messages")).toBe("page");
-      if (title === "Your year") expect(tabShown("Me")).toBe("page");
+      if (title === "Now & then") expect(tabShown("Me")).toBe("page");
       fireEvent.click(within(d).getByRole("button", { name: button }));
     }
     const done = screen.getByRole("dialog", { name: "You’re all set" });

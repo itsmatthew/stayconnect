@@ -58,6 +58,9 @@ import { circleGroup, withMyCircles, type MyCircleStore } from "./onboarding/my-
 import { StartCircleClient, type CircleInvites, type NewCircle } from "./onboarding/start-circle-client";
 import { TOUR_DELAY_MS, startTour, tourReducer, type TourState } from "./onboarding/tour";
 import { TourClient } from "./onboarding/tour-client";
+import { localProfile } from "./me/local-profile";
+import { ME_PROFILE, type ProfileStore } from "./me/profile";
+import type { ProfilePhotos } from "./me/me-client";
 import { joinedCircle, readInvite, type InvitePayload } from "./onboarding/invite";
 import { useMyCircles } from "./onboarding/use-my-circles";
 import { recipientSections } from "./parties";
@@ -107,6 +110,8 @@ type AppClientProps = {
   circleInvites?: () => CircleInvites;
   /** How long after "Go to my circle" the tour starts (ONB-14); tests skip the wait. */
   tourDelayMs?: number;
+  /** Your profile's text on Me (docs/specs/me.md, ME-6 to ME-8). TODO(server): a fake. */
+  profile?: (storageSuffix: string) => ProfileStore;
   /** The `invite=` an invite link opened the app with (ONB-19): read once, cleared once handled. Defaults to the address bar. */
   inviteLink?: InviteLink;
 };
@@ -191,6 +196,7 @@ export function AppClient({
   myCircles = localMyCircles,
   circleInvites = () => localCircleInvites(typeof location === "undefined" ? "" : location.origin),
   tourDelayMs = TOUR_DELAY_MS,
+  profile = localProfile,
   inviteLink = addressInvite,
 }: AppClientProps) {
   const [tab, setTab] = useState<NavLabel>(initialTab);
@@ -277,6 +283,7 @@ export function AppClient({
     inboxDispatch({ type: "welcome", at: now() });
   }, [joining, addCircle, inboxDispatch, now]);
   const [inviteService] = useState(circleInvites);
+  const [profileStore] = useState(() => profile(data.storageSuffix));
   /** A thread for Messages to open on arrival (CIRCLE-6). */
   const [openThread, setOpenThread] = useState<string | null>(null);
 
@@ -326,6 +333,16 @@ export function AppClient({
     void ornaments.change(circle.id, LOGO, Promise.resolve({ image: logo, caption: "" }), ME, now());
     if (then) void saveHeaderPhoto(circle.id, "first", then);
     if (nowPhoto) void saveHeaderPhoto(circle.id, "last", nowPhoto);
+  };
+  /** Your profile's photos on Me, kept with the ornaments (ME-5, ME-8). */
+  const profilePhotos: ProfilePhotos = {
+    get: (slot) => {
+      const v = ornaments.state[ornamentKey(ME_PROFILE, slot)]?.current;
+      return v && { src: v.photoId ? ornaments.urls[v.photoId] : undefined, caption: v.caption };
+    },
+    save: (slot, edit) => void ornaments.change(ME_PROFILE, slot, edit, ME, now()),
+    decode,
+    crop,
   };
   /** Shared by Home's card and the group profile (RENAME-2). The note follows only a successful save (RENAME-4). */
   const renameGroup = async (groupId: string, raw: string) => {
@@ -456,7 +473,7 @@ export function AppClient({
         />
       );
     case "Me":
-      return <MeClient data={viewerData} now={now} store={archive} nav={nav} gifts={giftDeps} findMe={findMeSetting} mailboxSetting={mailboxFrom} received={gifts.list} startOnShelf={meOnShelf} landing={landing} />;
+      return <MeClient data={viewerData} now={now} store={archive} nav={nav} gifts={giftDeps} findMe={findMeSetting} mailboxSetting={mailboxFrom} received={gifts.list} startOnShelf={meOnShelf} landing={landing} profile={{ store: profileStore, photos: profilePhotos }} />;
   }
   }
 }

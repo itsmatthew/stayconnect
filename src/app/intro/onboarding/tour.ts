@@ -15,8 +15,6 @@ export type Stop = {
   body: string;
   /** The last stop of a tab: after Got it, the spotlight moves to this tab in the nav. */
   next?: TourTab;
-  /** Not on the web yet. */
-  later?: true;
 };
 
 /** The design's eleven, in order. */
@@ -30,14 +28,13 @@ export const STOPS: readonly Stop[] = [
   { id: "ar-feed", tab: "Archive", targets: ["ar-feed"], title: "Everyone’s picks", body: "Your circles’ photos show up here, then the photo of the month and the year. No likes, no comments.", next: "Messages" },
   { id: "ms-chats", tab: "Messages", targets: ["ms-chats", "ms-pins", "ms-empty"], title: "Your circle’s chat", body: "Every circle gets its own chat. Everyone who joins lands here." },
   { id: "ms-pins", tab: "Messages", targets: ["ms-pins", "ms-chats", "ms-empty"], title: "Pin your people", body: "Pin your 3 closest circles and 3 closest people up top. React to messages with your real face.", next: "Me" },
-  // TODO(re-evaluate when Me has your now & then photos and bio): drop `later` and tag them on MeScreen.
-  { id: "me-photos", tab: "Me", targets: ["me-photos"], title: "Now & then", body: "Add a photo of you now, and one of you as a kid.", later: true },
-  { id: "me-bio", tab: "Me", targets: ["me-bio"], title: "Your bio", body: "Write a line about yourself, then answer five questions. The top one changes every week.", later: true },
+  { id: "me-photos", tab: "Me", targets: ["me-photos"], title: "Now & then", body: "Add a photo of you now, and one of you as a kid." },
+  { id: "me-bio", tab: "Me", targets: ["me-bio"], title: "Your bio", body: "Write a line about yourself, then answer five questions. The top one changes every week." },
   { id: "me-year", tab: "Me", targets: ["me-year"], title: "Your year", body: "Your photos of the week collect here, and gifts from friends go on your shelf.", next: "Circles" },
 ];
 
-/** The stops the web runs. */
-export const TOUR_STOPS: readonly Stop[] = STOPS.filter((s) => !s.later);
+/** The stops the web runs: all of them. */
+export const TOUR_STOPS: readonly Stop[] = STOPS;
 
 const UP_NEXT: Record<TourTab, string> = {
   Circles: "Back to your tree.",

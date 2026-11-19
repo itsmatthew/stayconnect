@@ -4,7 +4,7 @@ import { STOPS, TOUR_DELAY_MS, TOUR_STOPS, startTour, tourReducer, tourView, typ
 const run = (...actions: Parameters<typeof tourReducer>[1][]) => actions.reduce((s, a) => tourReducer(s, a), startTour());
 
 describe("the stops (ONB-15)", () => {
-  it("web runs nine of the design's eleven, skipping the Me profile stops for now", () => {
+  it("runs the design's eleven", () => {
     expect(STOPS).toHaveLength(11);
     expect(TOUR_STOPS.map((s) => s.title)).toEqual([
       "Your tree’s planted",
@@ -15,6 +15,8 @@ describe("the stops (ONB-15)", () => {
       "Everyone’s picks",
       "Your circle’s chat",
       "Pin your people",
+      "Now & then",
+      "Your bio",
       "Your year",
     ]);
   });
@@ -27,24 +29,24 @@ describe("the stops (ONB-15)", () => {
 describe("walking the tour (ONB-16, ONB-17)", () => {
   it("starts on Home, spotlighting the Daily 5 tab", () => {
     const v = tourView(startTour())!;
-    expect(v).toMatchObject({ kind: "stop", tab: "Circles", targets: ["nav:Daily 5"], title: "Your tree’s planted", count: "1 of 9", tap: { label: "Go to Daily 5", hint: "Tap Daily 5", to: "Daily 5" } });
+    expect(v).toMatchObject({ kind: "stop", tab: "Circles", targets: ["nav:Daily 5"], title: "Your tree’s planted", count: "1 of 11", tap: { label: "Go to Daily 5", hint: "Tap Daily 5", to: "Daily 5" } });
   });
 
   it("tapping the tab opens Daily 5's first stop, with Got it", () => {
     const v = tourView(run({ type: "tap" }))!;
-    expect(v).toMatchObject({ kind: "stop", tab: "Daily 5", title: "Daily 5", count: "2 of 9", tap: undefined });
+    expect(v).toMatchObject({ kind: "stop", tab: "Daily 5", title: "Daily 5", count: "2 of 11", tap: undefined });
   });
 
   it("Got it on a stop moves to the next one", () => {
-    expect(tourView(run({ type: "tap" }, { type: "gotIt" }))).toMatchObject({ title: "From back whenever", count: "3 of 9" });
+    expect(tourView(run({ type: "tap" }, { type: "gotIt" }))).toMatchObject({ title: "From back whenever", count: "3 of 11" });
   });
 
   it("the last stop of a tab, after Got it, points at the next tab", () => {
     const atSend = run({ type: "tap" }, { type: "gotIt" }, { type: "gotIt" });
     expect(tourView(atSend)).toMatchObject({ title: "Send one", tap: undefined });
     const up = tourView(tourReducer(atSend, { type: "gotIt" }))!;
-    expect(up).toMatchObject({ tab: "Daily 5", targets: ["nav:Archive"], title: "Up next: Archive", body: "See the photo of the week.", count: "4 of 9", tap: { hint: "Tap Archive", to: "Archive" } });
-    expect(tourView(tourReducer(tourReducer(atSend, { type: "gotIt" }), { type: "tap" }))).toMatchObject({ tab: "Archive", title: "65 Archive", count: "5 of 9" });
+    expect(up).toMatchObject({ tab: "Daily 5", targets: ["nav:Archive"], title: "Up next: Archive", body: "See the photo of the week.", count: "4 of 11", tap: { hint: "Tap Archive", to: "Archive" } });
+    expect(tourView(tourReducer(tourReducer(atSend, { type: "gotIt" }), { type: "tap" }))).toMatchObject({ tab: "Archive", title: "65 Archive", count: "5 of 11" });
   });
 
   it("Got it does nothing where a tap is needed, and a tap nothing where Got it is", () => {
