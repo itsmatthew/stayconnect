@@ -13,7 +13,7 @@ export type ThreadPane = HeaderPane & { empty?: boolean };
 
 type ChatThreadProps = {
   party: Party;
-  /** Left and right halves: a group's first photo together and last time together (GP-12), a friend's now and then. */
+  /** Left and right halves, always now then then: a group's last time together and first photo together (GP-12), a friend's now and then. */
   panes: readonly [ThreadPane, ThreadPane];
   messages: readonly ThreadMessage[];
   delivered: boolean;
@@ -54,8 +54,8 @@ export function ChatThread({ party, panes, messages, delivered, onBack, onSendTe
       <div className="flex min-h-0 flex-1 flex-col" style={{ width: s(390), margin: "0 auto" }}>
         <header aria-label={`${party.name} header`} style={{ position: "relative", flex: "none", height: s(232) }}>
           <div style={{ display: "flex", gap: s(2), height: s(172), background: NAVY }}>
-            <ThreadHalf pane={panes[0]} slot="first" name={party.name} onOpenProfile={onOpenProfile} onPickHeader={onPickHeader} />
-            <ThreadHalf pane={panes[1]} slot="last" name={party.name} onOpenProfile={onOpenProfile} onPickHeader={onPickHeader} />
+            <ThreadHalf pane={panes[0]} slot="last" name={party.name} onOpenProfile={onOpenProfile} onPickHeader={onPickHeader} />
+            <ThreadHalf pane={panes[1]} slot="first" name={party.name} onOpenProfile={onOpenProfile} onPickHeader={onPickHeader} />
           </div>
           <div aria-hidden="true" style={{ height: s(7), display: "flex", borderTop: `${s(2)} solid ${NAVY}`, borderBottom: `${s(2)} solid ${NAVY}` }}>
             <span style={{ flex: 1, background: "#C8432B" }} />
