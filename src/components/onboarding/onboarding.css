@@ -1,0 +1,34 @@
+/* Onboarding motion (docs/specs/onboarding.md), from WelcomeLetter.dc.html: transforms and opacity only, each with a
+   Reanimated equivalent. Each class rests at its final pose, so with motion off everything is simply in place. */
+@keyframes wl-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes wl-drop { 0% { opacity: 0; transform: translateY(calc(-60 * var(--s))) scale(0.6); } 100% { opacity: 1; transform: none; } }
+@keyframes wl-ripple { 0% { opacity: 0.9; transform: scale(0.55); } 100% { opacity: 0; transform: scale(1.25); } }
+@keyframes wl-tap { 0%, 100% { transform: translate(0, 0); } 45% { transform: translate(0, calc(-9 * var(--s))); } 60% { transform: translate(0, calc(2 * var(--s))) scale(0.94); } }
+@keyframes wl-hint { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+@keyframes wl-in { 0% { opacity: 0; transform: translateY(calc(160 * var(--s))) scale(0.85) rotate(-4deg); } 65% { opacity: 1; transform: translateY(calc(-8 * var(--s))) scale(1.01) rotate(-2deg); } 100% { transform: rotate(-2deg); } }
+@keyframes wl-bob { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(calc(-6 * var(--s))) rotate(-1deg); } }
+@keyframes wl-letter { 0% { opacity: 0; transform: translateY(calc(240 * var(--s))) scale(0.9); } 100% { opacity: 1; transform: none; } }
+.wl-fade { animation: wl-fade 0.4s ease-out both; }
+.wl-fade-late { animation: wl-fade 0.4s ease-out 0.3s both; }
+.wl-drop { animation: wl-drop 0.5s cubic-bezier(0.3, 1.5, 0.5, 1) 0.6s both; }
+.wl-drop-soon { animation: wl-drop 0.5s cubic-bezier(0.3, 1.5, 0.5, 1) 0.2s both; }
+.wl-ripple { animation: wl-ripple 1.3s ease-out 0.6s infinite; }
+.wl-tap { animation: wl-tap 1.3s ease-in-out 0.6s infinite; }
+.wl-hint { animation: wl-hint 2s ease-in-out infinite; }
+.wl-envelope { transform: rotate(-2deg); animation: wl-in 0.9s cubic-bezier(0.2, 0.8, 0.3, 1) both, wl-bob 3.4s ease-in-out 0.9s infinite; }
+.wl-envelope[data-opening="true"] { animation: none; }
+.wl-letter { animation: wl-letter 0.7s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+@keyframes wl-burst { 0% { opacity: 0; transform: translate(0, 0) scale(0.4); } 25% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(1); } }
+@keyframes wl-pop { 0% { opacity: 0; transform: translateY(calc(-60 * var(--s))) scale(0.6); } 100% { opacity: 1; transform: none; } }
+@keyframes wl-glow { 0%, 100% { opacity: 0.75; } 50% { opacity: 1; } }
+@keyframes wl-card { 0% { opacity: 0; transform: translateY(calc(160 * var(--s))) scale(0.85); } 65% { opacity: 1; transform: translateY(calc(-8 * var(--s))) scale(1.01); } 100% { transform: none; } }
+.wl-burst { opacity: 0; animation: wl-burst 1s cubic-bezier(0.2, 0.7, 0.3, 1) 0.35s both; }
+.wl-pop { animation: wl-pop 0.7s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
+.wl-glow { animation: wl-glow 2s ease-in-out infinite; }
+.wl-invite { animation: wl-card 0.8s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+.wl-scroll { scrollbar-width: none; }
+.wl-scroll::-webkit-scrollbar { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .wl-fade, .wl-fade-late, .wl-drop, .wl-drop-soon, .wl-ripple, .wl-tap, .wl-hint, .wl-envelope, .wl-letter, .wl-burst, .wl-pop, .wl-glow, .wl-invite { animation: none; }
+  .wl-ripple, .wl-burst { opacity: 0; }
+}

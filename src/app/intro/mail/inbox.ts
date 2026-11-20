@@ -17,7 +17,9 @@ export type Report = { letterId: string; personId: string; at: number };
 export type SeenReminder = { id: string; personId: string; day: string; at: number };
 /** A gift you sent someone for their birthday, from anywhere in the app (MAILBOX-12). */
 export type BirthdayGift = { personId: string; day: string };
-export type InboxState = { letters: Letter[]; blocked: string[]; reports: Report[]; seen: SeenReminder[]; birthdayGifts: BirthdayGift[] };
+/** The welcome letter a new person finds in their mailbox (docs/specs/onboarding.md, ONB-1): its day, and whether it's been read. */
+export type Welcome = { at: number; status: "new" | "kept" };
+export type InboxState = { letters: Letter[]; blocked: string[]; reports: Report[]; seen: SeenReminder[]; birthdayGifts: BirthdayGift[]; welcome?: Welcome };
 
 export const emptyInbox: InboxState = { letters: [], blocked: [], reports: [], seen: [], birthdayGifts: [] };
 
@@ -31,7 +33,9 @@ export type InboxAction =
   | { type: "block"; personId: string }
   | { type: "report"; letterId: string; at: number }
   | { type: "seeReminder"; personId: string; day: string; at: number }
-  | { type: "birthdayGift"; personId: string; day: string };
+  | { type: "birthdayGift"; personId: string; day: string }
+  | { type: "welcome"; at: number }
+  | { type: "readWelcome" };
 
 const setStatus = (letters: Letter[], ids: readonly string[], status: LetterStatus) => letters.map((l) => (ids.includes(l.id) ? { ...l, status } : l));
 
@@ -66,8 +70,19 @@ export function inboxReducer(state: InboxState, action: InboxAction): InboxState
       if (hasBirthdayGift(state, action.personId, action.day)) return state;
       return { ...state, birthdayGifts: [...state.birthdayGifts, { personId: action.personId, day: action.day }] };
     }
+    // The welcome letter comes once, and once read it's kept (ONB-1, ONB-6).
+    case "welcome":
+      return state.welcome ? state : { ...state, welcome: { at: action.at, status: "new" } };
+    case "readWelcome":
+      return state.welcome?.status === "new" ? { ...state, welcome: { ...state.welcome, status: "kept" } } : state;
   }
 }
+
+/** Someone with no circles who has never had the welcome letter gets one (ONB-1). */
+export const welcomeDue = (state: InboxState, circles: number) => !state.welcome && circles === 0;
+
+/** The welcome letter is waiting to be read (ONB-3). */
+export const welcomeIsNew = (state: InboxState) => state.welcome?.status === "new";
 
 /** New photos, counted one by one: the mailbox says "3 new photos" even when they share an envelope. */
 export const newCount = (state: InboxState) => state.letters.filter((l) => l.status === "new").length;
@@ -78,10 +93,16 @@ export const newReminders = (upcoming: readonly Upcoming[], state: InboxState) =
 /** You've sent them a gift for this birthday (MAILBOX-12). */
 export const hasBirthdayGift = (state: InboxState, personId: string, day: string) => state.birthdayGifts.some((g) => g.personId === personId && g.day === day);
 
-/** The mailbox's name for screen readers, as designed: new photos, and birthdays coming up. */
-export function mailboxLabel(photos: number, birthdays = 0): string {
+/** The mailbox's name for screen readers, as designed: the welcome letter (ONB-3), new photos, and birthdays coming up. */
+export function mailboxLabel(photos: number, birthdays = 0, welcome = false): string {
   const p = `${photos} new ${photos === 1 ? "photo" : "photos"}`;
   const b = `${birthdays} ${birthdays === 1 ? "birthday" : "birthdays"}`;
+  if (welcome) {
+    const rest = [photos ? p : "", birthdays ? b : ""].filter(Boolean);
+    if (rest.length === 2) return `Your mailbox, a welcome letter, ${rest.join(" and ")}`;
+    if (birthdays) return `Your mailbox, a welcome letter and ${b} coming up`;
+    return rest.length ? `Your mailbox, a welcome letter and ${p}` : "Your mailbox, a welcome letter";
+  }
   if (photos && birthdays) return `Your mailbox, ${p} and ${b}`;
   if (photos) return `Your mailbox, ${p}`;
   if (birthdays) return `Your mailbox, ${b} coming up`;
@@ -105,7 +126,8 @@ export function envelopes(state: InboxState): Envelope[] {
 
 const MONTH = (t: number, withYear: boolean) => new Date(t).toLocaleDateString("en-US", withYear ? { month: "long", year: "numeric" } : { month: "long" }).toLowerCase();
 
-export type KeptGroup = { label: string; letters: Letter[]; reminders: SeenReminder[] };
+/** `welcome`: the read welcome letter belongs to this group, shown before its photos (ONB-6). */
+export type KeptGroup = { label: string; letters: Letter[]; reminders: SeenReminder[]; welcome?: true };
 
 /**
  * Kept photos and seen birthday reminders, newest first, under "this week", then each month ("october"), with the year
@@ -117,6 +139,7 @@ export function keptGroups(state: InboxState, now: number): KeptGroup[] {
   const items = [
     ...state.letters.filter((l) => l.status === "kept").map((l) => ({ at: l.sentAt, letter: l })),
     ...state.seen.map((r) => ({ at: r.at, reminder: r })),
+    ...(state.welcome?.status === "kept" ? [{ at: state.welcome.at, welcome: true as const }] : []),
   ].sort((a, b) => b.at - a.at);
   const groups: KeptGroup[] = [];
   for (const item of items) {
@@ -124,7 +147,8 @@ export function keptGroups(state: InboxState, now: number): KeptGroup[] {
     let g = groups.at(-1);
     if (g?.label !== label) groups.push((g = { label, letters: [], reminders: [] }));
     if ("letter" in item) g.letters.push(item.letter);
-    else g.reminders.push(item.reminder);
+    else if ("reminder" in item) g.reminders.push(item.reminder);
+    else g.welcome = true;
   }
   return groups;
 }

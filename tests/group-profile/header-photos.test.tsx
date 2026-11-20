@@ -77,6 +77,15 @@ describe("the demo's header photos (GP-12)", () => {
     expect(header().textContent).not.toMatch(/Add |oldest photo/);
   });
 
+  it("now comes first: last time together on the left, first photo together on the right, in the thread and on the profile", () => {
+    const before = (a: HTMLElement, b: HTMLElement) => !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+    renderApp();
+    openThread();
+    expect(before(last(header()), first(header()))).toBe(true);
+    toProfile();
+    expect(before(last(profile()), first(profile()))).toBe(true);
+  });
+
   it("the profile shows them too, each a plain photo picker", () => {
     renderApp();
     openThread();

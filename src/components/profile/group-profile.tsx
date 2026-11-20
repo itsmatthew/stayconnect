@@ -45,19 +45,19 @@ export function GroupProfile(props: GroupProfileProps) {
       style={{ background: "linear-gradient(#F6ECCD, #F1E2B8)", fontFamily: KARLA, color: NAVY } as CSSProperties}
     >
       <div style={{ width: s(390), margin: "0 auto", paddingBottom: s(36), display: "flex", flexDirection: "column", gap: s(22) }}>
-        {/* The two header photos (GP-12), as in the thread, but each one a photo picker. */}
+        {/* The two header photos (GP-12), now then then, as in the thread, but each one a photo picker. */}
         <div style={{ display: "flex", gap: s(2), height: s(172), background: NAVY, marginBottom: s(-22) }}>
+          {header.prompt ? (
+            <Prompt text={header.prompt} onPick={onPickPrompt} onDismiss={onDismissPrompt} />
+          ) : (
+            <HeaderHalf slot={header.last} changeLabel="Change last time together" empty={{ title: "Add a photo from the last time you were all together." }} onPick={(f) => onPickHeader("last", f)} />
+          )}
           <HeaderHalf
             slot={header.first}
             changeLabel="Change first photo together"
             empty={{ title: "Add your first photo together", helper: "The oldest photo you can find of this group — the one where it started." }}
             onPick={(f) => onPickHeader("first", f)}
           />
-          {header.prompt ? (
-            <Prompt text={header.prompt} onPick={onPickPrompt} onDismiss={onDismissPrompt} />
-          ) : (
-            <HeaderHalf slot={header.last} changeLabel="Change last time together" empty={{ title: "Add a photo from the last time you were all together." }} onPick={(f) => onPickHeader("last", f)} />
-          )}
         </div>
 
         {/* The tree-colour band with the logo on its seam; back and change-logo sit on the band either side (GP-2). */}

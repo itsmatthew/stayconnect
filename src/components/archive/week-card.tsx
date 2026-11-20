@@ -13,7 +13,7 @@ const RULE = "#C8BC9F";
  */
 export function WeekCard({ week, slots, onPost }: { week: WeekCardView; slots: readonly SlotView[]; onPost: (key: string) => void }) {
   return (
-    <section aria-label="This week" style={{ margin: `${s(14)} ${s(14)} 0`, borderRadius: s(14), background: "#FFFBF0", border: `${s(1.5)} solid ${RULE}`, boxShadow: `0 ${s(3)} ${s(10)} rgba(74,44,20,.12)`, overflow: "hidden" }}>
+    <section aria-label="This week" data-tour="ar-week" style={{ margin: `${s(14)} ${s(14)} 0`, borderRadius: s(14), background: "#FFFBF0", border: `${s(1.5)} solid ${RULE}`, boxShadow: `0 ${s(3)} ${s(10)} rgba(74,44,20,.12)`, overflow: "hidden" }}>
       <div style={{ padding: `${s(12)} ${s(14)} ${s(10)}` }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: s(10) }}>
           <div style={{ display: "flex", flexDirection: "column", gap: s(1) }}>

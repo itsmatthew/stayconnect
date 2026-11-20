@@ -93,6 +93,25 @@ type CircleTreeProps = Omit<TreeShapeProps, "palette" | "children" | "glow"> & {
 };
 
 /** A group's tree with its three memories hung as ornaments. */
+/**
+ * A slot with no circle of its own (HOME-24): the tree's canopy and trunk as a dashed cream outline over a faint wash,
+ * with a "+" in the canopy. It has no ornaments; Home lays a "Start a new circle" button over it.
+ */
+export function OutlineTree({ slot, cx, cy, r, bottom, shadowRy }: { slot: TreeSlot; cx: number; cy: number; r: number; bottom: number; shadowRy: number }) {
+  const top = cy + 0.6 * r;
+  const trunk = `M${cx - 0.14 * r} ${top}C${cx - 0.12 * r} ${bottom - 20} ${cx - 0.2 * r} ${bottom - 8} ${cx - 0.3 * r} ${bottom}H${cx + 0.3 * r}C${cx + 0.2 * r} ${bottom - 8} ${cx + 0.12 * r} ${bottom - 20} ${cx + 0.14 * r} ${top}`;
+  const line = { stroke: "#FFF6DA", strokeWidth: slot === "center" ? 3 : 2.4, strokeDasharray: slot === "center" ? "10 8" : "8 7", strokeLinecap: "round" as const };
+  const plus = 0.16 * r;
+  return (
+    <g data-tree="" data-outline="" data-slot={slot} data-cx={cx}>
+      <ellipse cx={cx} cy={bottom} rx={0.55 * r} ry={shadowRy} fill="#3F5A2A" opacity=".18" />
+      <path d={trunk} fill="rgba(255,246,218,.12)" {...line} />
+      <circle cx={cx} cy={cy} r={r} fill="rgba(255,246,218,.16)" {...line} />
+      <path d={`M${cx - plus} ${cy}H${cx + plus}M${cx} ${cy - plus}V${cy + plus}`} stroke="#FFF6DA" strokeWidth={slot === "center" ? 5 : 4} strokeLinecap="round" opacity=".9" />
+    </g>
+  );
+}
+
 export function CircleTree({ group, slot, defs, ...shape }: CircleTreeProps) {
   const spots = ornamentSpots(slot, shape.cx, shape.cy, shape.r);
   return (

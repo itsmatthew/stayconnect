@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
 import { CAVEAT, FRAUNCES, KARLA, NAVY, s } from "../home/units";
 import { MailPicture } from "./mail-picture";
 import { BirthdayTile } from "./birthday-card";
@@ -10,7 +10,7 @@ import "./mail.css";
  * Nothing new: what you've kept (docs/specs/mailbox.md, MAILBOX-5), from MailOpen.dc.html. A sheet over your tree, kept
  * photos as small polaroids, two across, under "this week" and each month, with seen birthday reminders. Tap one to see it big.
  */
-export function KeptSheet({ groups, onZoom, onReminder, onClose }: { groups: readonly { label: string; items: readonly MailItemView[]; reminders?: readonly BirthdayTileView[] }[]; onZoom: (item: MailItemView) => void; onReminder?: (key: string) => void; onClose: () => void }) {
+export function KeptSheet({ groups, onZoom, onReminder, onClose }: { groups: readonly { label: string; items: readonly MailItemView[]; reminders?: readonly BirthdayTileView[]; lead?: ReactNode }[]; onZoom: (item: MailItemView) => void; onReminder?: (key: string) => void; onClose: () => void }) {
   const titleId = useId();
   return (
     <div role="dialog" aria-modal="true" aria-labelledby={titleId} className="fixed inset-0 z-50 overflow-hidden [--s:min(calc(100vw/390),calc(100dvh/844))]" style={{ fontFamily: KARLA, color: NAVY }}>
@@ -41,6 +41,8 @@ export function KeptSheet({ groups, onZoom, onReminder, onClose }: { groups: rea
             <section key={g.label}>
               <h3 style={{ display: "block", margin: `${s(gi ? 22 : 6)} ${s(4)} ${s(10)}`, fontSize: s(11), fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase", color: "#8E2A1E" }}>{g.label}</h3>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: s(14) }}>
+                {/* The read welcome letter comes before the group's photos (docs/specs/onboarding.md, ONB-6). */}
+                {g.lead}
                 {g.items.map((item, i) => (
                   <button
                     key={item.id}

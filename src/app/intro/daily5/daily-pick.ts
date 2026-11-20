@@ -17,15 +17,15 @@ export function localDateKey(d: Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-const isLeap = (y: number) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+/** How old a photo must be for the day's five (D5-5). */
+export const MIN_AGE_MONTHS = 3;
 
-/** On or before the same calendar day one year ago (Feb 29 → Feb 28 last year). */
+/** On or before the same calendar day three months ago, or that month's last day when it has no such day (May 31 → Feb 28). */
 export function isEligible(takenAt: number, today: Date): boolean {
-  const y = today.getFullYear() - 1;
-  const m = today.getMonth();
-  let d = today.getDate();
-  if (m === 1 && d === 29 && !isLeap(y)) d = 28;
-  return takenAt < new Date(y, m, d + 1).getTime();
+  const first = new Date(today.getFullYear(), today.getMonth() - MIN_AGE_MONTHS, 1);
+  const lastDay = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
+  const d = Math.min(today.getDate(), lastDay);
+  return takenAt < new Date(first.getFullYear(), first.getMonth(), d + 1).getTime();
 }
 
 // cyrb53-style string hash → mulberry32 PRNG: small, fast, stable everywhere.

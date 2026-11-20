@@ -1,8 +1,11 @@
 import { useState } from "react";
+import { HeaderActions, Wordmark } from "../home/header-actions";
 import type { NavProps } from "../home/main-nav";
 import { FRAUNCES, NAVY, s } from "../home/units";
 import { TabFrame } from "../shell/tab-frame";
 import { GiftShelf, type ShelfGift } from "./gift-shelf";
+import { MemoriesRow, type SelfMemory } from "./memories-row";
+import { ProfileHeader, type ProfileHeaderProps } from "./profile-header";
 import { SixtyFiveGrid } from "./sixty-five-grid";
 import { TileViewer } from "./tile-viewer";
 import type { MeTile } from "./types";
@@ -24,30 +27,52 @@ type MeScreenProps = {
   shelf?: { gifts: readonly ShelfGift[]; onOpenGift: (id: string) => void; landing?: string };
   /** "Who can drop in my mailbox" (docs/specs/mail.md, MAIL-10). */
   mailbox?: { options: readonly { id: string; label: string }[]; value: string; onChange: (id: string) => void };
+  /** Your profile above the posts (docs/specs/me.md, ME-5 to ME-8). */
+  profile?: ProfileHeaderProps & { memories: readonly [SelfMemory, SelfMemory, SelfMemory]; onOpenMemory: (index: number) => void };
 };
 
 /** The pill's look, 32 tall as designed; the button around it is 44 to tap. */
 const pill = { width: "100%", height: s(32), boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "center", gap: s(5), borderRadius: s(16), border: `${s(2)} solid ${NAVY}`, fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 700, fontSize: s(14) } as const;
 const pillButton = { flex: 1, minHeight: 44, padding: 0, border: 0, background: "none", display: "flex", alignItems: "center", cursor: "pointer" } as const;
 
-/** Me (docs/specs/me.md): the posts / year / gifts row, then your 65 for that year. Profile and bio come later (TODO). */
-export function MeScreen({ year, years, onYearChange, tiles, nav, onSendGift, findMe, mailbox, initialView = "posts", shelf }: MeScreenProps) {
+/** Me (docs/specs/me.md): your profile, the posts / year / gifts row, then your 65 for that year. */
+export function MeScreen({ year, years, onYearChange, tiles, nav, onSendGift, findMe, mailbox, initialView = "posts", shelf, profile }: MeScreenProps) {
   const [view, setView] = useState<"posts" | "gifts">(initialView);
   const [openKey, setOpenKey] = useState<string | null>(null);
   const open = tiles.find((t) => t.key === openKey);
   return (
     <TabFrame nav={nav}>
-      <h1 style={{ margin: 0, padding: `${s(44)} ${s(20)} 0`, fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(28), letterSpacing: s(-0.5) }}>Me</h1>
+      {/* Phones: the wordmark and its actions, as designed; wide screens have them in the frame. The page is still named Me. */}
+      <div className="flex items-center justify-between md:hidden" style={{ padding: `${s(44)} ${s(20)} 0` }}>
+        <Wordmark size={28} ink={NAVY} />
+        <HeaderActions color={NAVY} />
+      </div>
+      <h1 style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clipPath: "inset(50%)", whiteSpace: "nowrap" }}>Me</h1>
+      {profile && (
+        <>
+          <ProfileHeader {...profile} />
+          <MemoriesRow memories={profile.memories} onOpen={profile.onOpenMemory} />
+        </>
+      )}
+      <div data-tour="me-year">
       <div style={{ display: "flex", gap: s(8), padding: `${s(16)} ${s(14)} ${s(12)}` }}>
         <button type="button" aria-current={view === "posts" ? "page" : undefined} onClick={() => setView("posts")} style={pillButton}>
           <span style={{ ...pill, background: "#B43A2A", color: "#FFF6DA", opacity: view === "posts" ? 1 : 0.92, boxShadow: view === "posts" ? `0 ${s(3)} 0 ${NAVY}` : "none" }}>posts</span>
         </button>
         <YearSelect year={year} years={years} onChange={onYearChange} />
         <button type="button" aria-current={view === "gifts" ? "page" : undefined} onClick={() => setView("gifts")} style={pillButton}>
-          <span style={{ ...pill, background: "#4F7A36", color: "#FFF6DA", boxShadow: view === "gifts" ? `0 ${s(3)} 0 ${NAVY}` : "none" }}>gifts</span>
+          <span style={{ ...pill, background: "#4F7A36", color: "#FFF6DA", boxShadow: view === "gifts" ? `0 ${s(3)} 0 ${NAVY}` : "none" }}>
+            gifts
+            {shelf && (
+              <span aria-hidden="true" data-gift-count="" style={{ minWidth: s(16), height: s(16), boxSizing: "border-box", padding: `0 ${s(4)}`, borderRadius: s(8), background: "#FFF6DA", color: NAVY, fontFamily: "var(--font-karla), sans-serif", fontStyle: "normal", fontWeight: 800, fontSize: s(10.5), lineHeight: s(16), textAlign: "center" }}>
+                {shelf.gifts.length}
+              </span>
+            )}
+          </span>
         </button>
       </div>
       {view === "posts" ? <SixtyFiveGrid year={year} tiles={tiles} onOpen={setOpenKey} /> : <GiftShelf onSendGift={onSendGift} gifts={shelf?.gifts} onOpenGift={shelf?.onOpenGift} landing={shelf?.landing} />}
+      </div>
       {findMe && <FindMeRow {...findMe} />}
       {mailbox && <MailboxRow {...mailbox} />}
       {open?.photo && <TileViewer tile={{ ...open, photo: open.photo }} onClose={() => setOpenKey(null)} />}

@@ -201,14 +201,14 @@ export function MessagesClient({ chat, dispatch, now, store, groups, friends, re
   );
 }
 
-/** A circle's header is its first photo together and last time together (GP-12); a friend's, placeholder people now and then. */
+/** Now, then: a circle's header is its last time together, then its first photo together (GP-12); a friend's, placeholder people now and then. */
 function headerPanes(party: Party, groups: Map<string, CircleGroup>): readonly [ThreadPane, ThreadPane] {
   const g = party.kind === "group" ? groups.get(party.id.slice("group:".length)) : undefined;
   if (g) {
     const { first, last } = headerSlots(g);
     return [
-      { ...first.pane, empty: !first.set },
       { ...last.pane, empty: !last.set },
+      { ...first.pane, empty: !first.set },
     ];
   }
   return [

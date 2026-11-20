@@ -16,7 +16,7 @@ import { upcomingBirthdays } from "./mail/birthdays";
 import { shelf as shelfOf } from "./gifts/received";
 import { testGift } from "./gifts/received-client";
 import { activity, isLit, suggestion } from "./circle/suggestions";
-import { openingCenter, rotate, visibleAround } from "./circle-carousel";
+import { openingCenter, rotate, slotsAround } from "./circle-carousel";
 import { RenameSheetClient } from "./group-names/rename-sheet-client";
 import { emptyInbox, type InboxAction, type InboxState, type MailSender } from "./mail/inbox";
 import { useMailbox } from "./mail/mailbox-client";
@@ -45,7 +45,11 @@ type HomeClientProps = {
   /** Group id → "46 days · lake weekend" (docs/specs/home.md, HOME-19). */
   countdowns?: Readonly<Record<string, string>>;
   /** Your mailbox, by your circle's tree (docs/specs/mailbox.md). */
-  mail?: { state: InboxState; dispatch: (a: InboxAction) => void; recipientName?: string };
+  mail?: { state: InboxState; dispatch: (a: InboxAction) => void; recipientName?: string; onStartCircle?: () => void; letterAgain?: number };
+  /** Open on this circle (docs/specs/onboarding.md, ONB-12). */
+  focus?: string;
+  /** A tap on an outline tree (HOME-24). */
+  onStartCircle?: () => void;
   /** The gift maker, for "Schedule a gift" on a birthday in your mailbox (MAILBOX-12). Birthdays come with it. */
   giftMaker?: GiftDeps;
 };
@@ -74,6 +78,8 @@ export function HomeClient({
   countdowns = {},
   mail = noMail,
   giftMaker = noGiftDeps,
+  focus,
+  onStartCircle,
 }: HomeClientProps) {
   // Your circle is everyone you've placed or can place: the dev control sends as some of them (MAILBOX-8).
   const circleSenders: MailSender[] = friends.map((f) => ({ id: f.id, name: f.name, look: f.look, inCircle: true }));
@@ -95,7 +101,10 @@ export function HomeClient({
     },
   });
   const [testGifts, setTestGifts] = useState(0);
-  const [center, setCenter] = useState(() => openingCenter(groups));
+  const [center, setCenter] = useState(() => {
+    const at = focus ? groups.findIndex((g) => g.id === focus) : -1;
+    return at >= 0 ? at : openingCenter(groups);
+  });
   const [sheet, setSheet] = useState<OpenSheet | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [view, setView] = useState<CirclesView>("circles");
@@ -120,6 +129,7 @@ export function HomeClient({
       <>
       <CircleScreen
         mailbox={mailbox.tree}
+        mailHint={mailbox.welcomeHint}
         people={people}
         shelf={{ count: shelfOf(gifts, dayKey(now())).length, onOpen: giftActions.onShowShelf }}
         crowded={RINGS.filter((r) => overGuide(r, placed.filter((p) => p.ring === r).length))}
@@ -154,15 +164,16 @@ export function HomeClient({
   }
 
   // HOME-12: no circles yet.
-  if (!groups.length) return <HomeEmpty nav={nav} onDaily5={() => nav.onNavigate?.("Daily 5")} view={view} onViewChange={setView} />;
+  if (!groups.length) return <HomeEmpty nav={nav} onDaily5={() => nav.onNavigate?.("Daily 5")} view={view} onViewChange={setView} startHere={mailbox.welcomeHint} />;
 
   const open = sheet && groups.find((g) => g.id === sheet.groupId);
   const renamingGroup = groups.find((g) => g.id === renaming);
   return (
     <>
       <HomeScreen
-        phone={visibleAround(groups, center, 1) as [CircleGroup, CircleGroup, CircleGroup]}
-        wide={visibleAround(groups, center, 2) as [CircleGroup, CircleGroup, CircleGroup, CircleGroup, CircleGroup]}
+        phone={slotsAround(groups, center, 1) as unknown as [CircleGroup | null, CircleGroup, CircleGroup | null]}
+        wide={slotsAround(groups, center, 2) as unknown as [CircleGroup | null, CircleGroup | null, CircleGroup, CircleGroup | null, CircleGroup | null]}
+        onStartCircle={onStartCircle}
         view={view}
         onViewChange={setView}
         onPrevious={() => turn(-1)}

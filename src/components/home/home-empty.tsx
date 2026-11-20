@@ -2,16 +2,33 @@ import { CircleToggle, type CirclesView } from "./circle-toggle";
 import { FRAUNCES, NAVY, s } from "./units";
 import type { NavProps } from "./main-nav";
 import { TabFrame } from "../shell/tab-frame";
+import { TapHint } from "../onboarding/tap-hint";
 
-type HomeEmptyProps = { nav: NavProps; onDaily5: () => void; view: CirclesView; onViewChange: (v: CirclesView) => void };
+type HomeEmptyProps = {
+  nav: NavProps;
+  onDaily5: () => void;
+  view: CirclesView;
+  onViewChange: (v: CirclesView) => void;
+  /** A welcome letter is waiting: point to your circle (docs/specs/onboarding.md, ONB-2). */
+  startHere?: boolean;
+};
 
 /** Home with no circles yet (docs/specs/home.md, HOME-12): one young sapling, and a way to send a first memory. The toggle still leads to Your circle. */
-export function HomeEmpty({ nav, onDaily5, view, onViewChange }: HomeEmptyProps) {
+export function HomeEmpty({ nav, onDaily5, view, onViewChange, startHere = false }: HomeEmptyProps) {
   return (
     <TabFrame nav={nav}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: `${s(24)} ${s(28)} ${s(32)}`, textAlign: "center" }}>
         <CircleToggle value={view} onChange={onViewChange} />
-        <div style={{ height: s(48) }} />
+        {startHere ? (
+          <div style={{ position: "relative", height: s(48), width: "100%" }}>
+            {/* Under the toggle's "your circle" half, its arrow pointing up at it. */}
+            <TapHint title="Start here" style={{ position: "absolute", left: "50%", top: s(10), zIndex: 2, translate: `${s(-6)} 0` }}>
+              Tap <b>your circle</b> to see your tree.
+            </TapHint>
+          </div>
+        ) : (
+          <div style={{ height: s(48) }} />
+        )}
         <Sapling />
         <p style={{ margin: `${s(22)} 0 0`, fontFamily: FRAUNCES, fontWeight: 700, fontSize: s(20), lineHeight: 1.3, letterSpacing: s(-0.2) }}>
           Your circles grow when someone sends you a memory — or send one first

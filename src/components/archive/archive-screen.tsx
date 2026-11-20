@@ -47,7 +47,7 @@ export function ArchiveScreen({ week, slots, posts, onPost, onMessage, picker, o
       {/* The design's double rule under the title. */}
       <div aria-hidden="true" style={{ margin: `${s(6)} ${s(14)} 0`, height: s(5), borderTop: `${s(1.5)} solid ${NAVY}`, borderBottom: `${s(1.5)} solid ${NAVY}` }} />
       <WeekCard week={week} slots={slots} onPost={onPost} />
-      <section aria-label="Feed" style={{ marginTop: s(16), paddingBottom: s(28) }}>
+      <section aria-label="Feed" data-tour="ar-feed" style={{ marginTop: s(16), paddingBottom: s(28) }}>
         {!posts.length && <p style={{ margin: `${s(24)} ${s(24)}`, fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 500, fontSize: s(16), lineHeight: 1.4, color: "#5C5442", textAlign: "center" }}>Your circles&apos; photos will show here.</p>}
         {posts.slice(0, shown).map((post) => (
           <FeedPost key={post.id} post={post} onMessage={() => onMessage(post.id)} />

@@ -8,3 +8,4 @@ Mailbox drops and your mailbox (specs: `docs/specs/mail.md`, `docs/specs/mailbox
 - Drops are free: never route them through payment.
 - Birthdays (MAILBOX-11 to 13): rules in `birthdays.ts` (month and day only, never a year); `useMailbox` shows reminders before envelopes and opens the gift maker it's handed. A birthday gift is noted from anywhere through `GiftDeps.onSentGift`. TODO(server/onboarding): birthdays will be asked when people join.
 - Your mailbox never tells a sender anything: not opened, kept, removed, blocked or reported. Keep it that way.
+- The welcome letter (`docs/specs/onboarding.md`, ONB-1 to ONB-6) is mail too: `welcome` on the inbox, new until opened, then kept. It comes before birthdays and photos.
