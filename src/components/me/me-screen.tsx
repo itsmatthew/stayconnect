@@ -25,6 +25,8 @@ type MeScreenProps = {
   initialView?: "posts" | "gifts";
   /** Gifts on your shelf, newest first, opening one big, and one just landing (GIFT-21, GIFT-23). */
   shelf?: { gifts: readonly ShelfGift[]; onOpenGift: (id: string) => void; landing?: string };
+  /** Opens Nudges & check-ins (docs/specs/nudges.md, NUDGE-1). */
+  onNudges?: () => void;
   /** "Who can drop in my mailbox" (docs/specs/mail.md, MAIL-10). */
   mailbox?: { options: readonly { id: string; label: string }[]; value: string; onChange: (id: string) => void };
   /** Your profile above the posts (docs/specs/me.md, ME-5 to ME-8). */
@@ -36,7 +38,7 @@ const pill = { width: "100%", height: s(32), boxSizing: "border-box", display: "
 const pillButton = { flex: 1, minHeight: 44, padding: 0, border: 0, background: "none", display: "flex", alignItems: "center", cursor: "pointer" } as const;
 
 /** Me (docs/specs/me.md): your profile, the posts / year / gifts row, then your 65 for that year. */
-export function MeScreen({ year, years, onYearChange, tiles, nav, onSendGift, findMe, mailbox, initialView = "posts", shelf, profile }: MeScreenProps) {
+export function MeScreen({ year, years, onYearChange, tiles, nav, onSendGift, findMe, mailbox, initialView = "posts", shelf, profile, onNudges }: MeScreenProps) {
   const [view, setView] = useState<"posts" | "gifts">(initialView);
   const [openKey, setOpenKey] = useState<string | null>(null);
   const open = tiles.find((t) => t.key === openKey);
@@ -73,10 +75,26 @@ export function MeScreen({ year, years, onYearChange, tiles, nav, onSendGift, fi
       </div>
       {view === "posts" ? <SixtyFiveGrid year={year} tiles={tiles} onOpen={setOpenKey} /> : <GiftShelf onSendGift={onSendGift} gifts={shelf?.gifts} onOpenGift={shelf?.onOpenGift} landing={shelf?.landing} />}
       </div>
+      {onNudges && <NudgesRow onOpen={onNudges} />}
       {findMe && <FindMeRow {...findMe} />}
       {mailbox && <MailboxRow {...mailbox} />}
       {open?.photo && <TileViewer tile={{ ...open, photo: open.photo }} onClose={() => setOpenKey(null)} />}
     </TabFrame>
+  );
+}
+
+/** The way into Nudges & check-ins (docs/specs/nudges.md, NUDGE-1). The reference draws the screen, not the way in. */
+function NudgesRow({ onOpen }: { onOpen: () => void }) {
+  return (
+    <button type="button" onClick={onOpen} style={{ margin: `${s(18)} ${s(14)} 0`, width: `calc(100% - ${s(28)})`, minHeight: 44, padding: `${s(10)} 0`, border: 0, borderBottom: `${s(1.5)} dotted #D8C794`, background: "none", display: "flex", alignItems: "center", justifyContent: "space-between", gap: s(12), color: NAVY, textAlign: "left", cursor: "pointer" }}>
+      <span style={{ display: "flex", flexDirection: "column", gap: s(2) }}>
+        <span style={{ fontSize: s(13.5), fontWeight: 800 }}>Nudges &amp; check-ins</span>
+        <span style={{ fontSize: s(12), fontWeight: 500, color: "#5C5442" }}>Your check-in people, Sunday check-in, quiet hours.</span>
+      </span>
+      <svg width={s(16)} height={s(16)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M9 5l7 7-7 7" />
+      </svg>
+    </button>
   );
 }
 

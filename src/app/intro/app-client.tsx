@@ -66,6 +66,10 @@ import { useMyCircles } from "./onboarding/use-my-circles";
 import { recipientSections } from "./parties";
 import { captureDate, cropSquare, downscale, type CropArea } from "./photo-file";
 import { useBrowserFolders } from "./daily5/browser-folders";
+import { localNudges } from "./nudges/local-nudges";
+import { NudgesHost, NudgesSettingsClient } from "./nudges/nudges-client";
+import type { NudgeStore } from "./nudges/state";
+import { useNudges } from "./nudges/use-nudges";
 import type { FolderAccess } from "./daily5/folders";
 import { activeGoal, countdownTag } from "./profile/goals";
 import { useGoals } from "./profile/use-goals";
@@ -116,6 +120,8 @@ type AppClientProps = {
   tourDelayMs?: number;
   /** Your profile's text on Me (docs/specs/me.md, ME-6 to ME-8). TODO(server): a fake. */
   profile?: (storageSuffix: string) => ProfileStore;
+  /** Nudges & check-ins' settings and log (docs/specs/nudges.md, NUDGE-7). */
+  nudgeStore?: (storageSuffix: string) => NudgeStore;
   /** The `invite=` an invite link opened the app with (ONB-19): read once, cleared once handled. Defaults to the address bar. */
   inviteLink?: InviteLink;
 };
@@ -202,6 +208,7 @@ export function AppClient({
   circleInvites = () => localCircleInvites(typeof location === "undefined" ? "" : location.origin),
   tourDelayMs = TOUR_DELAY_MS,
   profile = localProfile,
+  nudgeStore = localNudges,
   inviteLink = addressInvite,
 }: AppClientProps) {
   const [tab, setTab] = useState<NavLabel>(initialTab);
@@ -292,6 +299,10 @@ export function AppClient({
   }, [joining, addCircle, inboxDispatch, now]);
   const [inviteService] = useState(circleInvites);
   const [profileStore] = useState(() => profile(data.storageSuffix));
+  const [nudgesSaved] = useState(() => nudgeStore(data.storageSuffix));
+  const nudges = useNudges(nudgesSaved);
+  const [nudgeSettings, setNudgeSettings] = useState(false);
+  const [checkInNow, setCheckInNow] = useState(0);
   /** A thread for Messages to open on arrival (CIRCLE-6). */
   const [openThread, setOpenThread] = useState<string | null>(null);
 
@@ -411,6 +422,34 @@ export function AppClient({
         />
       )}
       <TourClient state={tour} dispatch={(a) => setTour((s) => tourReducer(s, a))} onNavigate={navigate} />
+      {nudgeSettings && (
+        <NudgesSettingsClient
+          deps={{ state: nudges.state, dispatch: nudges.dispatch, friends: viewerData.friends, placements: circle.placements }}
+          onCheckInNow={() => {
+            setNudgeSettings(false);
+            setCheckInNow((n) => n + 1);
+          }}
+          onBack={() => setNudgeSettings(false)}
+        />
+      )}
+      <NudgesHost
+        checkInNow={checkInNow}
+        onOpenSettings={() => setNudgeSettings(true)}
+        deps={{
+          ...nudges,
+          now,
+          friends: viewerData.friends,
+          placements: circle.placements,
+          chat,
+          chatDispatch: dispatch,
+          groups: homeGroups,
+          photos: store,
+          decode,
+          share: shareService,
+          // One thing at a time: only on Circles, once the intro is over and nothing else is up (NUDGE-8).
+          free: tab === "Circles" && shown && !popups.screen && !tour && !tourDue && !starting && !joining && !nudgeSettings,
+        }}
+      />
     </>
   );
 
@@ -485,7 +524,7 @@ export function AppClient({
         />
       );
     case "Me":
-      return <MeClient data={viewerData} now={now} store={archive} nav={nav} gifts={giftDeps} findMe={findMeSetting} mailboxSetting={mailboxFrom} received={gifts.list} startOnShelf={meOnShelf} landing={landing} profile={{ store: profileStore, photos: profilePhotos }} />;
+      return <MeClient data={viewerData} now={now} store={archive} nav={nav} gifts={giftDeps} findMe={findMeSetting} mailboxSetting={mailboxFrom} received={gifts.list} startOnShelf={meOnShelf} landing={landing} profile={{ store: profileStore, photos: profilePhotos }} onNudges={() => setNudgeSettings(true)} />;
   }
   }
 }
