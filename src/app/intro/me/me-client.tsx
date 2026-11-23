@@ -58,6 +58,8 @@ type MeClientProps = {
   landing?: string;
   /** Your profile's text and photos (docs/specs/me.md, ME-5 to ME-8). */
   profile?: { store: ProfileStore; photos: ProfilePhotos };
+  /** Opens Nudges & check-ins (docs/specs/nudges.md, NUDGE-1). */
+  onNudges?: () => void;
 };
 
 const MAILBOX_OPTIONS: readonly { id: WhoCanDrop; label: string }[] = [
@@ -67,7 +69,7 @@ const MAILBOX_OPTIONS: readonly { id: WhoCanDrop; label: string }[] = [
 ];
 
 /** Your own 65 for the chosen year (docs/specs/me.md). Other people's posts never fill your slots. */
-export function MeClient({ data, now, store, nav, gifts, findMe, mailboxSetting, received = [], startOnShelf = false, landing, profile }: MeClientProps) {
+export function MeClient({ data, now, store, nav, gifts, findMe, mailboxSetting, received = [], startOnShelf = false, landing, profile, onNudges }: MeClientProps) {
   const header = useProfileHeader(profile, data.senderName, now);
   const [looking, setLooking] = useState<string | null>(null);
   const lookingAt = looking ? received.find((g) => g.id === looking) : undefined;
@@ -90,7 +92,7 @@ export function MeClient({ data, now, store, nav, gifts, findMe, mailboxSetting,
 
   return (
     <>
-      <MeScreen year={year} years={years} onYearChange={setYear} tiles={tiles} nav={nav} onSendGift={() => void gift.open()} findMe={{ on: findable, onChange: setFindable }} mailbox={{ options: MAILBOX_OPTIONS, value: mailboxFrom, onChange: (id) => isWhoCanDrop(id) && setMailboxFrom(id) }} initialView={startOnShelf ? "gifts" : "posts"} shelf={{ gifts: shelfGifts(received, data.senderName, dayKey(now()), shelfUrls), onOpenGift: setLooking, landing }} profile={header.props} />
+      <MeScreen year={year} years={years} onYearChange={setYear} tiles={tiles} nav={nav} onSendGift={() => void gift.open()} findMe={{ on: findable, onChange: setFindable }} mailbox={{ options: MAILBOX_OPTIONS, value: mailboxFrom, onChange: (id) => isWhoCanDrop(id) && setMailboxFrom(id) }} initialView={startOnShelf ? "gifts" : "posts"} shelf={{ gifts: shelfGifts(received, data.senderName, dayKey(now()), shelfUrls), onOpenGift: setLooking, landing }} profile={header.props} onNudges={onNudges} />
       {header.sheet}
       {lookingAt && <ShelfGiftScreen gift={lookingAt} viewerName={data.senderName} urls={shelfUrls} onClose={() => setLooking(null)} />}
       {gift.maker}

@@ -19,7 +19,7 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-type Shared = { url: string; text: string };
+type Shared = { url?: string; text: string };
 const renderApp = ({ data = emptyData, answer = "shared" as Awaited<ReturnType<Share["share"]>> } = {}) => {
   const id = ++n;
   const shared: Shared[] = [];

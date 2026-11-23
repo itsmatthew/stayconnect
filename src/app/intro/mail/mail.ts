@@ -30,5 +30,6 @@ export interface Invites {
 
 /** The system share sheet: the Web Share API on the web, React Native's Share on mobile. */
 export interface Share {
-  share(req: { url: string; text: string }): Promise<"shared" | "copied" | "cancelled">;
+  /** `url` may be left out to share just the text (a check-in's message, docs/specs/nudges.md, NUDGE-15). */
+  share(req: { url?: string; text: string }): Promise<"shared" | "copied" | "cancelled">;
 }

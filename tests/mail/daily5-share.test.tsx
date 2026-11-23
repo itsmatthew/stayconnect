@@ -29,7 +29,7 @@ const seed = async () => {
   for (let i = 0; i < 6; i++) await store.add({ pool: "mine", fileKey: `m${i}`, takenAt: OLD + i, image: new Blob([`m${i}`]) });
   store.close();
 };
-const shared: { url: string }[] = [];
+const shared: { url?: string }[] = [];
 const share: Share = { share: async (req) => (shared.push(req), "shared") };
 const renderTab = (tab: "Daily 5" | "Me", data: AppData = demoData) =>
   render(
