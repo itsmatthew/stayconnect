@@ -88,7 +88,7 @@ export function MailViewer(p: MailViewerProps) {
                   <Polaroid item={item} onZoom={() => p.onZoom(item)} onMenu={() => p.onMenu(item)} />
                   <div className="mb-late" style={{ position: "absolute", left: s(70), top: s(436), width: s(250), display: "flex", flexDirection: "column", alignItems: "center", gap: s(8) }}>
                     {env.items.length > 1 && (
-                      <span style={{ fontSize: s(12.5), fontWeight: 800, color: "#E8D9A8" }}>
+                      <span style={{ fontSize: s(12), fontWeight: 800, color: "#E8D9A8" }}>
                         photo {p.photoIndex + 1} of {env.items.length}
                       </span>
                     )}
@@ -116,7 +116,7 @@ export function MailViewer(p: MailViewerProps) {
                 <span key={e.key} style={{ width: s(9), height: s(9), borderRadius: "50%", background: i === p.index ? CREAM : "rgba(255,246,218,.3)" }} />
               ))}
             </div>
-            <span style={{ fontSize: s(12.5), fontWeight: 800, color: "#E8D9A8" }}>
+            <span style={{ fontSize: s(12), fontWeight: 800, color: "#E8D9A8" }}>
               {p.index + 1} of {p.pieces.length}
             </span>
           </div>

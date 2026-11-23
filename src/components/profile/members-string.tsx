@@ -53,7 +53,7 @@ export function MembersString({ members }: { members: readonly ProfileMember[] }
                   boxShadow: `0 0 0 ${s(2.5)} #F6ECCD, 0 0 0 ${s(5.5)} ${look.ring}, 0 ${s(6)} ${s(8)} rgba(74,44,20,.3)`,
                 }}
               />
-              <span style={{ marginTop: s(9), fontFamily: FRAUNCES, fontWeight: 700, fontSize: s(13), lineHeight: s(15) }}>{m.name}</span>
+              <span style={{ marginTop: s(9), fontFamily: FRAUNCES, fontWeight: 700, fontSize: s(13.5), lineHeight: s(15) }}>{m.name}</span>
             </>
           );
           const column: CSSProperties = { display: "flex", flexDirection: "column", alignItems: "center", width: "100%", padding: 0, border: 0, background: "none", color: NAVY, font: "inherit" };

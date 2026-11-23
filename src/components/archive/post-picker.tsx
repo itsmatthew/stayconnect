@@ -33,9 +33,9 @@ export function PostPicker({ picker, onPick, onPost, onCancel }: PostPickerProps
             <h2 id={titleId} style={{ margin: 0, fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(21), letterSpacing: s(-0.3) }}>
               {picker.title}
             </h2>
-            <div style={{ marginTop: s(4), fontWeight: 800, fontSize: s(13), color: "#A8331F" }}>{picker.range}</div>
+            <div style={{ marginTop: s(4), fontWeight: 800, fontSize: s(13.5), color: "#B43A2A" }}>{picker.range}</div>
           </div>
-          <button type="button" onClick={onCancel} style={{ border: 0, background: "none", padding: s(6), color: NAVY, fontWeight: 700, fontSize: s(14), cursor: "pointer" }}>
+          <button type="button" onClick={onCancel} style={{ border: 0, background: "none", padding: s(6), color: NAVY, fontWeight: 700, fontSize: s(13.5), cursor: "pointer" }}>
             Cancel
           </button>
         </div>
@@ -46,7 +46,7 @@ export function PostPicker({ picker, onPick, onPost, onCancel }: PostPickerProps
         ) : (
           <label
             htmlFor={inputId}
-            style={{ ...button, height: s(120), borderRadius: s(16), borderStyle: "dashed", background: "#FFF8EC", display: "flex", alignItems: "center", justifyContent: "center" }}
+            style={{ ...button, height: s(120), borderRadius: s(16), borderStyle: "dashed", background: "#FFFBF0", display: "flex", alignItems: "center", justifyContent: "center" }}
           >
             Choose a photo
           </label>
@@ -65,7 +65,7 @@ export function PostPicker({ picker, onPick, onPost, onCancel }: PostPickerProps
         />
 
         {picker.error && (
-          <p role="alert" style={{ margin: 0, padding: `${s(10)} ${s(12)}`, borderRadius: s(12), background: "#FBE3D8", color: "#8E2A1A", fontWeight: 700, fontSize: s(14), lineHeight: 1.35 }}>
+          <p role="alert" style={{ margin: 0, padding: `${s(10)} ${s(12)}`, borderRadius: s(12), background: "#FBE3D8", color: "#8E2A1A", fontWeight: 700, fontSize: s(13.5), lineHeight: 1.35 }}>
             {picker.error}
           </p>
         )}
@@ -80,11 +80,11 @@ export function PostPicker({ picker, onPick, onPost, onCancel }: PostPickerProps
               value={caption}
               enterKeyHint="done"
               onChange={(e) => setCaption(e.target.value)}
-              style={{ height: s(42), boxSizing: "border-box", padding: `0 ${s(14)}`, borderRadius: s(21), border: `${s(2)} solid ${NAVY}`, background: "#FFF8EC", font: "inherit", fontFamily: FRAUNCES, fontStyle: "italic", fontSize: s(15), color: NAVY, outline: 0 }}
+              style={{ height: s(42), boxSizing: "border-box", padding: `0 ${s(14)}`, borderRadius: s(21), border: `${s(2)} solid ${NAVY}`, background: "#FFFBF0", font: "inherit", fontFamily: FRAUNCES, fontStyle: "italic", fontSize: s(15), color: NAVY, outline: 0 }}
             />
-            <p style={{ margin: 0, fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 600, fontSize: s(14) }}>Once it&apos;s posted, it can&apos;t be replaced or edited.</p>
+            <p style={{ margin: 0, fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 600, fontSize: s(13.5) }}>Once it&apos;s posted, it can&apos;t be replaced or edited.</p>
             <div style={{ display: "flex", gap: s(10) }}>
-              <label htmlFor={inputId} style={{ ...button, flex: 1, background: "#FFF8EC", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <label htmlFor={inputId} style={{ ...button, flex: 1, background: "#FFFBF0", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 Pick another
               </label>
               <button type="button" disabled={picker.busy} onClick={() => onPost(caption)} style={{ ...button, flex: 1, background: "#B43A2A", color: "#FFF6DA", boxShadow: `0 ${s(3)} 0 ${NAVY}` }}>

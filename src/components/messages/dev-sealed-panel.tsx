@@ -14,7 +14,7 @@ export function DevSealedPanel({ sealed, onSimulateReply }: { sealed: readonly S
           <span>
             {x.name} · {x.count} sealed
           </span>
-          <button type="button" aria-label={`Simulate reply in ${x.name}`} onClick={() => onSimulateReply(x.conversationId)} style={{ font: "inherit", padding: `${s(3)} ${s(10)}`, borderRadius: s(12), border: "1px solid #2B3350", background: "#FFF8EC", cursor: "pointer" }}>
+          <button type="button" aria-label={`Simulate reply in ${x.name}`} onClick={() => onSimulateReply(x.conversationId)} style={{ font: "inherit", padding: `${s(3)} ${s(10)}`, borderRadius: s(12), border: "1px solid #2B3350", background: "#FFFBF0", cursor: "pointer" }}>
             simulate reply
           </button>
         </div>

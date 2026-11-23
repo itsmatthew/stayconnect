@@ -5,7 +5,7 @@ import { YOU } from "./members-string";
 import { PhotoFill } from "./photo-grid";
 import type { NextGoal, ThenTile } from "./types";
 
-const kicker: CSSProperties = { fontSize: s(10), fontWeight: 800, letterSpacing: s(1.1), textTransform: "uppercase" };
+const kicker: CSSProperties = { fontSize: s(10.5), fontWeight: 800, letterSpacing: s(1.1), textTransform: "uppercase" };
 const pillButton: CSSProperties = {
   height: s(44),
   padding: `0 ${s(16)}`,
@@ -14,7 +14,7 @@ const pillButton: CSSProperties = {
   fontFamily: FRAUNCES,
   fontStyle: "italic",
   fontWeight: 700,
-  fontSize: s(14),
+  fontSize: s(13.5),
   color: NAVY,
   cursor: "pointer",
   whiteSpace: "nowrap",
@@ -36,13 +36,13 @@ export function NextCard({ then, goal, onEditGoal, onToggleIn }: NextCardProps) 
             <PhotoFill photo={then.photo} style={{ position: "absolute", inset: 0, filter: "sepia(.3) saturate(.9)" }} />
             <span style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: `${s(22)} ${s(12)} ${s(9)}`, background: "linear-gradient(rgba(27,31,52,0), rgba(27,31,52,.88))", color: "#FFF6DA", display: "flex", flexDirection: "column", gap: s(1) }}>
               <span style={{ ...kicker, color: "#F7CB4D" }}>then</span>
-              <span style={{ fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 700, fontSize: s(14), lineHeight: 1.15 }}>{years}</span>
+              <span style={{ fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 700, fontSize: s(13.5), lineHeight: 1.15 }}>{years}</span>
             </span>
           </div>
         )}
         <div style={{ flex: 1, minWidth: 0, padding: `${s(14)} ${s(12)} ${s(15)} ${s(14)}`, background: "#4F8A3C", color: "#FFF6DA", display: "flex", flexDirection: "column", gap: s(8) }}>
           {goal ? <Goal goal={goal} /> : <NoGoal />}
-          <button type="button" onClick={onEditGoal} style={{ ...pillButton, alignSelf: "flex-start", height: s(34), fontSize: s(13), background: "#FFF6DA" }}>
+          <button type="button" onClick={onEditGoal} style={{ ...pillButton, alignSelf: "flex-start", height: s(34), fontSize: s(13.5), background: "#FFF6DA" }}>
             {goal ? "Change goal" : "Set a goal"}
           </button>
         </div>
@@ -61,7 +61,7 @@ export function NextCard({ then, goal, onEditGoal, onToggleIn }: NextCardProps) 
               );
             })}
           </span>
-          <span style={{ flex: 1, minWidth: 0, fontSize: s(12.5), fontWeight: 700, whiteSpace: "nowrap" }}>
+          <span style={{ flex: 1, minWidth: 0, fontSize: s(12), fontWeight: 700, whiteSpace: "nowrap" }}>
             {goal.going.length} of {goal.total} are in
           </span>
           <button type="button" onClick={onToggleIn} style={{ ...pillButton, flex: "none", padding: `0 ${s(13)}`, background: goal.mineIn ? PAPER : "#F0B429" }}>
@@ -86,11 +86,11 @@ function Goal({ goal }: { goal: NextGoal }) {
             {unit && (
               <>
                 {" "}
-                <span style={{ fontSize: s(14), fontStyle: "italic", fontWeight: 600, letterSpacing: 0 }}>{unit}</span>
+                <span style={{ fontSize: s(13.5), fontStyle: "italic", fontWeight: 600, letterSpacing: 0 }}>{unit}</span>
               </>
             )}
           </div>
-          <div style={{ fontSize: s(12.5), fontWeight: 500, lineHeight: 1.25, marginTop: s(3) }}>
+          <div style={{ fontSize: s(12), fontWeight: 500, lineHeight: 1.25, marginTop: s(3) }}>
             until {goal.label}, {goal.dateLabel}
           </div>
         </>
@@ -106,7 +106,7 @@ function NoGoal() {
     <div>
       <div style={kicker}>next</div>
       <div style={{ fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(20), lineHeight: 1.1, marginTop: s(2) }}>Next time together</div>
-      <div style={{ fontSize: s(12.5), fontWeight: 500, lineHeight: 1.25, marginTop: s(3) }}>When will you all be in one place?</div>
+      <div style={{ fontSize: s(12), fontWeight: 500, lineHeight: 1.25, marginTop: s(3) }}>When will you all be in one place?</div>
     </div>
   );
 }

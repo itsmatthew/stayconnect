@@ -43,22 +43,22 @@ export function DropSheet({ photo, query, onQuery, rows, empty, picked, onPick, 
             <h2 id={titleId} style={{ margin: 0, fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(20), letterSpacing: s(-0.3) }}>
               Drop it in a mailbox
             </h2>
-            <p style={{ margin: 0, fontSize: s(12.5), fontWeight: 700, color: "#3F4664", lineHeight: 1.3 }}>Anyone on Now &amp; Then. They don&apos;t have to be in your circles.</p>
+            <p style={{ margin: 0, fontSize: s(12), fontWeight: 700, color: "#3F4664", lineHeight: 1.3 }}>Anyone on Now &amp; Then. They don&apos;t have to be in your circles.</p>
           </div>
-          <button type="button" aria-label="Cancel" onClick={onCancel} style={{ flex: "none", width: 44, height: 44, borderRadius: "50%", border: `${s(2)} solid ${NAVY}`, background: "#FFF8EC", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", color: NAVY, cursor: "pointer" }}>
+          <button type="button" aria-label="Cancel" onClick={onCancel} style={{ flex: "none", width: 44, height: 44, borderRadius: "50%", border: `${s(2)} solid ${NAVY}`, background: "#FFFBF0", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", color: NAVY, cursor: "pointer" }}>
             <svg width={s(16)} height={s(16)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.8} strokeLinecap="round" aria-hidden="true">
               <path d="M6 6l12 12M18 6L6 18" />
             </svg>
           </button>
         </div>
-        <label style={{ height: s(46), minHeight: 44, boxSizing: "border-box", padding: `0 ${s(14)}`, borderRadius: s(23), border: `${s(2)} solid ${NAVY}`, background: "#FFF8EC", display: "flex", alignItems: "center", gap: s(9) }}>
+        <label style={{ height: s(46), minHeight: 44, boxSizing: "border-box", padding: `0 ${s(14)}`, borderRadius: s(23), border: `${s(2)} solid ${NAVY}`, background: "#FFFBF0", display: "flex", alignItems: "center", gap: s(9) }}>
           <svg width={s(18)} height={s(18)} viewBox="0 0 24 24" fill="none" stroke={NAVY} strokeWidth={2.4} strokeLinecap="round" aria-hidden="true">
             <circle cx="11" cy="11" r="6.5" />
             <path d="M16 16l4.5 4.5" />
           </svg>
-          <input type="search" aria-label="Find someone" placeholder="name, @username or phone" value={query} onChange={(e) => onQuery(e.target.value)} style={{ flex: 1, minWidth: 0, border: 0, background: "none", outline: 0, font: "inherit", fontSize: s(15.5), fontWeight: 700, color: NAVY }} />
+          <input type="search" aria-label="Find someone" placeholder="name, @username or phone" value={query} onChange={(e) => onQuery(e.target.value)} style={{ flex: 1, minWidth: 0, border: 0, background: "none", outline: 0, font: "inherit", fontSize: s(15), fontWeight: 700, color: NAVY }} />
         </label>
-        {empty && <p style={{ margin: 0, textAlign: "center", fontSize: s(13), fontWeight: 700, color: "#6A604C" }}>{empty}</p>}
+        {empty && <p style={{ margin: 0, textAlign: "center", fontSize: s(13.5), fontWeight: 700, color: "#6A604C" }}>{empty}</p>}
         <div style={{ display: "flex", flexDirection: "column", gap: s(6) }}>
           {rows.map((r) => {
             const on = r.key === picked;
@@ -75,7 +75,7 @@ export function DropSheet({ photo, query, onQuery, rows, empty, picked, onPick, 
                 </span>
                 <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: s(1) }}>
                   <span style={{ fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(16), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.kind === "person" ? r.name : `Drop for ${r.number}`}</span>
-                  <span style={{ fontSize: s(12.5), fontWeight: 700, color: "#6A604C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.kind === "person" ? r.detail : "their mailbox, or an invite if they're new"}</span>
+                  <span style={{ fontSize: s(12), fontWeight: 700, color: "#6A604C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.kind === "person" ? r.detail : "their mailbox, or an invite if they're new"}</span>
                 </span>
                 {on && (
                   <span aria-hidden="true" style={{ flex: "none", width: s(26), height: s(26), borderRadius: "50%", background: NAVY, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -88,7 +88,7 @@ export function DropSheet({ photo, query, onQuery, rows, empty, picked, onPick, 
             );
           })}
         </div>
-        {note && <p style={{ margin: 0, textAlign: "center", fontSize: s(13), fontWeight: 800, color: "#A8331F" }}>{note}</p>}
+        {note && <p style={{ margin: 0, textAlign: "center", fontSize: s(13.5), fontWeight: 800, color: "#B43A2A" }}>{note}</p>}
         <button type="button" disabled={!canDrop} onClick={onDrop} style={{ height: s(52), minHeight: 44, marginTop: s(4), borderRadius: s(26), border: `${s(2)} solid ${NAVY}`, background: canDrop ? NAVY : "#E2D3A8", color: canDrop ? "#FFF6DA" : "#6B6A66", boxShadow: canDrop ? `0 ${s(3)} 0 #11152A` : "none", display: "flex", alignItems: "center", justifyContent: "center", gap: s(9), fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 700, fontSize: s(17), cursor: canDrop ? "pointer" : "default" }}>
           <MailboxIcon size={s(30)} />
           {buttonLabel}

@@ -15,7 +15,7 @@ export function MailNote({ text, onDismiss }: { text: string; onDismiss: () => v
         <path d="M3.5 13.5h17" />
         <path d="M12 13.5V21" />
       </svg>
-      <span style={{ flex: 1, fontSize: s(14), fontWeight: 700, lineHeight: 1.3 }}>{text}</span>
+      <span style={{ flex: 1, fontSize: s(13.5), fontWeight: 700, lineHeight: 1.3 }}>{text}</span>
       <button type="button" aria-label="Dismiss" onClick={onDismiss} style={{ flex: "none", width: 44, height: 44, border: 0, borderRadius: 22, background: "none", color: "#FFF6DA", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
         <Cross size={15} />
       </button>

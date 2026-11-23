@@ -126,7 +126,7 @@ function Picture({ src, alt, picture }: { src?: string; alt: string; picture?: R
         {picture}
       </span>
     );
-  if (!src) return <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: KARLA, fontSize: s(13), fontWeight: 700, color: "#6B6A66" }}>Your photo goes here</span>;
+  if (!src) return <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: KARLA, fontSize: s(13.5), fontWeight: 700, color: "#6B6A66" }}>Your photo goes here</span>;
   // eslint-disable-next-line @next/next/no-img-element -- a blob: URL from this browser
   return <img src={src} alt={alt} style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />;
 }

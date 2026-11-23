@@ -77,10 +77,10 @@ export const pill: CSSProperties = {
 export function ChangedLine({ line, canUndo, onUndo }: { line?: string; canUndo: boolean; onUndo: () => void }) {
   if (!line && !canUndo) return null;
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: s(10), fontSize: s(13), fontWeight: 700, color: "#3F4664" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: s(10), fontSize: s(13.5), fontWeight: 700, color: "#3F4664" }}>
       {line && <span>{line}</span>}
       {canUndo && (
-        <button type="button" onClick={onUndo} style={{ border: 0, padding: 0, background: "none", font: "inherit", fontWeight: 800, color: "#A8331F", textDecoration: "underline", cursor: "pointer" }}>
+        <button type="button" onClick={onUndo} style={{ border: 0, padding: 0, background: "none", font: "inherit", fontWeight: 800, color: "#B43A2A", textDecoration: "underline", cursor: "pointer" }}>
           undo
         </button>
       )}

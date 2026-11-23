@@ -33,7 +33,7 @@ export function HeaderPicture({ pane, style }: { pane: HeaderPane; style?: CSSPr
             fontFamily: FRAUNCES,
             fontStyle: "italic",
             fontWeight: 700,
-            fontSize: s(12.5),
+            fontSize: s(12),
           }}
         >
           {pane.dateLine}

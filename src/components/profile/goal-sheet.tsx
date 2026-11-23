@@ -53,7 +53,7 @@ export function GoalSheet({ current, labelMax, onSave, onClear, onCancel }: Goal
         <input id={dateId} type="date" value={date} onChange={(e) => setDate(e.target.value)} style={field} />
         <SheetActions canSave={!!label.trim()} onCancel={onCancel} />
         {current && (
-          <button type="button" onClick={onClear} style={{ ...pill, background: "none", borderColor: "transparent", color: "#A8331F", textDecoration: "underline" }}>
+          <button type="button" onClick={onClear} style={{ ...pill, background: "none", borderColor: "transparent", color: "#B43A2A", textDecoration: "underline" }}>
             Clear goal
           </button>
         )}

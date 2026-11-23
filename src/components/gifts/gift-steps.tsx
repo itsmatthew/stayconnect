@@ -13,7 +13,7 @@ import { PaperDefs, PaperFill } from "./wrap-pattern";
 const heading: CSSProperties = { margin: 0, fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 700, fontSize: s(17) };
 const aside: CSSProperties = { fontSize: s(12), fontWeight: 700, color: NOTE_GREY };
 const plain: CSSProperties = { margin: 0, fontSize: s(13.5), color: NOTE_GREY };
-const label: CSSProperties = { fontSize: s(14), fontWeight: 800 };
+const label: CSSProperties = { fontSize: s(13.5), fontWeight: 800 };
 const NAVY_RING = `0 0 0 ${s(2)} ${PAPER_PANEL}, 0 0 0 ${s(4)} ${NAVY}`;
 const FAINT_RING = `0 0 0 ${s(1)} rgba(43,51,80,.3)`;
 
@@ -73,7 +73,7 @@ function PartyTile({ party, picked, onPick, badge }: { party: Party; picked: boo
 function Everyone({ count, onClick }: { count: number; onClick: () => void }) {
   return (
     <button type="button" aria-label="See everyone" aria-expanded={false} onClick={onClick} style={{ ...bare, flex: "none", width: s(62), minHeight: s(76), flexDirection: "column", justifyContent: "flex-start", gap: s(4) }}>
-      <span style={{ width: s(48), height: s(48), boxSizing: "border-box", borderRadius: "50%", border: `${s(2)} dashed ${NAVY}`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: s(13) }}>+{count}</span>
+      <span style={{ width: s(48), height: s(48), boxSizing: "border-box", borderRadius: "50%", border: `${s(2)} dashed ${NAVY}`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: s(13.5) }}>+{count}</span>
       <span style={{ fontSize: s(12), fontWeight: 800 }}>everyone</span>
     </button>
   );
@@ -112,7 +112,7 @@ export function ToStep({ sections, query, onQuery, picked, onPick, badges = {} }
         </button>
       </div>
       {searching && (
-        <input type="search" autoFocus aria-label="Search people" placeholder="search" value={query} onChange={(e) => onQuery(e.target.value)} style={{ minHeight: 44, boxSizing: "border-box", padding: `0 ${s(14)}`, borderRadius: s(22), border: `${s(2)} solid ${NAVY}`, background: "#FFFDF6", font: "inherit", fontSize: s(15), color: NAVY, outline: 0 }} />
+        <input type="search" autoFocus aria-label="Search people" placeholder="search" value={query} onChange={(e) => onQuery(e.target.value)} style={{ minHeight: 44, boxSizing: "border-box", padding: `0 ${s(14)}`, borderRadius: s(22), border: `${s(2)} solid ${NAVY}`, background: "#FFFBF0", font: "inherit", fontSize: s(15), color: NAVY, outline: 0 }} />
       )}
       {nobody && <p style={plain}>{filtering ? "Nobody by that name." : "People show up here once they're in your circle."}</p>}
       {groups.length > 0 && (
@@ -174,7 +174,7 @@ export function PhotoStep({ photos, loading, picked, onPick, hasMore, onMore, on
       {!loading && !photos.length && (
         <>
           <p style={plain}>Your photos live in Daily 5. Add some there, then come back.</p>
-          <button type="button" onClick={onDaily5} style={{ ...bare, alignSelf: "flex-start", minHeight: 44, padding: `0 ${s(16)}`, borderRadius: s(22), border: `${s(2)} solid ${NAVY}`, background: "#FFFDF6", fontSize: s(14), fontWeight: 800 }}>
+          <button type="button" onClick={onDaily5} style={{ ...bare, alignSelf: "flex-start", minHeight: 44, padding: `0 ${s(16)}`, borderRadius: s(22), border: `${s(2)} solid ${NAVY}`, background: "#FFFBF0", fontSize: s(13.5), fontWeight: 800 }}>
             Add photos in Daily 5
           </button>
         </>
@@ -192,7 +192,7 @@ export function PhotoStep({ photos, loading, picked, onPick, hasMore, onMore, on
         })}
       </div>
       {hasMore && (
-        <button type="button" onClick={onMore} style={{ ...bare, alignSelf: "center", minHeight: 44, padding: `0 ${s(14)}`, fontSize: s(13), fontWeight: 800, textDecoration: "underline" }}>
+        <button type="button" onClick={onMore} style={{ ...bare, alignSelf: "center", minHeight: 44, padding: `0 ${s(14)}`, fontSize: s(13.5), fontWeight: 800, textDecoration: "underline" }}>
           Show more
         </button>
       )}
@@ -270,7 +270,7 @@ export function NoteStep({ text, count, placeholder, onText, hands, hand, onHand
   return (
     <>
       <Top title="Write on the back" right={count} labelFor={fieldId} />
-      <textarea id={fieldId} value={text} placeholder={placeholder} onChange={(e) => onText(e.target.value)} style={{ display: "block", width: "100%", flex: "none", height: s(62), minHeight: 44, boxSizing: "border-box", padding: `${s(8)} ${s(12)}`, borderRadius: s(12), border: `${s(2)} solid ${NAVY}`, background: "#FFFDF6", color: NAVY, fontFamily: KARLA, fontSize: s(15), lineHeight: 1.35, outline: 0, resize: "none" }} />
+      <textarea id={fieldId} value={text} placeholder={placeholder} onChange={(e) => onText(e.target.value)} style={{ display: "block", width: "100%", flex: "none", height: s(62), minHeight: 44, boxSizing: "border-box", padding: `${s(8)} ${s(12)}`, borderRadius: s(12), border: `${s(2)} solid ${NAVY}`, background: "#FFFBF0", color: NAVY, fontFamily: KARLA, fontSize: s(15), lineHeight: 1.35, outline: 0, resize: "none" }} />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: s(6) }}>
         {hands.map((h) => {
           const on = h.id === hand;
@@ -339,7 +339,7 @@ type WrapStepProps = {
   onOpens: (day: string | undefined) => void;
 };
 
-const segment = (on: boolean): CSSProperties => ({ height: s(38), padding: `0 ${s(12)}`, borderRadius: s(19), background: on ? NAVY : "transparent", color: on ? "#FBF4DD" : NAVY, display: "flex", alignItems: "center", fontWeight: 800, fontSize: s(13) });
+const segment = (on: boolean): CSSProperties => ({ height: s(38), padding: `0 ${s(12)}`, borderRadius: s(19), background: on ? NAVY : "transparent", color: on ? "#FBF4DD" : NAVY, display: "flex", alignItems: "center", fontWeight: 800, fontSize: s(13.5) });
 
 /** Wrap it up (GIFT-8). */
 export function WrapStep({ patterns, pattern, onPattern, ribbons, ribbon, onRibbon, day, dayLabel, minDay, onOpens }: WrapStepProps) {
@@ -386,7 +386,7 @@ export function WrapStep({ patterns, pattern, onPattern, ribbons, ribbon, onRibb
       {on && (
         // The design's day button; the date input over it opens the system date picker (a native picker on mobile).
         <label style={{ position: "relative", alignSelf: "flex-end", minHeight: 44, display: "flex", alignItems: "center", cursor: "pointer" }}>
-          <span style={{ height: s(32), padding: `0 ${s(12)}`, display: "flex", alignItems: "center", gap: s(6), borderRadius: s(16), border: `${s(2)} solid ${NAVY}`, background: "#FFFDF6", fontWeight: 800, fontSize: s(13) }}>
+          <span style={{ height: s(32), padding: `0 ${s(12)}`, display: "flex", alignItems: "center", gap: s(6), borderRadius: s(16), border: `${s(2)} solid ${NAVY}`, background: "#FFFBF0", fontWeight: 800, fontSize: s(13.5) }}>
             <svg width={s(14)} height={s(14)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <rect x="4" y="5" width="16" height="15" rx="2" />
               <path d="M4 10h16M9 3v4M15 3v4" />

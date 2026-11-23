@@ -49,7 +49,7 @@ export function RenameSheet({ current, canSave, errorFor, onSave, onCancel }: Re
           style={{ height: s(44), minHeight: 44, boxSizing: "border-box", padding: `0 ${s(14)}`, borderRadius: s(14), border: `${s(2)} solid ${NAVY}`, background: CREAM, font: "inherit", fontSize: s(15), color: NAVY, outline: 0 }}
         />
         {message && (
-          <p role="alert" style={{ margin: 0, fontSize: s(13), fontWeight: 700, color: "#93281A" }}>
+          <p role="alert" style={{ margin: 0, fontSize: s(13.5), fontWeight: 700, color: "#93281A" }}>
             {message}
           </p>
         )}

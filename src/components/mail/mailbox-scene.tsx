@@ -78,7 +78,7 @@ export function MailboxScene({ flag, photo, face, title, line, onShareAgain, onD
           <h2 id={titleId} style={{ margin: 0, fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(28), letterSpacing: s(-0.4), color: "#FFF6DA" }}>
             {title}
           </h2>
-          <p style={{ margin: 0, whiteSpace: "pre-line", fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 500, fontSize: s(15.5), lineHeight: 1.4, color: "#E8D9A8" }}>{line}</p>
+          <p style={{ margin: 0, whiteSpace: "pre-line", fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 500, fontSize: s(15), lineHeight: 1.4, color: "#E8D9A8" }}>{line}</p>
           <div style={{ display: "flex", gap: s(10), marginTop: s(8) }}>
             {onShareAgain && (
               <button type="button" onClick={onShareAgain} style={{ minHeight: 44, height: s(44), padding: `0 ${s(18)}`, borderRadius: s(22), border: `${s(2)} solid #FFF6DA`, background: "none", color: "#FFF6DA", fontWeight: 800, fontSize: s(15), cursor: "pointer" }}>

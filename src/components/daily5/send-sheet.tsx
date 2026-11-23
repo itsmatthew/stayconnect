@@ -81,7 +81,7 @@ export function SendSheet({ photo, recipients, onCancel, onSend }: SendSheetProp
             type="button"
             aria-label="Cancel"
             onClick={onCancel}
-            style={{ width: s(44), height: s(44), borderRadius: "50%", border: `${s(2)} solid ${NAVY}`, background: "#FFF8EC", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", color: NAVY, cursor: "pointer" }}
+            style={{ width: s(44), height: s(44), borderRadius: "50%", border: `${s(2)} solid ${NAVY}`, background: "#FFFBF0", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", color: NAVY, cursor: "pointer" }}
           >
             <svg width={s(16)} height={s(16)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.8} strokeLinecap="round" aria-hidden="true">
               <path d="M6 6l12 12M18 6L6 18" />
@@ -95,7 +95,7 @@ export function SendSheet({ photo, recipients, onCancel, onSend }: SendSheetProp
           placeholder="search friends and circles"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          style={{ height: s(40), boxSizing: "border-box", padding: `0 ${s(14)}`, borderRadius: s(20), border: `${s(2)} solid ${NAVY}`, background: "#FFF8EC", font: "inherit", fontFamily: FRAUNCES, fontStyle: "italic", fontSize: s(14), color: NAVY, outline: 0 }}
+          style={{ height: s(40), boxSizing: "border-box", padding: `0 ${s(14)}`, borderRadius: s(20), border: `${s(2)} solid ${NAVY}`, background: "#FFFBF0", font: "inherit", fontFamily: FRAUNCES, fontStyle: "italic", fontSize: s(13.5), color: NAVY, outline: 0 }}
         />
 
         {SECTIONS.every(([, key]) => !recipients[key].length) && (
@@ -108,7 +108,7 @@ export function SendSheet({ photo, recipients, onCancel, onSend }: SendSheetProp
           if (!parties.length) return null;
           return (
             <div key={key} role="group" aria-label={label} style={{ display: "flex", flexDirection: "column", gap: s(8) }}>
-              <div aria-hidden="true" style={{ fontSize: s(10.5), fontWeight: 800, letterSpacing: s(1.3), textTransform: "uppercase", color: "#A8331F" }}>
+              <div aria-hidden="true" style={{ fontSize: s(10.5), fontWeight: 800, letterSpacing: s(1.3), textTransform: "uppercase", color: "#B43A2A" }}>
                 {label}
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", rowGap: s(6) }}>
@@ -133,7 +133,7 @@ export function SendSheet({ photo, recipients, onCancel, onSend }: SendSheetProp
                           </span>
                         )}
                       </span>
-                      <span style={{ fontFamily: FRAUNCES, fontWeight: 700, fontSize: s(12.5), textAlign: "center" }}>{p.name}</span>
+                      <span style={{ fontFamily: FRAUNCES, fontWeight: 700, fontSize: s(12), textAlign: "center" }}>{p.name}</span>
                     </button>
                   );
                 })}
@@ -159,7 +159,7 @@ export function SendSheet({ photo, recipients, onCancel, onSend }: SendSheetProp
               placeholder="the night we…"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              style={{ flex: 1, minWidth: 0, height: s(46), boxSizing: "border-box", padding: `0 ${s(16)}`, borderRadius: s(23), border: `${s(2)} solid ${NAVY}`, background: "#FFF8EC", font: "inherit", fontSize: s(15.5), fontWeight: 700, color: NAVY, outline: 0 }}
+              style={{ flex: 1, minWidth: 0, height: s(46), boxSizing: "border-box", padding: `0 ${s(16)}`, borderRadius: s(23), border: `${s(2)} solid ${NAVY}`, background: "#FFFBF0", font: "inherit", fontSize: s(15), fontWeight: 700, color: NAVY, outline: 0 }}
             />
             <button
               type="submit"

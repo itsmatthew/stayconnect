@@ -11,7 +11,7 @@ export function MailMenu({ fromName, onRemove, onBlock, onReport, onCancel }: { 
       type="button"
       role="menuitem"
       onClick={onClick}
-      style={{ width: "100%", minHeight: 44, padding: `${s(12)} ${s(16)}`, border: 0, borderRadius: s(14), background: "#FFF8EC", color: danger ? "#B43A2A" : NAVY, fontFamily: KARLA, fontWeight: 800, fontSize: s(15), textAlign: "left", cursor: "pointer" }}
+      style={{ width: "100%", minHeight: 44, padding: `${s(12)} ${s(16)}`, border: 0, borderRadius: s(14), background: "#FFFBF0", color: danger ? "#B43A2A" : NAVY, fontFamily: KARLA, fontWeight: 800, fontSize: s(15), textAlign: "left", cursor: "pointer" }}
     >
       {label}
     </button>

@@ -31,7 +31,7 @@ export function FeedPost({ post, onMessage }: { post: FeedPostView; onMessage: (
       <div style={{ display: "flex", alignItems: "center", gap: s(8), padding: `${s(8)} ${s(6)} ${s(8)} ${s(12)}` }}>
         <Face look={post.author.look} ring={color} />
         <span style={{ display: "flex", flexDirection: "column", gap: s(1), minWidth: 0 }}>
-          <span style={{ fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(14.5), lineHeight: 1.1 }}>{post.author.name}</span>
+          <span style={{ fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(15), lineHeight: 1.1 }}>{post.author.name}</span>
           <span style={{ display: "flex", alignItems: "center", gap: s(4), fontSize: s(10.5), fontWeight: 700, color: "#5C5442" }}>
             <span aria-hidden="true" style={{ width: s(7), height: s(7), borderRadius: "50%", background: color }} />
             {post.circle.name}
@@ -69,7 +69,7 @@ export function FeedPost({ post, onMessage }: { post: FeedPostView; onMessage: (
         </div>
       )}
       {post.caption && (
-        <p data-caption="" style={{ margin: 0, padding: `${s(8)} ${s(14)} 0`, fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 600, fontSize: s(14), lineHeight: 1.3 }}>
+        <p data-caption="" style={{ margin: 0, padding: `${s(8)} ${s(14)} 0`, fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 600, fontSize: s(13.5), lineHeight: 1.3 }}>
           {post.caption}
         </p>
       )}

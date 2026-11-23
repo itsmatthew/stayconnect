@@ -89,7 +89,7 @@ export function GroupProfile(props: GroupProfileProps) {
             <button
               type="button"
               onClick={onChangeColor}
-              style={{ minHeight: 44, padding: `0 ${s(12)}`, display: "flex", alignItems: "center", gap: s(8), border: 0, background: "none", color: NAVY, fontFamily: KARLA, fontSize: s(13), fontWeight: 700, cursor: "pointer" }}
+              style={{ minHeight: 44, padding: `0 ${s(12)}`, display: "flex", alignItems: "center", gap: s(8), border: 0, background: "none", color: NAVY, fontFamily: KARLA, fontSize: s(13.5), fontWeight: 700, cursor: "pointer" }}
             >
               <span aria-hidden="true" style={{ width: s(14), height: s(14), borderRadius: "50%", background: party.palette.canopy }} />
               Color on my screen
@@ -117,7 +117,7 @@ export function GroupProfile(props: GroupProfileProps) {
               Recent photos
             </h2>
             {hasMore && (
-              <button type="button" onClick={onSeeAll} style={{ border: 0, padding: 0, background: "none", font: "inherit", fontWeight: 800, fontSize: s(13), color: "#A8331F", textDecoration: "underline", cursor: "pointer" }}>
+              <button type="button" onClick={onSeeAll} style={{ border: 0, padding: 0, background: "none", font: "inherit", fontWeight: 800, fontSize: s(13.5), color: "#B43A2A", textDecoration: "underline", cursor: "pointer" }}>
                 See all
               </button>
             )}
@@ -137,7 +137,7 @@ export function GroupProfile(props: GroupProfileProps) {
   );
 }
 
-const emptyText: CSSProperties = { fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 700, fontSize: s(14), lineHeight: 1.2 };
+const emptyText: CSSProperties = { fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 700, fontSize: s(13.5), lineHeight: 1.2 };
 
 /** A set half is its picture; an empty one is a dashed slot saying what belongs there. Either way, a tap picks a photo. */
 function HeaderHalf({ slot, changeLabel, empty, onPick }: { slot: HeaderSlotView; changeLabel: string; empty: { title: string; helper?: string }; onPick: (file: File) => void }) {
@@ -156,7 +156,7 @@ function HeaderHalf({ slot, changeLabel, empty, onPick }: { slot: HeaderSlotView
         style={{ flex: 1, borderRadius: s(12), border: `${s(2)} dashed #A8761A`, padding: s(12), display: "flex", flexDirection: "column", justifyContent: "center", gap: s(6), color: NAVY, textAlign: "center" }}
       >
         <span style={emptyText}>{empty.title}</span>
-        {empty.helper && <span style={{ fontSize: s(11.5), fontWeight: 600, lineHeight: 1.25, color: "#3F4664" }}>{empty.helper}</span>}
+        {empty.helper && <span style={{ fontSize: s(12), fontWeight: 600, lineHeight: 1.25, color: "#3F4664" }}>{empty.helper}</span>}
       </div>
     </PickArea>
   );
@@ -169,7 +169,7 @@ function Prompt({ text, onPick, onDismiss }: { text: string; onPick: (file: File
       <PickArea label={text} onPick={onPick} style={{ borderRadius: s(12), border: `${s(2)} dashed #FFF6DA`, padding: s(10) }}>
         <span style={{ ...emptyText, color: "#FFF6DA" }}>{text}</span>
       </PickArea>
-      <button type="button" onClick={onDismiss} style={{ alignSelf: "center", border: 0, padding: 0, background: "none", font: "inherit", fontWeight: 800, fontSize: s(13), color: "#FFF6DA", textDecoration: "underline", cursor: "pointer" }}>
+      <button type="button" onClick={onDismiss} style={{ alignSelf: "center", border: 0, padding: 0, background: "none", font: "inherit", fontWeight: 800, fontSize: s(13.5), color: "#FFF6DA", textDecoration: "underline", cursor: "pointer" }}>
         Not now
       </button>
     </div>
