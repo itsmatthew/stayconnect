@@ -17,15 +17,12 @@ export function localDateKey(d: Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-/** How old a photo must be for the day's five (D5-5). */
-export const MIN_AGE_MONTHS = 3;
+/** The past this many days are skipped, so the five look back rather than replay this week (D5-5). */
+export const MIN_AGE_DAYS = 7;
 
-/** On or before the same calendar day three months ago, or that month's last day when it has no such day (May 31 → Feb 28). */
+/** On or before the same calendar day a week ago (Nov 23 → Nov 16), in local time. */
 export function isEligible(takenAt: number, today: Date): boolean {
-  const first = new Date(today.getFullYear(), today.getMonth() - MIN_AGE_MONTHS, 1);
-  const lastDay = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
-  const d = Math.min(today.getDate(), lastDay);
-  return takenAt < new Date(first.getFullYear(), first.getMonth(), d + 1).getTime();
+  return takenAt < new Date(today.getFullYear(), today.getMonth(), today.getDate() - MIN_AGE_DAYS + 1).getTime();
 }
 
 // cyrb53-style string hash → mulberry32 PRNG: small, fast, stable everywhere.
@@ -69,7 +66,7 @@ type PickOptions = {
 };
 
 /**
- * Today's five: 3 from My photos and 2 from Family computer (a short pool's share goes to the other),
+ * Today's five: 3 from My photos and 2 from Family folder (a short pool's share goes to the other),
  * at most one without a face, eligible photos only, seeded by the local date.
  */
 export async function pickDaily({ photos, today, hasFace, maxChecks = MAX_CHECKS }: PickOptions): Promise<PhotoMeta[]> {

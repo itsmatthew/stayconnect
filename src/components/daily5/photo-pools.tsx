@@ -1,11 +1,12 @@
 import type { ChangeEvent, CSSProperties } from "react";
 import { FRAUNCES, NAVY, PAPER, s } from "../home/units";
-import type { PoolId, PoolView } from "./types";
+import type { FolderActions, PoolId, PoolView } from "./types";
 
 // `webkitdirectory` (pick a whole folder) isn't in React's types, but every desktop browser supports it.
 const FOLDER = { webkitdirectory: "" } as Record<string, string>;
 
 const pickerLabel: CSSProperties = {
+  boxSizing: "border-box",
   display: "inline-flex",
   alignItems: "center",
   height: s(40),
@@ -19,8 +20,13 @@ const pickerLabel: CSSProperties = {
 };
 const hiddenInput: CSSProperties = { position: "absolute", width: 1, height: 1, opacity: 0, overflow: "hidden" };
 
-/** "My photos" and "Family computer": where Daily 5 draws from. */
-export function PhotoPools({ pools, onAddFiles }: { pools: readonly PoolView[]; onAddFiles: (pool: PoolId, files: File[]) => void }) {
+const linkButton: CSSProperties = { padding: 0, border: 0, background: "none", color: "#3F4664", font: "inherit", fontSize: s(12), fontWeight: 700, textDecoration: "underline", cursor: "pointer", minHeight: s(32) };
+
+/**
+ * "My photos" and "Family folder": where Daily 5 draws from (D5-2). With `folders` (desktop Chrome and Edge), a chosen
+ * folder is remembered and can be checked again for new photos (D5-14); without it, the plain folder picker.
+ */
+export function PhotoPools({ pools, onAddFiles, folders, loading = false }: { pools: readonly PoolView[]; onAddFiles: (pool: PoolId, files: File[]) => void; folders?: FolderActions; /** Nothing can be added until the photos have loaded. */ loading?: boolean }) {
   const add = (pool: PoolId) => (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (files.length) onAddFiles(pool, files);
@@ -41,6 +47,13 @@ export function PhotoPools({ pools, onAddFiles }: { pools: readonly PoolView[]; 
               {p.count === 1 ? "1 photo" : `${p.count} photos`}
             </span>
           </div>
+          {p.hint && <div style={{ marginTop: s(2), fontSize: s(12), fontWeight: 500, color: "#3F4664" }}>{p.hint}</div>}
+          {p.folder && <div style={{ marginTop: s(6), fontSize: s(12), fontWeight: 800 }}>From {p.folder}</div>}
+          {p.folderError && (
+            <div role="alert" style={{ marginTop: s(4), fontSize: s(12), fontWeight: 700, color: "#A8331F" }}>
+              {p.folderError}
+            </div>
+          )}
           {(p.progress || p.skipped > 0) && (
             <div aria-live="polite" style={{ marginTop: s(4), fontSize: s(12), fontWeight: 700, color: "#A8331F" }}>
               {p.progress && `Importing ${p.progress.done} of ${p.progress.total}`}
@@ -48,15 +61,30 @@ export function PhotoPools({ pools, onAddFiles }: { pools: readonly PoolView[]; 
               {p.skipped > 0 && `${p.skipped} skipped`}
             </div>
           )}
-          <div style={{ display: "flex", gap: s(8), marginTop: s(10) }}>
-            <label style={pickerLabel}>
-              Choose folder
-              <input type="file" {...FOLDER} onChange={add(p.id)} style={hiddenInput} />
-            </label>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: s(8), marginTop: s(10) }}>
+            {folders && p.folder ? (
+              <button type="button" disabled={loading} aria-label={`Check ${p.folder} for new photos`} onClick={() => folders.onCheck(p.id)} style={{ ...pickerLabel, font: "inherit", fontWeight: 800, fontSize: s(13), color: NAVY }}>
+                Check for new photos
+              </button>
+            ) : folders ? (
+              <button type="button" disabled={loading} onClick={() => folders.onChoose(p.id)} style={{ ...pickerLabel, font: "inherit", fontWeight: 800, fontSize: s(13), color: NAVY }}>
+                Choose folder
+              </button>
+            ) : (
+              <label style={pickerLabel}>
+                Choose folder
+                <input type="file" {...FOLDER} disabled={loading} onChange={add(p.id)} style={hiddenInput} />
+              </label>
+            )}
             <label style={pickerLabel}>
               Choose photos
-              <input type="file" multiple accept="image/*" onChange={add(p.id)} style={hiddenInput} />
+              <input type="file" multiple accept="image/*" disabled={loading} onChange={add(p.id)} style={hiddenInput} />
             </label>
+            {folders && p.folder && (
+              <button type="button" aria-label={`Forget ${p.folder}`} onClick={() => folders.onForget(p.id)} style={linkButton}>
+                Forget folder
+              </button>
+            )}
           </div>
         </section>
       ))}

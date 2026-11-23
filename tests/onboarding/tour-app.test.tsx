@@ -38,6 +38,9 @@ const phone = () => document.querySelector("[data-layout='phone']") as HTMLEleme
 const flow = () => screen.getByRole("dialog", { name: /Start a circle|Pick a logo|Now & then|Your invite|is live/ });
 const tap = (name: string | RegExp) => fireEvent.click(within(flow()).getByRole("button", { name }));
 
+// TODO(re-evaluate when these time out at normal machine load): each test renders the whole app and walks the letter
+// and the four steps (about 10 s of jsdom rendering, most of the 15 s limit). Under heavy load they run over; they pass alone.
+// Speed-up to try first: start from a saved circle and the tour state instead of walking the flow.
 /** A brand-new app, through the letter and the four steps, to Home with a new circle. */
 async function makeCircle() {
   renderApp();

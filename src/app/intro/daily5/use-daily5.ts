@@ -26,6 +26,8 @@ export function useDaily5(
   now: () => number,
   hasFace: (image: Blob) => Promise<boolean>,
   track: (work: Promise<void>) => Promise<void> = (work) => work,
+  /** Decodes and downscales an added photo; the browser's own when not given. */
+  decode?: (f: File) => Promise<Blob>,
 ) {
   const [state, setState] = useState<Daily5State>(() => ({
     loading: true,
@@ -106,13 +108,13 @@ export function useDaily5(
           if (!store) return;
           const setPool = (patch: Partial<PoolState>) =>
             setState((s) => ({ ...s, pools: { ...s.pools, [pool]: { ...s.pools[pool], ...patch } } }));
-          const result = await importPhotos(files, pool, store, { onProgress: (progress) => setPool({ progress }) });
+          const result = await importPhotos(files, pool, store, { ...(decode ? { decode } : {}), onProgress: (progress) => setPool({ progress }) });
           setPool({ progress: undefined, skipped: result.skipped, count: (await store.counts())[pool] });
           // The day's set is fixed once full; until then, new photos can fill it.
           if (needsNewPick(dayIds.current)) await refresh();
         })(),
       ),
-    [store, refresh, track],
+    [store, refresh, track, decode],
   );
 
   return { state, addFiles };
