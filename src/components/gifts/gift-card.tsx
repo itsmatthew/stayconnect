@@ -48,7 +48,7 @@ export function GiftCard({ look, side, onFlip }: GiftCardProps) {
         {side === "wrapped" && <WrappedGift to={look.to} {...look.wrap} />}
       </div>
       {side !== "wrapped" && (
-        <button type="button" onClick={onFlip} style={{ position: "absolute", left: s(120), top: s(280), width: s(150), height: s(40), minHeight: 44, border: 0, background: "none", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: s(6), color: NAVY, fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 700, fontSize: s(14), cursor: "pointer" }}>
+        <button type="button" onClick={onFlip} style={{ position: "absolute", left: s(120), top: s(280), width: s(150), height: s(40), minHeight: 44, border: 0, background: "none", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: s(6), color: NAVY, fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 700, fontSize: s(13.5), cursor: "pointer" }}>
           <svg width={s(15)} height={s(15)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M3 12a9 9 0 0 1 15.5-6.2L21 8" />
             <path d="M21 3v5h-5" />

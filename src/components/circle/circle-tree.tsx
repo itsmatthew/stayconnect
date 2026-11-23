@@ -251,7 +251,7 @@ export function CircleTree({ people, onOpenChat, onMove }: CircleTreeProps) {
 
       <div role="status" aria-live="polite" style={{ position: "absolute", left: 0, width: "100%", top: s(TREE_BOX.cy + BANDS.bloom.outer + 6), textAlign: "center", pointerEvents: "none" }}>
         {announcement && (
-          <span style={{ display: "inline-block", padding: `${s(4)} ${s(12)}`, borderRadius: s(14), background: "#2B3350", color: "#FBF4DD", fontStyle: "italic", fontWeight: 700, fontSize: s(13) }}>
+          <span style={{ display: "inline-block", padding: `${s(4)} ${s(12)}`, borderRadius: s(14), background: "#2B3350", color: "#FBF4DD", fontStyle: "italic", fontWeight: 700, fontSize: s(13.5) }}>
             {announcement}
           </span>
         )}

@@ -56,7 +56,7 @@ export function MessagesScreen({ pinnedCircles, pinnedPeople, list, onOpen, seal
           placeholder="search friends and circles"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          style={{ flex: 1, minWidth: 0, border: 0, outline: 0, background: "none", font: "inherit", fontFamily: FRAUNCES, fontStyle: "italic", fontSize: s(14), color: NAVY }}
+          style={{ flex: 1, minWidth: 0, border: 0, outline: 0, background: "none", font: "inherit", fontFamily: FRAUNCES, fontStyle: "italic", fontSize: s(13.5), color: NAVY }}
         />
       </label>
 
@@ -98,7 +98,7 @@ export function MessagesScreen({ pinnedCircles, pinnedPeople, list, onOpen, seal
                     {r.preview}
                   </span>
                 </span>
-                <span style={{ flex: "none", fontSize: s(11.5), fontWeight: 700, color: r.hasNew ? "#A8331F" : "#3F4664" }}>{r.time}</span>
+                <span style={{ flex: "none", fontSize: s(12), fontWeight: 700, color: r.hasNew ? "#B43A2A" : "#3F4664" }}>{r.time}</span>
               </button>
             </div>
           ))}

@@ -42,7 +42,7 @@ export function PhotoCropper({ src, alt, ring, onAreaChange }: PhotoCropperProps
           style={{ cropAreaStyle: { border: `${s(3)} solid ${ring}`, color: "rgba(27,31,52,.6)" } as CSSProperties }}
         />
       </div>
-      <label style={{ display: "flex", alignItems: "center", gap: s(10), alignSelf: "stretch", fontSize: s(13), fontWeight: 800, color: NAVY }}>
+      <label style={{ display: "flex", alignItems: "center", gap: s(10), alignSelf: "stretch", fontSize: s(13.5), fontWeight: 800, color: NAVY }}>
         Zoom
         <input
           type="range"

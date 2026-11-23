@@ -10,7 +10,7 @@ export function GiftToast({ text, onDismiss }: { text: string; onDismiss?: () =>
         <path d="M12 7v14" />
         <path d="M12 7c-4-6-8-2-5 0zm0 0c4-6 8-2 5 0z" />
       </svg>
-      <span style={{ flex: 1, fontSize: s(14), fontWeight: 700, lineHeight: 1.3 }}>{text}</span>
+      <span style={{ flex: 1, fontSize: s(13.5), fontWeight: 700, lineHeight: 1.3 }}>{text}</span>
       {/* 36 to look at, as designed, in a 44 tap area. */}
       <button type="button" aria-label="Dismiss" onClick={onDismiss} style={{ flex: "none", width: 44, height: 44, border: 0, background: "none", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#FFF6DA", cursor: "pointer" }}>
         <span style={{ width: s(36), height: s(36), borderRadius: s(18), background: "rgba(255,246,218,.14)", display: "flex", alignItems: "center", justifyContent: "center" }}>

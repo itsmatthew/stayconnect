@@ -19,7 +19,7 @@ export function TileViewer({ tile, onClose }: { tile: MeTile & { photo: NonNulla
           <h2 id={titleId} style={{ margin: 0, fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(20) }}>
             {tile.title}
           </h2>
-          <button type="button" onClick={onClose} style={{ border: 0, background: "none", padding: s(6), color: NAVY, fontWeight: 700, fontSize: s(14), cursor: "pointer" }}>
+          <button type="button" onClick={onClose} style={{ border: 0, background: "none", padding: s(6), color: NAVY, fontWeight: 700, fontSize: s(13.5), cursor: "pointer" }}>
             Close
           </button>
         </div>

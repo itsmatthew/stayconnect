@@ -32,7 +32,7 @@ type MeScreenProps = {
 };
 
 /** The pill's look, 32 tall as designed; the button around it is 44 to tap. */
-const pill = { width: "100%", height: s(32), boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "center", gap: s(5), borderRadius: s(16), border: `${s(2)} solid ${NAVY}`, fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 700, fontSize: s(14) } as const;
+const pill = { width: "100%", height: s(32), boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "center", gap: s(5), borderRadius: s(16), border: `${s(2)} solid ${NAVY}`, fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 700, fontSize: s(13.5) } as const;
 const pillButton = { flex: 1, minHeight: 44, padding: 0, border: 0, background: "none", display: "flex", alignItems: "center", cursor: "pointer" } as const;
 
 /** Me (docs/specs/me.md): your profile, the posts / year / gifts row, then your 65 for that year. */
@@ -85,7 +85,7 @@ function FindMeRow({ on, onChange }: { on: boolean; onChange: (on: boolean) => v
   return (
     <div style={{ margin: `${s(18)} ${s(14)} ${s(24)}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: s(12) }}>
       <div style={{ display: "flex", flexDirection: "column", gap: s(2) }}>
-        <span style={{ fontSize: s(14), fontWeight: 800 }}>Let people find me by name</span>
+        <span style={{ fontSize: s(13.5), fontWeight: 800 }}>Let people find me by name</span>
         <span style={{ fontSize: s(12), fontWeight: 500, color: "#5C5442" }}>They can still find you by your exact @username or phone number.</span>
       </div>
       <button type="button" role="switch" aria-label="Let people find me by name" aria-checked={on} onClick={() => onChange(!on)} style={{ flex: "none", width: s(52), minWidth: 44, minHeight: 44, padding: 0, border: 0, background: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
@@ -101,7 +101,7 @@ function FindMeRow({ on, onChange }: { on: boolean; onChange: (on: boolean) => v
 function MailboxRow({ options, value, onChange }: NonNullable<MeScreenProps["mailbox"]>) {
   return (
     <div style={{ margin: `0 ${s(14)} ${s(24)}`, display: "flex", flexDirection: "column", gap: s(6) }}>
-      <span id="mailbox-from-label" style={{ fontSize: s(14), fontWeight: 800 }}>Who can drop in my mailbox</span>
+      <span id="mailbox-from-label" style={{ fontSize: s(13.5), fontWeight: 800 }}>Who can drop in my mailbox</span>
       <span style={{ fontSize: s(12), fontWeight: 500, color: "#5C5442" }}>Your circles always can.</span>
       <div role="radiogroup" aria-labelledby="mailbox-from-label" style={{ display: "flex", gap: s(6) }}>
         {options.map((o) => {

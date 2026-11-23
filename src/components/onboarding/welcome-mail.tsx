@@ -306,7 +306,7 @@ export function WelcomeTile({ onOpen }: { onOpen: () => void }) {
         </span>
         <span style={{ fontFamily: CAVEAT, fontWeight: 700, fontSize: s(22), lineHeight: 1 }}>welcome letter</span>
       </span>
-      <span style={{ fontSize: s(13), fontWeight: 800, paddingLeft: s(2) }}>
+      <span style={{ fontSize: s(13.5), fontWeight: 800, paddingLeft: s(2) }}>
         Welcome letter <span style={{ fontWeight: 700, color: "#6A604C" }}>· from Harrison &amp; Jackson</span>
       </span>
     </button>

@@ -43,7 +43,7 @@ export function WeekCard({ week, slots, onPost }: { week: WeekCardView; slots: r
               <span style={{ flex: "none", width: s(34), height: s(34), borderRadius: s(6), overflow: "hidden", border: `${s(1.5)} solid ${NAVY}` }}>
                 <ArchivePhoto photo={slot.posted} />
               </span>
-              <span style={{ fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(14.5) }}>{slot.postedLine}</span>
+              <span style={{ fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(15) }}>{slot.postedLine}</span>
             </div>
           ) : (
             <button type="button" onClick={() => onPost(slot.key)} style={{ width: "100%", minHeight: 44, display: "flex", alignItems: "center", gap: s(10), padding: `${s(9)} ${s(12)} ${s(9)} ${s(14)}`, border: 0, background: "none", color: NAVY, textAlign: "left", cursor: "pointer" }}>

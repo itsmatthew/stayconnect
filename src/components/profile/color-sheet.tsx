@@ -16,7 +16,7 @@ type ColorSheetProps = {
 export function ColorSheet({ groupName, swatches, selected, overridden, onPick, onReset, onCancel }: ColorSheetProps) {
   return (
     <Sheet title={`${groupName} color`} onCancel={onCancel}>
-      <p style={{ margin: 0, fontFamily: KARLA, fontSize: s(14) }}>Only you see this.</p>
+      <p style={{ margin: 0, fontFamily: KARLA, fontSize: s(13.5) }}>Only you see this.</p>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: s(12), justifyItems: "center" }}>
         {swatches.map(({ id, label, color }) => (
           <button

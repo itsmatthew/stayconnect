@@ -162,19 +162,19 @@ const PHONE_TREES: Record<TreeSlot, { cx: number; cy: number; r: number; bottom:
   right: { cx: 324, cy: 492, r: 64, bottom: 588, shadowRy: 7.76 },
 };
 const PHONE_LABELS: Record<TreeSlot, CSSProperties> = {
-  left: { left: 0, top: s(402), width: s(120), fontSize: s(13) },
+  left: { left: 0, top: s(402), width: s(120), fontSize: s(13.5) },
   center: { left: 0, top: s(346), width: s(390), fontSize: s(20) },
-  right: { left: s(284), top: s(402), width: s(106), fontSize: s(13) },
+  right: { left: s(284), top: s(402), width: s(106), fontSize: s(13.5) },
 };
 /** The tags sit above the labels, in the same column (HOME-19). */
 const PHONE_TAGS: Record<TreeSlot, { left: number; top: number; width: number; fontSize: number; align: "start" | "center" | "end" }> = {
-  left: { left: 4, top: 402, width: 382, fontSize: 10, align: "start" },
+  left: { left: 4, top: 402, width: 382, fontSize: 10.5, align: "start" },
   center: { left: 0, top: 346, width: 390, fontSize: 11, align: "center" },
-  right: { left: 4, top: 402, width: 382, fontSize: 10, align: "end" },
+  right: { left: 4, top: 402, width: 382, fontSize: 10.5, align: "end" },
 };
 const PHONE_BADGES: Record<TreeSlot, { left: number; top: number; size: number; fontSize: number }> = {
   left: { left: 100, top: 560, size: 24, fontSize: 12 },
-  center: { left: 266, top: 574, size: 30, fontSize: 14 },
+  center: { left: 266, top: 574, size: 30, fontSize: 13.5 },
   right: { left: 352, top: 560, size: 24, fontSize: 12 },
 };
 const SLOTS: readonly TreeSlot[] = ["left", "center", "right"];

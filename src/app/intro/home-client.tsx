@@ -131,7 +131,8 @@ export function HomeClient({
         mailbox={mailbox.tree}
         mailHint={mailbox.welcomeHint}
         people={people}
-        shelf={{ count: shelfOf(gifts, dayKey(now())).length, onOpen: giftActions.onShowShelf }}
+        // Nobody in your circle yet: no "your gifts" (CIRCLE-12, Main.dc.html's fresh tree).
+        shelf={friends.length ? { count: shelfOf(gifts, dayKey(now())).length, onOpen: giftActions.onShowShelf } : undefined}
         crowded={RINGS.filter((r) => overGuide(r, placed.filter((p) => p.ring === r).length))}
         suggestion={next && name ? { name, to: next.to } : undefined}
         onAcceptSuggestion={() => next && dispatch({ type: "place", friendId: next.friendId, ring: next.to })}

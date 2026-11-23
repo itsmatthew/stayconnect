@@ -74,7 +74,7 @@ export function BirthdayCard({ card, onAction }: { card: BirthdayCardView; onAct
           <span style={{ fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(card.name.length > 8 ? 30 : 40), lineHeight: 1, letterSpacing: s(-1), color: CREAM, overflowWrap: "anywhere" }}>{card.name}</span>
           <span style={{ fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 700, fontSize: s(19), color: "#FFD9A0" }}>{card.dayLong}</span>
         </div>
-        <span style={{ position: "absolute", left: s(140), top: s(168), height: s(30), padding: `0 ${s(13)}`, borderRadius: s(15), background: GOLD, color: "#1A2040", fontSize: s(13), fontWeight: 800, lineHeight: s(30), boxShadow: `0 ${s(2)} 0 #B5801F` }}>{card.countdown}</span>
+        <span style={{ position: "absolute", left: s(140), top: s(168), height: s(30), padding: `0 ${s(13)}`, borderRadius: s(15), background: GOLD, color: "#1A2040", fontSize: s(13.5), fontWeight: 800, lineHeight: s(30), boxShadow: `0 ${s(2)} 0 #B5801F` }}>{card.countdown}</span>
       </section>
       {card.done ? (
         <div role="status" className="mb-pop" style={{ width: s(350), minHeight: s(56), marginTop: s(22), boxSizing: "border-box", padding: `${s(8)} ${s(14)}`, borderRadius: s(16), background: "#E4EED8", border: `${s(2)} solid #4F7A36`, display: "flex", alignItems: "center", gap: s(10), textAlign: "left", color: NAVY }}>
@@ -85,11 +85,11 @@ export function BirthdayCard({ card, onAction }: { card: BirthdayCardView; onAct
           </span>
           <span style={{ display: "flex", flexDirection: "column", gap: s(1) }}>
             <span style={{ fontSize: s(15), fontWeight: 800 }}>{card.done.title}</span>
-            <span style={{ fontSize: s(12.5), fontWeight: 700, color: "#4A5A3E" }}>{card.done.line}</span>
+            <span style={{ fontSize: s(12), fontWeight: 700, color: "#4A5A3E" }}>{card.done.line}</span>
           </span>
         </div>
       ) : card.action && (
-        <button type="button" onClick={onAction} style={{ width: s(350), height: s(56), minHeight: 44, marginTop: s(22), boxSizing: "border-box", borderRadius: s(28), border: `2px solid ${CREAM}`, background: "#E0482B", color: CREAM, boxShadow: `0 ${s(4)} 0 #8E2A1E`, display: "flex", alignItems: "center", justifyContent: "center", gap: s(9), fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 700, fontSize: s(20), cursor: "pointer" }}>
+        <button type="button" onClick={onAction} style={{ width: s(350), height: s(46), minHeight: 44, marginTop: s(22), boxSizing: "border-box", borderRadius: 999, border: `${s(2)} solid ${NAVY}`, background: "#C8432B", color: CREAM, boxShadow: `0 ${s(3)} 0 ${NAVY}`, display: "flex", alignItems: "center", justifyContent: "center", gap: s(9), fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 800, fontSize: s(17), cursor: "pointer" }}>
           <svg width={s(19)} height={s(19)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ display: "block" }}>
             <rect x="4" y="11" width="16" height="10" rx="1.5" />
             <rect x="2.5" y="7" width="19" height="4" rx="1" />
@@ -130,7 +130,7 @@ export function BirthdayTile({ tile, onOpen }: { tile: BirthdayTileView; onOpen:
           <span style={{ height: s(20), padding: `0 ${s(8)}`, borderRadius: s(10), background: tile.scheduled ? "#4F7A36" : "#F0B429", color: tile.scheduled ? CREAM : NAVY, fontSize: s(10.5), fontWeight: 800, lineHeight: s(20) }}>{tile.scheduled ? "gift scheduled" : "reminder"}</span>
         </span>
       </span>
-      <span style={{ fontSize: s(13), fontWeight: 800, paddingLeft: s(2) }}>birthday reminder</span>
+      <span style={{ fontSize: s(13.5), fontWeight: 800, paddingLeft: s(2) }}>birthday reminder</span>
     </button>
   );
 }

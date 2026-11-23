@@ -117,7 +117,7 @@ function OrnamentEdit({ current, rim, color, preview, captionMax, onPickFile, on
 
       <ChangedLine line={current.line} canUndo={current.canUndo} onUndo={onUndo} />
       <PhotoPicker onPickFile={onPickFile} />
-      <p style={{ margin: `${s(-4)} 0 0`, alignSelf: "stretch", textAlign: "center", fontSize: s(13), lineHeight: 1.35, color: "#3F4664" }}>
+      <p style={{ margin: `${s(-4)} 0 0`, alignSelf: "stretch", textAlign: "center", fontSize: s(13.5), lineHeight: 1.35, color: "#3F4664" }}>
         Pick a photo that defines this group — the inside joke, the trip, the night everyone still talks about.
       </p>
 

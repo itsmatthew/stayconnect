@@ -30,13 +30,13 @@ type CheckoutSheetProps = {
   onDevFail?: () => void;
 };
 
-const label = { fontSize: s(11), fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "#A8331F" } as const;
+const label = { fontSize: s(11), fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "#B43A2A" } as const;
 
 function Row({ name, children }: { name: string; children: ReactNode }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: s(12), minHeight: s(36), borderBottom: `${s(1)} solid #E2D3A8` }}>
       <span style={label}>{name}</span>
-      <span style={{ display: "flex", alignItems: "center", gap: s(8), fontSize: s(14.5), fontWeight: 800, textAlign: "right" }}>{children}</span>
+      <span style={{ display: "flex", alignItems: "center", gap: s(8), fontSize: s(15), fontWeight: 800, textAlign: "right" }}>{children}</span>
     </div>
   );
 }
@@ -57,7 +57,7 @@ export function CheckoutSheet({ recipient, forLine, group, opens, inside, wrap, 
           <h2 id={titleId} style={{ flex: 1, margin: 0, fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(20), letterSpacing: s(-0.3) }}>
             Ready to send
           </h2>
-          <button type="button" aria-label="Cancel" disabled={paying} onClick={onCancel} style={{ flex: "none", width: 44, height: 44, minHeight: 44, borderRadius: "50%", border: `${s(2)} solid ${NAVY}`, background: "#FFF8EC", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", color: NAVY, cursor: paying ? "default" : "pointer" }}>
+          <button type="button" aria-label="Cancel" disabled={paying} onClick={onCancel} style={{ flex: "none", width: 44, height: 44, minHeight: 44, borderRadius: "50%", border: `${s(2)} solid ${NAVY}`, background: "#FFFBF0", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", color: NAVY, cursor: paying ? "default" : "pointer" }}>
             <svg width={s(16)} height={s(16)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.8} strokeLinecap="round" aria-hidden="true">
               <path d="M6 6l12 12M18 6L6 18" />
             </svg>
@@ -77,7 +77,7 @@ export function CheckoutSheet({ recipient, forLine, group, opens, inside, wrap, 
           <Row name="Inside">{inside}</Row>
         </div>
         {message && (
-          <p role="alert" style={{ margin: 0, fontSize: s(13.5), fontWeight: 800, color: "#A8331F", textAlign: "center" }}>
+          <p role="alert" style={{ margin: 0, fontSize: s(13.5), fontWeight: 800, color: "#B43A2A", textAlign: "center" }}>
             {message}
           </p>
         )}
@@ -97,7 +97,7 @@ export function CheckoutSheet({ recipient, forLine, group, opens, inside, wrap, 
           {buttonLabel}
         </button>
         {onDevFail && (
-          <button type="button" onClick={onDevFail} style={{ alignSelf: "center", minHeight: 44, border: 0, background: "none", color: NOTE_GREY, fontSize: s(11.5), fontWeight: 700, textDecoration: "underline", cursor: "pointer" }}>
+          <button type="button" onClick={onDevFail} style={{ alignSelf: "center", minHeight: 44, border: 0, background: "none", color: NOTE_GREY, fontSize: s(12), fontWeight: 700, textDecoration: "underline", cursor: "pointer" }}>
             dev: make the next payment fail
           </button>
         )}

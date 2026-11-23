@@ -74,7 +74,7 @@ export function GiftMaker({ title, recipient, chips, onChip, look, side, onFlip,
         <nav aria-label="Gift steps" style={{ flex: "none", margin: `${s(10)} ${s(16)} 0`, display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: s(5) }}>
           {chips.map((c, i) => (
             <button key={c.id} type="button" disabled={!c.enabled} aria-current={c.state === "current" ? "step" : undefined} onClick={() => onChip(c.id)} style={{ minHeight: 44, padding: 0, border: 0, background: "none", display: "flex", alignItems: "center", cursor: c.enabled ? "pointer" : "default" }}>
-              <span style={{ ...CHIP[c.state], width: "100%", height: s(40), boxSizing: "border-box", borderRadius: s(20), borderWidth: s(2), borderStyle: "solid", display: "flex", alignItems: "center", justifyContent: "center", gap: s(5), fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 700, fontSize: s(13) }}>
+              <span style={{ ...CHIP[c.state], width: "100%", height: s(40), boxSizing: "border-box", borderRadius: s(20), borderWidth: s(2), borderStyle: "solid", display: "flex", alignItems: "center", justifyContent: "center", gap: s(5), fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 700, fontSize: s(13.5) }}>
                 <span style={{ fontFamily: KARLA, fontStyle: "normal", fontWeight: 800, fontSize: s(11), opacity: 0.8 }}>{c.state === "done" ? "✓" : i + 1}</span>
                 <span>{c.label}</span>
               </span>

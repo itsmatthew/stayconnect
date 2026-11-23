@@ -96,7 +96,7 @@ export function ChatThread({ party, panes, messages, delivered, onBack, onSendTe
         <div role="log" aria-label="Conversation" style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: `${s(14)} ${s(14)} ${s(12)}`, display: "flex", flexDirection: "column", gap: s(5) }}>
           {messages.map((m) =>
             m.kind === "note" ? (
-              <div key={m.id} data-note="" style={{ alignSelf: "center", maxWidth: s(280), padding: `${s(4)} 0`, textAlign: "center", fontSize: s(11.5), fontWeight: 700, color: "#3F4664", overflowWrap: "anywhere" }}>
+              <div key={m.id} data-note="" style={{ alignSelf: "center", maxWidth: s(280), padding: `${s(4)} 0`, textAlign: "center", fontSize: s(12), fontWeight: 700, color: "#3F4664", overflowWrap: "anywhere" }}>
                 {m.text}
               </div>
             ) : (
@@ -124,7 +124,7 @@ export function ChatThread({ party, panes, messages, delivered, onBack, onSendTe
           style={{ flex: "none", boxSizing: "border-box", padding: `${s(10)} ${s(12)} ${s(30)}`, background: PAPER, borderTop: `${s(2)} solid #E2D3A8`, display: "flex", alignItems: "center", gap: s(8) }}
         >
           {/* TODO(re-evaluate when sending photos in chat is designed): does nothing yet. */}
-          <button type="button" aria-label="Add a photo" style={{ ...roundButton, flex: "none", background: "#FFF8EC" }}>
+          <button type="button" aria-label="Add a photo" style={{ ...roundButton, flex: "none", background: "#FFFBF0" }}>
             <svg width={s(20)} height={s(20)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M4 8h3l2-3h6l2 3h3v11H4z" />
               <circle cx="12" cy="13" r="3.5" />
@@ -136,7 +136,7 @@ export function ChatThread({ party, panes, messages, delivered, onBack, onSendTe
             placeholder={`message ${party.name}`}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            style={{ flex: 1, minWidth: 0, height: s(44), boxSizing: "border-box", padding: `0 ${s(16)}`, borderRadius: s(22), border: `${s(2)} solid ${NAVY}`, background: "#FFF8EC", outline: 0, font: "inherit", fontFamily: FRAUNCES, fontStyle: "italic", fontSize: s(15), color: NAVY }}
+            style={{ flex: 1, minWidth: 0, height: s(44), boxSizing: "border-box", padding: `0 ${s(16)}`, borderRadius: s(22), border: `${s(2)} solid ${NAVY}`, background: "#FFFBF0", outline: 0, font: "inherit", fontFamily: FRAUNCES, fontStyle: "italic", fontSize: s(15), color: NAVY }}
           />
           <button type="submit" aria-label="Send" style={{ ...roundButton, flex: "none", background: "#C8432B", color: "#FFF6DA" }}>
             <svg width={s(20)} height={s(20)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

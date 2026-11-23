@@ -28,8 +28,8 @@ export function MemoriesRow({ memories, onOpen }: { memories: readonly [SelfMemo
             ) : (
               <span aria-hidden="true" style={{ width: s(64), height: s(64), marginTop: s(-3), boxSizing: "border-box", borderRadius: "50%", border: `${s(2.5)} dashed ${RINGS[i]}`, background: "#FBF2DC", display: "flex", alignItems: "center", justifyContent: "center", color: "#7A6B48", fontSize: s(22), fontWeight: 800 }}>+</span>
             )}
-            <span aria-hidden="true" style={{ marginTop: s(6), maxWidth: "100%", fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 600, fontSize: s(12.5), lineHeight: 1.2, overflowWrap: "anywhere" }}>{m.src ? m.caption : ""}</span>
-            {m.src && m.nest && <span aria-hidden="true" style={{ marginTop: s(3), padding: `${s(1)} ${s(6)}`, borderRadius: s(6), background: "#27305A", color: "#F7CB4D", fontSize: s(10), fontWeight: 800 }}>nest</span>}
+            <span aria-hidden="true" style={{ marginTop: s(6), maxWidth: "100%", fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 600, fontSize: s(12), lineHeight: 1.2, overflowWrap: "anywhere" }}>{m.src ? m.caption : ""}</span>
+            {m.src && m.nest && <span aria-hidden="true" style={{ marginTop: s(3), padding: `${s(1)} ${s(6)}`, borderRadius: s(6), background: "#27305A", color: "#F7CB4D", fontSize: s(10.5), fontWeight: 800 }}>nest</span>}
           </button>
         ))}
       </div>
@@ -87,7 +87,7 @@ export function MemorySheet({ memory, preview, captionMax, onPickFile, onSave, o
             [false, "Everyone in my circles"],
             [true, "Only my nest"],
           ] as const).map(([value, text]) => (
-            <button key={text} type="button" role="radio" aria-checked={nest === value} onClick={() => setNest(value)} style={{ ...pill, flex: 1, fontSize: s(13), background: nest === value ? NAVY : CREAM, color: nest === value ? "#FFF6DA" : NAVY }}>
+            <button key={text} type="button" role="radio" aria-checked={nest === value} onClick={() => setNest(value)} style={{ ...pill, flex: 1, fontSize: s(13.5), background: nest === value ? NAVY : CREAM, color: nest === value ? "#FFF6DA" : NAVY }}>
               {text}
             </button>
           ))}

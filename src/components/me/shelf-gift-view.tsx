@@ -15,7 +15,7 @@ export function ShelfGiftView({ label, heading, look, onClose }: { label: string
       <div className="gf-up" style={{ position: "relative", width: s(390), margin: `${s(120)} auto 0`, boxSizing: "border-box", padding: `${s(16)} 0 ${s(24)}`, borderRadius: s(26), background: "linear-gradient(#F6ECCD, #F1E2B8)", border: `${s(2)} solid ${NAVY}` }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: `0 ${s(14)} 0 ${s(20)}` }}>
           <h2 style={{ margin: 0, fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(22) }}>{heading}</h2>
-          <button type="button" aria-label="Close" onClick={onClose} style={{ width: 44, height: 44, padding: 0, borderRadius: "50%", border: `2px solid ${NAVY}`, background: "#FFF8EC", color: NAVY, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+          <button type="button" aria-label="Close" onClick={onClose} style={{ width: 44, height: 44, padding: 0, borderRadius: "50%", border: `2px solid ${NAVY}`, background: "#FFFBF0", color: NAVY, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" aria-hidden="true">
               <path d="M6 6l12 12M18 6L6 18" />
             </svg>

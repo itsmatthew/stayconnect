@@ -51,7 +51,7 @@ export function BottomNav({ current: currentTab, onNavigate }: NavProps) {
               alignItems: "center",
               justifyContent: "center",
               gap: s(3),
-              color: current ? "#A8331F" : "#2B3350",
+              color: current ? "#B43A2A" : "#2B3350",
               fontWeight: current ? 800 : 700,
               fontSize: s(11),
               cursor: "pointer",
@@ -87,7 +87,7 @@ export function TopNav({ current: currentTab, onNavigate }: NavProps) {
               flexDirection: "column",
               alignItems: "center",
               gap: s(4),
-              color: current ? "#A8331F" : "#2B3350",
+              color: current ? "#B43A2A" : "#2B3350",
               fontWeight: 700,
               fontSize: s(16),
               // No header bar behind the labels, only sky: a cream glow keeps them readable.

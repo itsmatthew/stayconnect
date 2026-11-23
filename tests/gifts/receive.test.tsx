@@ -86,6 +86,13 @@ describe("gifts pop up when the app opens (GIFT-19)", () => {
     expect(screen.getByRole("region", { name: "Your shelf" })).toBeTruthy();
     await act(async () => {});
   });
+
+  it("someone with nobody in their circle yet has no 'your gifts' (CIRCLE-12)", async () => {
+    renderApp(emptyData);
+    toCircle();
+    expect(within(phone()!).queryByRole("button", { name: /^your gifts/ })).toBeNull();
+    await act(async () => {});
+  });
 });
 
 describe("unwrapping (GIFT-20)", () => {

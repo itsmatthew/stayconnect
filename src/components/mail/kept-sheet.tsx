@@ -25,9 +25,9 @@ export function KeptSheet({ groups, onZoom, onReminder, onClose }: { groups: rea
             <h2 id={titleId} style={{ margin: 0, fontFamily: FRAUNCES, fontWeight: 800, fontSize: s(26), letterSpacing: s(-0.4) }}>
               Your mailbox
             </h2>
-            <span style={{ fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 500, fontSize: s(14.5), color: "#5C5442" }}>nothing new · here&apos;s what you&apos;ve kept</span>
+            <span style={{ fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 500, fontSize: s(15), color: "#5C5442" }}>nothing new · here&apos;s what you&apos;ve kept</span>
           </div>
-          <button type="button" aria-label="Close your mailbox" onClick={onClose} style={{ flex: "none", width: 44, height: 44, borderRadius: "50%", border: `2px solid ${NAVY}`, background: "#FFF8EC", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", color: NAVY, cursor: "pointer" }}>
+          <button type="button" aria-label="Close your mailbox" onClick={onClose} style={{ flex: "none", width: 44, height: 44, borderRadius: "50%", border: `2px solid ${NAVY}`, background: "#FFFBF0", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", color: NAVY, cursor: "pointer" }}>
             <Cross size={16} />
           </button>
         </div>
@@ -55,7 +55,7 @@ export function KeptSheet({ groups, onZoom, onReminder, onClose }: { groups: rea
                       <MailPicture art={item.art} height={s(118)} />
                       <span style={{ display: "block", height: s(26), fontFamily: CAVEAT, fontWeight: 700, fontSize: s(16), lineHeight: s(26) }}>{item.photoDate}</span>
                     </span>
-                    <span style={{ fontSize: s(13), fontWeight: 800, paddingLeft: s(2) }}>
+                    <span style={{ fontSize: s(13.5), fontWeight: 800, paddingLeft: s(2) }}>
                       from {item.fromName} <span style={{ fontWeight: 700, color: "#6A604C" }}>· Daily 5</span>
                     </span>
                   </button>

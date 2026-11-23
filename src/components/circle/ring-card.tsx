@@ -103,10 +103,10 @@ export function RingCard({ people, crowded, suggestion, onAcceptSuggestion, onDi
         </section>
       ) : (
         // A brand new tree says how it fills, as Main.dc.html's new-account card does (CIRCLE-11).
-        <div style={{ fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 500, fontSize: s(14), lineHeight: 1.2, paddingLeft: s(2) }}>{nobody ? "Your tree fills in as your friends join." : BLURBS[ring]}</div>
+        <div style={{ fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 500, fontSize: s(13.5), lineHeight: 1.2, paddingLeft: s(2) }}>{nobody ? "Your tree fills in as your friends join." : BLURBS[ring]}</div>
       )}
 
-      {crowded.includes(ring) && <div style={{ fontSize: s(11.5), fontWeight: 700, color: "#8E2A1E", paddingLeft: s(2) }}>{NOTES[ring]}</div>}
+      {crowded.includes(ring) && <div style={{ fontSize: s(12), fontWeight: 700, color: "#8E2A1E", paddingLeft: s(2) }}>{NOTES[ring]}</div>}
 
       <div style={{ display: "flex", alignItems: "flex-start", gap: s(8) }}>
         <ul aria-label="People in this ring" style={{ display: "flex", gap: s(8), margin: 0, padding: `${s(1)} ${s(2)} ${s(2)}`, listStyle: "none", overflowX: "auto", flex: "0 1 auto", minWidth: 0 }}>
@@ -192,7 +192,7 @@ export function RingCard({ people, crowded, suggestion, onAcceptSuggestion, onDi
 
 function AddChoices({ people, onPick }: { people: readonly CirclePerson[]; onPick: (id: string) => void }) {
   if (!people.length) {
-    return <p style={{ margin: 0, fontSize: s(12.5), fontWeight: 600 }}>No one to add yet. Your circle fills as you connect with people.</p>;
+    return <p style={{ margin: 0, fontSize: s(12), fontWeight: 600 }}>No one to add yet. Your circle fills as you connect with people.</p>;
   }
   return (
     <div style={{ display: "flex", gap: s(8), overflowX: "auto", padding: `${s(2)} ${s(2)} ${s(4)}` }}>
@@ -271,8 +271,8 @@ const pill = (primary: boolean): CSSProperties => ({
   fontFamily: FRAUNCES,
   fontStyle: "italic",
   fontWeight: 700,
-  fontSize: s(12.5),
+  fontSize: s(12),
   cursor: "pointer",
 });
 
-const menuItem = (primary: boolean): CSSProperties => ({ ...pill(primary), height: s(34), padding: `0 ${s(14)}`, textAlign: "left", fontSize: s(14) });
+const menuItem = (primary: boolean): CSSProperties => ({ ...pill(primary), height: s(34), padding: `0 ${s(14)}`, textAlign: "left", fontSize: s(13.5) });

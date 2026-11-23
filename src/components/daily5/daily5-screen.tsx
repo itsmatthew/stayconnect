@@ -48,7 +48,7 @@ export function Daily5Screen({ todayLabel, cards, pools, recipients, onAddFiles,
 
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: `${s(10)} ${s(20)} ${s(12)}` }}>
         <h1 style={{ margin: 0, fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 700, fontSize: s(24) }}>Daily 5</h1>
-        <span style={{ fontSize: s(13), fontWeight: 700, color: "#3F4664" }}>{todayLabel}</span>
+        <span style={{ fontSize: s(13.5), fontWeight: 700, color: "#3F4664" }}>{todayLabel}</span>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: s(30), padding: `0 ${s(14)} ${s(30)}` }}>

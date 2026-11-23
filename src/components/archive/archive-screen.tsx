@@ -57,7 +57,7 @@ export function ArchiveScreen({ week, slots, posts, onPost, onMessage, picker, o
             <button
               type="button"
               onClick={() => setShown((n) => n + FEED_PAGE)}
-              style={{ minHeight: 44, height: s(40), padding: `0 ${s(20)}`, borderRadius: s(20), border: `${s(2)} solid ${NAVY}`, background: "#FFF8EC", color: NAVY, fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 700, fontSize: s(15), cursor: "pointer" }}
+              style={{ minHeight: 44, height: s(40), padding: `0 ${s(20)}`, borderRadius: s(20), border: `${s(2)} solid ${NAVY}`, background: "#FFFBF0", color: NAVY, fontFamily: FRAUNCES, fontStyle: "italic", fontWeight: 700, fontSize: s(15), cursor: "pointer" }}
             >
               Show earlier
             </button>
