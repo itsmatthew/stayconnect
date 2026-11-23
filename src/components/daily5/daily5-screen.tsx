@@ -9,7 +9,7 @@ import { Polaroid } from "./polaroid";
 import { GiftToast } from "./gift-toast";
 import { SendSheet } from "./send-sheet";
 import { SentFlight } from "./sent-flight";
-import type { Daily5Card, PoolId, PoolView, RecipientSections } from "./types";
+import type { Daily5Card, FolderActions, PoolId, PoolView, RecipientSections } from "./types";
 
 export type Daily5ScreenProps = {
   todayLabel: string;
@@ -17,6 +17,8 @@ export type Daily5ScreenProps = {
   pools: readonly PoolView[];
   recipients: RecipientSections;
   onAddFiles: (pool: PoolId, files: File[]) => void;
+  /** Where the browser can remember a pool's folder (D5-14). */
+  folders?: FolderActions;
   onSend: (send: { cardId: string; recipientId: string; note: string }) => void;
   nav: NavProps;
   /** While today's set is still being picked. */
@@ -31,7 +33,7 @@ export type Daily5ScreenProps = {
 };
 
 /** Daily 5 (docs/specs/daily5.md): today's five polaroids, the send sheet, and the photo pools. */
-export function Daily5Screen({ todayLabel, cards, pools, recipients, onAddFiles, onSend, nav, loading, onMailbox, onGift, toast, onDismissToast }: Daily5ScreenProps) {
+export function Daily5Screen({ todayLabel, cards, pools, recipients, onAddFiles, folders, onSend, nav, loading, onMailbox, onGift, toast, onDismissToast }: Daily5ScreenProps) {
   const [sending, setSending] = useState<Daily5Card | null>(null);
   const [flying, setFlying] = useState<{ key: number; src: string; color?: string } | null>(null);
   const landed = useCallback(() => setFlying(null), []);
@@ -55,10 +57,10 @@ export function Daily5Screen({ todayLabel, cards, pools, recipients, onAddFiles,
         ))}
         {!loading && cards.length === 0 && (
           <p data-tour="d5-empty" style={{ margin: `${s(8)} ${s(6)} 0`, fontFamily: FRAUNCES, fontStyle: "italic", fontSize: s(16), lineHeight: 1.4, color: "#3F4664" }}>
-            Add your photos and the family computer’s below. Each day, five photos at least 3 months old will appear here.
+            Add your photos and your family’s below. Each day, five photos at least a week old will appear here.
           </p>
         )}
-        <PhotoPools pools={pools} onAddFiles={onAddFiles} />
+        <PhotoPools pools={pools} onAddFiles={onAddFiles} folders={folders} loading={loading} />
       </div>
 
       {sending && (

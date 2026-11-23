@@ -65,6 +65,8 @@ import { joinedCircle, readInvite, type InvitePayload } from "./onboarding/invit
 import { useMyCircles } from "./onboarding/use-my-circles";
 import { recipientSections } from "./parties";
 import { captureDate, cropSquare, downscale, type CropArea } from "./photo-file";
+import { useBrowserFolders } from "./daily5/browser-folders";
+import type { FolderAccess } from "./daily5/folders";
 import { activeGoal, countdownTag } from "./profile/goals";
 import { useGoals } from "./profile/use-goals";
 
@@ -102,6 +104,8 @@ type AppClientProps = {
   hasFace?: (image: Blob) => Promise<boolean>;
   readCapture?: (f: File) => Promise<number | undefined>;
   decode?: (f: File) => Promise<Blob>;
+  /** Remembered Daily 5 folders (docs/specs/daily5.md, D5-14); the browser's own, where it has them. */
+  folders?: FolderAccess;
   /** Cuts a cropped square out of a photo (docs/specs/group-logo.md, LOGO-7). */
   crop?: (image: Blob, area: CropArea | undefined, max: number) => Promise<Blob>;
   /** Circles you started (docs/specs/onboarding.md, ONB-13). TODO(server): a fake. */
@@ -192,6 +196,7 @@ export function AppClient({
   hasFace = detectFaces,
   readCapture = captureDate,
   decode = downscale,
+  folders: givenFolders,
   crop = cropSquare,
   myCircles = localMyCircles,
   circleInvites = () => localCircleInvites(typeof location === "undefined" ? "" : location.origin),
@@ -200,6 +205,8 @@ export function AppClient({
   inviteLink = addressInvite,
 }: AppClientProps) {
   const [tab, setTab] = useState<NavLabel>(initialTab);
+  const browserFolderAccess = useBrowserFolders();
+  const folders = givenFolders ?? browserFolderAccess;
   const [store, trackStoreWork] = useStore(openStore);
   const [openArchiveNamed] = useState(() => () => openArchive(ARCHIVE_DB + data.storageSuffix));
   const [archive, trackArchiveWork] = useStore(openArchiveNamed);
@@ -439,7 +446,7 @@ export function AppClient({
         />
       );
     case "Daily 5":
-      return <Daily5Client store={store} track={trackStoreWork} now={now} hasFace={hasFace} recipients={recipients} dispatch={dispatch} nav={nav} gifts={giftDeps} drops={{ directory: data.directory, mail: mailService, share: shareService, friends: data.friends, placements: circle.placements }} />;
+      return <Daily5Client store={store} track={trackStoreWork} now={now} hasFace={hasFace} decode={decode} folders={folders} recipients={recipients} dispatch={dispatch} nav={nav} gifts={giftDeps} drops={{ directory: data.directory, mail: mailService, share: shareService, friends: data.friends, placements: circle.placements }} />;
     case "Archive":
       return <ArchiveClient data={viewerData} now={now} store={archive} track={trackArchiveWork} readCapture={readCapture} decode={decode} nav={nav} onOpenChat={openChat} />;
     case "Messages":

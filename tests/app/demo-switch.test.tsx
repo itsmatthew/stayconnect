@@ -162,8 +162,8 @@ describe("no placeholder data anywhere (DEMO-4)", () => {
     const attrs = Array.from(document.querySelectorAll("[aria-label],[alt],[title],[placeholder]")).flatMap((el) =>
       ["aria-label", "alt", "title", "placeholder"].map((a) => el.getAttribute(a) ?? ""),
     );
-    // "Family computer" is Daily 5's pool label, not the placeholder Family circle.
-    return [document.body.textContent ?? "", ...attrs].join("\n").replaceAll("Family computer", "");
+    // "Family folder" is Daily 5's pool label, not the placeholder Family circle.
+    return [document.body.textContent ?? "", ...attrs].join("\n").replaceAll("Family folder", "");
   };
 
   it("on every tab, and in what's saved", async () => {

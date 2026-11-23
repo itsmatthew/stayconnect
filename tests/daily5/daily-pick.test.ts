@@ -17,25 +17,20 @@ const ids = (ps: readonly PhotoMeta[]) => ps.map((p) => p.id);
 const countPool = (ps: readonly PhotoMeta[], pool: string) => ps.filter((p) => p.pool === pool).length;
 
 describe("eligibility (D5-5)", () => {
-  it("is on or before the same calendar day three months ago", () => {
-    expect(isEligible(day(2026, 7, 14, 23), today)).toBe(true);
-    expect(isEligible(day(2026, 7, 13), today)).toBe(true);
+  it("is on or before the same calendar day a week ago: the past week is skipped", () => {
+    expect(isEligible(day(2026, 10, 7, 23), today)).toBe(true);
+    expect(isEligible(day(2026, 10, 6), today)).toBe(true);
+    expect(isEligible(day(2026, 8, 1), today)).toBe(true);
     expect(isEligible(day(2025, 10, 14), today)).toBe(true);
-    expect(isEligible(day(2026, 7, 15, 0), today)).toBe(false);
-    expect(isEligible(day(2026, 9, 1), today)).toBe(false);
+    expect(isEligible(day(2026, 10, 8, 0), today)).toBe(false);
+    expect(isEligible(day(2026, 10, 14, 8), today)).toBe(false);
   });
 
-  it("goes back across the new year", () => {
-    const feb = new Date(2027, 1, 10, 9);
-    expect(isEligible(day(2026, 11, 10, 22), feb)).toBe(true);
-    expect(isEligible(day(2026, 11, 11, 1), feb)).toBe(false);
-  });
-
-  it("uses the month's last day when that day doesn't exist (May 31 → Feb 28 or 29)", () => {
-    expect(isEligible(day(2027, 2, 28, 22), new Date(2027, 4, 31, 9))).toBe(true);
-    expect(isEligible(day(2027, 3, 1, 1), new Date(2027, 4, 31, 9))).toBe(false);
-    expect(isEligible(day(2028, 2, 29, 22), new Date(2028, 4, 31, 9))).toBe(true);
-    expect(isEligible(day(2028, 3, 1, 1), new Date(2028, 4, 31, 9))).toBe(false);
+  it("goes back across months and the new year", () => {
+    expect(isEligible(day(2026, 12, 29, 22), new Date(2027, 0, 5, 9))).toBe(true);
+    expect(isEligible(day(2026, 12, 30, 1), new Date(2027, 0, 5, 9))).toBe(false);
+    expect(isEligible(day(2027, 2, 24, 22), new Date(2027, 2, 3, 9))).toBe(true);
+    expect(isEligible(day(2027, 2, 25, 1), new Date(2027, 2, 3, 9))).toBe(false);
   });
 
   it("formats the local date key", () => {
@@ -45,7 +40,7 @@ describe("eligibility (D5-5)", () => {
 });
 
 describe("the daily pick", () => {
-  it("picks 3 from My photos and 2 from Family computer (D5-6)", async () => {
+  it("picks 3 from My photos and 2 from Family folder (D5-6)", async () => {
     const picked = await pickDaily({ photos: [...pool("m", 10), ...pool("f", 10)], today, hasFace: allFaces });
     expect(picked).toHaveLength(5);
     expect(countPool(picked, "mine")).toBe(3);
@@ -63,7 +58,7 @@ describe("the daily pick", () => {
   });
 
   it("only picks eligible photos, and shows all of them when fewer than 5 are eligible (D5-5/6)", async () => {
-    const recent = pool("m", 20, day(2026, 9, 1)).map((p) => ({ ...p, id: `new-${p.id}` }));
+    const recent = pool("m", 20, day(2026, 10, 10)).map((p) => ({ ...p, id: `new-${p.id}` }));
     const picked = await pickDaily({ photos: [...recent, ...pool("m", 2), ...pool("f", 1)], today, hasFace: allFaces });
     expect(ids(picked).sort()).toEqual(["f0", "m0", "m1"]);
   });

@@ -10,7 +10,9 @@ import { DropClient, type DropDeps } from "../mail/drop-client";
 import { ME, type ChatAction } from "../messages/conversations";
 import { formatPhotoDate, formatToday } from "./format";
 import type { PhotoStore } from "./photo-store";
+import type { FolderAccess } from "./folders";
 import { useDaily5 } from "./use-daily5";
+import { useFolders } from "./use-folders";
 
 type Daily5ClientProps = {
   store: PhotoStore | null;
@@ -25,12 +27,18 @@ type Daily5ClientProps = {
   gifts?: GiftDeps;
   /** For "drop in a mailbox" (docs/specs/mail.md). */
   drops?: DropDeps;
+  /** Decodes and downscales an added photo. */
+  decode?: (f: File) => Promise<Blob>;
+  /** Remembered folders, where the browser has them (D5-14). */
+  folders?: FolderAccess;
 };
 
-const POOL_LABELS = { mine: "My photos", family: "Family computer" } as const;
+const POOL_LABELS = { mine: "My photos", family: "Family folder" } as const;
+const POOL_HINTS = { family: "The family computer’s photos, or a shared album saved to a folder." } as const;
 
-export function Daily5Client({ store, track, now, hasFace, recipients, dispatch, nav, gifts, drops }: Daily5ClientProps) {
-  const { state, addFiles } = useDaily5(store, now, hasFace, track);
+export function Daily5Client({ store, track, now, hasFace, recipients, dispatch, nav, gifts, drops, decode, folders }: Daily5ClientProps) {
+  const { state, addFiles } = useDaily5(store, now, hasFace, track, decode);
+  const kept = useFolders(folders, addFiles);
   const [toast, setToast] = useState<string>();
   const [dropping, setDropping] = useState<string | null>(null);
   const gift = useGiftMaker(gifts ?? noGiftDeps, { now, nav, onSent: (name) => setToast(`Wrapped and on its way to ${name}`) });
@@ -46,7 +54,11 @@ export function Daily5Client({ store, track, now, hasFace, recipients, dispatch,
       todayLabel={formatToday(new Date(now()))}
       cards={cards}
       loading={state.loading}
-      pools={(["mine", "family"] as const).map((id) => ({ id, label: POOL_LABELS[id], ...state.pools[id] }))}
+      pools={(["mine", "family"] as const).map((id) => {
+        const f = kept?.folders[id];
+        return { id, label: POOL_LABELS[id], ...(id in POOL_HINTS ? { hint: POOL_HINTS[id as keyof typeof POOL_HINTS] } : {}), ...state.pools[id], ...(f?.folder ? { folder: f.folder.name } : {}), ...(f?.error ? { folderError: f.error } : {}) };
+      })}
+      folders={kept && { onChoose: (p) => void kept.choose(p), onCheck: (p) => void kept.check(p), onForget: (p) => void kept.forget(p) }}
       recipients={recipients}
       onAddFiles={addFiles}
       onSend={({ cardId, recipientId, note }) => {

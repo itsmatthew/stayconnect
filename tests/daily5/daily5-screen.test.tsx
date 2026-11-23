@@ -18,7 +18,7 @@ const cards = ["Oct 6, 2023", "May 24, 2024", "Jul 2, 2023", "Jul 2, 2023", "Mar
 }));
 const pools: Daily5ScreenProps["pools"] = [
   { id: "mine", label: "My photos", count: 12, skipped: 0 },
-  { id: "family", label: "Family computer", count: 40, skipped: 3, progress: { done: 4, total: 10 } },
+  { id: "family", label: "Family folder", count: 40, skipped: 3, progress: { done: 4, total: 10 } },
 ];
 
 function renderScreen(over: Partial<Daily5ScreenProps> = {}) {
@@ -73,7 +73,7 @@ describe("Daily 5 screen", () => {
   it("shows both pools with counts, import progress and skipped files (D5-2)", () => {
     renderScreen();
     const mine = screen.getByRole("group", { name: "My photos" });
-    const family = screen.getByRole("group", { name: "Family computer" });
+    const family = screen.getByRole("group", { name: "Family folder" });
     expect(mine.textContent).toContain("12 photos");
     expect(family.textContent).toContain("40 photos");
     expect(family.textContent).toContain("Importing 4 of 10");
@@ -101,7 +101,7 @@ describe("Daily 5 screen", () => {
   it("explains the empty state and keeps the pools reachable (D5-10)", () => {
     renderScreen({ cards: [] });
     expect(screen.queryAllByRole("article")).toHaveLength(0);
-    expect(screen.getByText(/at least 3 months old/)).toBeTruthy();
+    expect(screen.getByText(/at least a week old/)).toBeTruthy();
     expect(screen.getByRole("group", { name: "My photos" })).toBeTruthy();
   });
 

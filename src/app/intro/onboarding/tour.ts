@@ -21,7 +21,7 @@ export type Stop = {
 export const STOPS: readonly Stop[] = [
   { id: "planted", tab: "Circles", targets: ["nav:Daily 5"], title: "Your tree’s planted", body: "Let’s take a quick look around so you know what everything does." },
   // The phone asks for the camera roll ("Allow photos"); on the web you add photos to Daily 5's pools.
-  { id: "d5", tab: "Daily 5", targets: ["d5-pools"], title: "Daily 5", body: "Every morning it picks five of your photos from at least 3 months ago. Add yours here to see your first five." },
+  { id: "d5", tab: "Daily 5", targets: ["d5-pools"], title: "Daily 5", body: "Every morning it picks five of your photos from before this past week. Add yours here to see your first five." },
   { id: "d5-today", tab: "Daily 5", targets: ["d5-card", "d5-empty"], title: "From back whenever", body: "Swipe through today’s five. Some will be from last week, some from years ago." },
   { id: "d5-send", tab: "Daily 5", targets: ["d5-send", "d5-empty"], title: "Send one", body: "Drop it in a circle’s chat, leave it in someone’s mailbox, or wrap it as a gift.", next: "Archive" },
   { id: "ar-week", tab: "Archive", targets: ["ar-week"], title: "65 Archive", body: "Once a week, post your favorite photo of the week. It closes Sunday at 11:59 pm." },
